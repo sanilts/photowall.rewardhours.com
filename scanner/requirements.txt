@@ -1,0 +1,6 @@
+pillow>=10.3
+pillow-heif>=0.16
+numpy>=1.26
+opencv-python-headless>=4.8,<5
+onnxruntime>=1.17
+nudenet>=3.4,<4

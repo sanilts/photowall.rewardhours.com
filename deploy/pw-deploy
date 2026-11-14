@@ -1,0 +1,35 @@
+#!/bin/bash
+# Photowall: gets the latest code from GitHub, checks it, and installs it.
+#   pw-deploy          install whatever is new
+#   pw-deploy back     go back to the version that was running before the last pw-deploy
+APP=/var/www/photowall
+REPO=git@github-photowall:sanilts/photowall.rewardhours.com.git
+KEEP=/var/lib/photowall/previous-version
+[ "$(id -u)" = 0 ] || { echo "Please run this as root (sudo -i first)."; exit 1; }
+
+if [ "${1:-}" = back ]; then
+  [ -s "$KEEP" ] || { echo "There is no earlier version to go back to."; exit 1; }
+  git -C "$APP" reset -q --hard "$(cat "$KEEP")" || { echo "Could not go back."; exit 1; }
+  echo "Went back to: $(git -C "$APP" log -1 --format='%h %s')"
+  exec bash "$APP/deploy/install.sh"
+fi
+
+if [ ! -d "$APP/.git" ]; then
+  mkdir -p "$(dirname "$APP")"
+  git clone -q "$REPO" "$APP" || { echo "Could not reach GitHub with the deploy key. Check that the key is added to the repository (Settings, Deploy keys)."; exit 1; }
+else
+  git -C "$APP" fetch -q origin main || { echo "Could not get the latest code from GitHub."; exit 1; }
+  if [ "$(git -C "$APP" rev-parse HEAD)" != "$(git -C "$APP" rev-parse origin/main)" ]; then
+    # Check the new code for syntax errors before switching to it.
+    T=$(mktemp -d)
+    git -C "$APP" archive origin/main | tar -x -C "$T"
+    BAD=$(find "$T" -name '*.php' -exec php -l {} \; 2>&1 | grep -v '^No syntax errors' | grep -v '^$' | head -5)
+    rm -rf "$T"
+    [ -z "$BAD" ] || { echo "The new code has an error, so nothing was changed:"; echo "$BAD"; exit 1; }
+    mkdir -p "$(dirname "$KEEP")"
+    git -C "$APP" rev-parse HEAD > "$KEEP"
+    git -C "$APP" reset -q --hard origin/main
+  fi
+fi
+echo "Code from GitHub: $(git -C "$APP" log -1 --format='%h %s')"
+exec bash "$APP/deploy/install.sh"

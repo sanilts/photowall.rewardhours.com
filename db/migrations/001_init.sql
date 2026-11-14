@@ -1,0 +1,156 @@
+CREATE TABLE staff (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  pass_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin','reviewer') NOT NULL DEFAULT 'admin',
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  last_login_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE clients (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(160) NOT NULL,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE client_users (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  client_id INT UNSIGNED NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL,
+  last_login_at DATETIME NULL,
+  KEY (client_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE projects (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  client_id INT UNSIGNED NULL,
+  slug VARCHAR(80) NOT NULL UNIQUE,
+  name VARCHAR(160) NOT NULL,
+  intro TEXT NOT NULL,
+  terms MEDIUMTEXT NOT NULL,
+  terms_version INT UNSIGNED NOT NULL DEFAULT 1,
+  status ENUM('draft','open','closed') NOT NULL DEFAULT 'draft',
+  photos_per_person INT UNSIGNED NOT NULL DEFAULT 10,
+  daily_limit INT UNSIGNED NOT NULL DEFAULT 0,
+  opens_at DATETIME NULL,
+  closes_at DATETIME NULL,
+  min_iphone INT UNSIGNED NOT NULL DEFAULT 16,
+  extra_models TEXT NOT NULL,
+  strict_original TINYINT(1) NOT NULL DEFAULT 1,
+  min_megapixels DECIMAL(5,2) NOT NULL DEFAULT 8.00,
+  blur_min DECIMAL(6,2) NOT NULL DEFAULT 25.00,
+  dark_min DECIMAL(6,2) NOT NULL DEFAULT 25.00,
+  bright_max DECIMAL(6,2) NOT NULL DEFAULT 240.00,
+  dup_distance TINYINT NOT NULL DEFAULT 4,
+  safety_block DECIMAL(4,3) NOT NULL DEFAULT 0.850,
+  safety_review DECIMAL(4,3) NOT NULL DEFAULT 0.300,
+  created_at DATETIME NOT NULL,
+  KEY (client_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE respondents (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  project_id INT UNSIGNED NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  full_name VARCHAR(120) NOT NULL DEFAULT '',
+  country VARCHAR(80) NOT NULL DEFAULT '',
+  phone VARCHAR(40) NOT NULL DEFAULT '',
+  iphone_model VARCHAR(60) NOT NULL DEFAULT '',
+  age_confirmed TINYINT(1) NOT NULL DEFAULT 0,
+  terms_version INT UNSIGNED NOT NULL DEFAULT 0,
+  terms_agreed_at DATETIME NULL,
+  terms_ip VARCHAR(45) NOT NULL DEFAULT '',
+  blocked TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL,
+  last_login_at DATETIME NULL,
+  UNIQUE KEY project_email (project_id, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE otps (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  area ENUM('respondent','admin','client') NOT NULL,
+  email VARCHAR(190) NOT NULL,
+  project_id INT UNSIGNED NOT NULL DEFAULT 0,
+  code_hash CHAR(64) NOT NULL,
+  attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  ip VARCHAR(45) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL,
+  KEY lookup (area, email, project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE photos (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  project_id INT UNSIGNED NOT NULL,
+  respondent_id INT UNSIGNED NOT NULL,
+  token CHAR(32) NOT NULL UNIQUE,
+  orig_name VARCHAR(255) NOT NULL,
+  ext VARCHAR(8) NOT NULL,
+  mime VARCHAR(60) NOT NULL,
+  bytes BIGINT UNSIGNED NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  crc32 INT UNSIGNED NOT NULL,
+  dhash BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  width INT UNSIGNED NOT NULL DEFAULT 0,
+  height INT UNSIGNED NOT NULL DEFAULT 0,
+  device_model VARCHAR(80) NOT NULL DEFAULT '',
+  lens_model VARCHAR(160) NOT NULL DEFAULT '',
+  software VARCHAR(80) NOT NULL DEFAULT '',
+  taken_at DATETIME NULL,
+  gps_lat DECIMAL(10,7) NULL,
+  gps_lng DECIMAL(10,7) NULL,
+  meta_json MEDIUMTEXT NOT NULL,
+  sharpness DECIMAL(6,2) NOT NULL DEFAULT 0,
+  brightness DECIMAL(6,2) NOT NULL DEFAULT 0,
+  safety_score DECIMAL(5,4) NOT NULL DEFAULT 0,
+  safety_detail TEXT NOT NULL,
+  safety ENUM('clear','review') NOT NULL DEFAULT 'clear',
+  status ENUM('pending','approved','rejected','removed') NOT NULL DEFAULT 'pending',
+  reject_reason VARCHAR(255) NOT NULL DEFAULT '',
+  reviewed_by INT UNSIGNED NULL,
+  reviewed_at DATETIME NULL,
+  created_at DATETIME NOT NULL,
+  KEY project_status (project_id, status),
+  KEY respondent (respondent_id),
+  KEY project_sha (project_id, sha256)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE rejections (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  project_id INT UNSIGNED NOT NULL,
+  respondent_id INT UNSIGNED NOT NULL,
+  orig_name VARCHAR(255) NOT NULL,
+  bytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  sha256 CHAR(64) NOT NULL DEFAULT '',
+  code VARCHAR(40) NOT NULL,
+  message VARCHAR(255) NOT NULL,
+  device_model VARCHAR(80) NOT NULL DEFAULT '',
+  meta_json MEDIUMTEXT NOT NULL,
+  ip VARCHAR(45) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL,
+  KEY project (project_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE rate_limits (
+  bucket VARCHAR(190) NOT NULL PRIMARY KEY,
+  hits INT UNSIGNED NOT NULL,
+  reset_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE audit_log (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  actor_type VARCHAR(20) NOT NULL,
+  actor_id INT UNSIGNED NOT NULL DEFAULT 0,
+  actor_label VARCHAR(190) NOT NULL DEFAULT '',
+  action VARCHAR(60) NOT NULL,
+  detail VARCHAR(500) NOT NULL DEFAULT '',
+  ip VARCHAR(45) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL,
+  KEY (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
