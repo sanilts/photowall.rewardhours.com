@@ -31,7 +31,8 @@
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 16px; }
 [hidden] { display: none !important; }
-body { margin: 0; font: 400 17px/1.55 var(--text); color: var(--ink); background: var(--paper); }
+/* The page is a column as tall as the window, so the footer sits at the bottom even when the page is short. */
+body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; font: 400 17px/1.55 var(--text); color: var(--ink); background: var(--paper); }
 body.is-wide { background: #fff; }
 h1, h2, h3 { font-family: var(--display); line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 .6rem; }
 h1 { font-size: 1.9rem; font-weight: 700; }
@@ -47,8 +48,9 @@ img { max-width: 100%; height: auto; }
 
 .wrap { max-width: 1140px; margin: 0 auto; padding: 0 22px; }
 .narrow-wrap { max-width: 820px; }
-.main { padding-top: 30px; padding-bottom: 56px; min-height: 70vh; }
-.main-wide { min-height: 70vh; }
+.main { padding-top: 30px; padding-bottom: 56px; }
+.main, .main-wide { flex: 1 0 auto; width: 100%; }
+.top, .foot { flex: none; }
 .skip { position: absolute; left: -999px; top: 0; background: #fff; padding: 8px 12px; z-index: 10; }
 .skip:focus { left: 8px; top: 8px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
