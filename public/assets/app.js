@@ -35,6 +35,15 @@
     }
   });
 
+  // Slow forms (data-busy="message"): show the message on the button and stop a second click.
+  document.addEventListener('submit', function (ev) {
+    var form = ev.target;
+    if (!form.dataset || !form.dataset.busy || ev.defaultPrevented) return;
+    var btn = form.querySelector('button[type=submit]');
+    if (!btn) return;
+    setTimeout(function () { btn.disabled = true; btn.textContent = form.dataset.busy; }, 0);
+  });
+
   // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
   var secure = document.getElementById('smtp_secure');
   var port = document.getElementById('smtp_port');

@@ -1,5 +1,5 @@
 <?php
-/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken */
+/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken @var array $models @var array $gemini @var array $made */
 $driver = (string) ($m['driver'] ?? 'log');
 if ($driver === 'log' && ($m['source'] ?? '') === 'file') $driver = 'smtp'; // nothing chosen yet: offer the usual choice
 $smtp = (array) ($m['smtp'] ?? []);
@@ -105,6 +105,66 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
     </ul>
     <button class="btn btn-main" type="submit">Save phone pictures</button>
   </form>
+</section>
+
+<section class="card" id="make">
+  <h2>Create a phone picture with Gemini</h2>
+  <p class="muted">Instead of uploading a file, you can have Google's Gemini create a picture from a description you write. This needs your own Gemini API key from Google AI Studio with billing switched on, and Google charges that key for every picture.</p>
+
+  <form method="post" action="/settings/gemini" class="form">
+    <?= csrf_field() ?>
+    <div class="grid2">
+      <div>
+        <label for="gemini_key">Gemini API key <?= $gemini['key'] !== '' ? '<span class="muted">(saved; leave empty to keep it)</span>' : '' ?></label>
+        <input id="gemini_key" name="gemini_key" type="password" autocomplete="new-password" placeholder="<?= $gemini['key'] !== '' ? 'Saved' : '' ?>">
+      </div>
+      <div>
+        <label for="gemini_model">Image model</label>
+        <input id="gemini_model" name="gemini_model" maxlength="80" value="<?= e($gemini['model']) ?>" autocomplete="off">
+      </div>
+    </div>
+    <p class="muted hint">The key is stored encrypted. Change the model name only if Google renames or retires it.</p>
+    <div class="row form-end">
+      <button class="btn" type="submit">Save Gemini settings</button>
+      <?php if ($gemini['key'] !== ''): ?><button class="btn btn-quiet" type="submit" name="forget_key" value="1" data-confirm="Remove the saved Gemini API key?">Remove the key</button><?php endif; ?>
+    </div>
+  </form>
+
+  <?php if ($gemini['key'] !== ''): ?>
+  <h3 class="sub">New picture</h3>
+  <form method="post" action="/settings/phones/make" class="form" data-busy="Creating the picture. This can take a minute.">
+    <?= csrf_field() ?>
+    <label for="make_slug">Picture for</label>
+    <select id="make_slug" name="slug">
+      <?php foreach ($models as $model): $slug = phone_slug($model); ?>
+        <option value="<?= e($slug) ?>"<?= ($made['slug'] ?? '') === $slug ? ' selected' : '' ?>><?= e($model) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <label for="make_prompt">Describe the picture</label>
+    <textarea id="make_prompt" name="prompt" rows="4" required minlength="10" maxlength="2000"><?= e($made['prompt'] ?? '') ?></textarea>
+    <p class="muted hint">Say what should be in the picture, the angle and the background. Your words are sent to Google exactly as written, and the picture comes back upright (9:16). Nothing appears on the project page until you press "Use this picture".</p>
+    <button class="btn btn-main" type="submit">Create picture</button>
+  </form>
+  <?php endif; ?>
+
+  <?php $drafts = array_values(array_filter($models, static fn($x) => Gemini::draftFile(phone_slug($x)) !== null)); ?>
+  <?php if ($drafts): ?>
+  <h3 class="sub">Waiting for your decision</h3>
+  <ul class="drafts">
+    <?php foreach ($drafts as $model): $slug = phone_slug($model); ?>
+      <li>
+        <img src="/phone-draft/<?= e($slug) ?>?v=<?= filemtime(Gemini::draftFile($slug)) ?>" alt="New picture for <?= e($model) ?>">
+        <p><strong><?= e($model) ?></strong><?= phone_picture($model) ? '<br><span class="muted">Replaces the current picture</span>' : '' ?></p>
+        <form method="post" action="/settings/phones/draft" class="row">
+          <?= csrf_field() ?>
+          <input type="hidden" name="slug" value="<?= e($slug) ?>">
+          <button class="btn btn-main" type="submit" name="action" value="use">Use this picture</button>
+          <button class="btn btn-quiet" type="submit" name="action" value="discard">Discard</button>
+        </form>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+  <?php endif; ?>
 </section>
 
 <section class="card">

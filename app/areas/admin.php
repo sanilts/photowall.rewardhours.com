@@ -536,7 +536,82 @@ route('GET', '/settings', function () {
     $m = Settings::mail();
     view('admin/settings', ['title' => 'Settings', 'nav' => ad_nav('settings'), 'm' => $m, 'me' => $me,
         'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '',
-        'models' => array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')))]);
+        'models' => array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone'))),
+        'gemini' => Gemini::settings(), 'made' => $_SESSION['made'] ?? []]);
+});
+
+/* ---------- settings: phone pictures created with Gemini ---------- */
+
+route('GET', '/phone-draft/{slug}', function (string $slug) {
+    ad_need(true);
+    $f = Gemini::draftFile($slug);
+    if (!$f) fail_page(404, 'We could not find that picture.');
+    session_write_close();
+    Storage::send($f, ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp'][pathinfo($f, PATHINFO_EXTENSION)], null, false);
+});
+
+route('POST', '/settings/gemini', function () {
+    ad_need(true);
+    $key = trim((string) ($_POST['gemini_key'] ?? ''));
+    $model = preg_replace('/[^A-Za-z0-9._-]/', '', post('gemini_model')) ?: Gemini::DEFAULT_MODEL;
+    if (!empty($_POST['forget_key'])) {
+        Settings::set('gemini', ['key' => '', 'model' => $model]);
+        audit('settings.gemini', 'key removed');
+        flash('The Gemini API key was removed.');
+    } elseif ($key === '' && !Gemini::isSetUp()) {
+        flash('Paste the Gemini API key first. Nothing was saved.', 'bad');
+    } else {
+        Settings::set('gemini', ['key' => Settings::seal($key !== '' ? $key : Gemini::settings()['key']), 'model' => $model]);
+        audit('settings.gemini', $model);
+        flash('Gemini settings saved. You can create a picture now.');
+    }
+    redirect('/settings#make');
+});
+
+route('POST', '/settings/phones/make', function () {
+    ad_need(true);
+    $models = array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')));
+    $slugs = array_map('phone_slug', $models);
+    $slug = post('slug');
+    $prompt = mb_substr(post('prompt'), 0, 2000);
+    $_SESSION['made'] = ['slug' => $slug, 'prompt' => $prompt]; // so the description is still there for another try
+    if (!in_array($slug, $slugs, true)) {
+        flash('Choose which phone the picture is for.', 'bad');
+    } elseif (mb_strlen($prompt) < 10) {
+        flash('Describe the picture you want in a sentence or two.', 'bad');
+    } elseif (!Gemini::isSetUp()) {
+        flash('Save the Gemini API key first.', 'bad');
+    } elseif (!throttle('gemini:' . client_ip(), 60, 3600)) {
+        flash('Too many pictures in a short time. Please wait a little.', 'bad');
+    } else {
+        session_write_close(); // the request to Google can take a minute; do not hold up other pages meanwhile
+        @set_time_limit(180);
+        $pic = Gemini::picture($prompt);
+        session_start();
+        if ($pic) {
+            Gemini::saveDraft($slug, $pic);
+            audit('settings.phones.make', $slug);
+            flash('Picture created for ' . $models[array_search($slug, $slugs, true)] . '. Check it below, then use it or discard it.');
+        } else {
+            flash('No picture was created. ' . Gemini::$lastError, 'bad');
+        }
+    }
+    redirect('/settings#make');
+});
+
+route('POST', '/settings/phones/draft', function () {
+    ad_need(true);
+    $slug = post('slug');
+    if (post('action') === 'use' && Gemini::useDraft($slug)) {
+        audit('settings.phones.use', $slug);
+        flash('The picture is now shown on the project page.');
+    } elseif (Gemini::draftFile($slug)) {
+        Gemini::dropDraft($slug);
+        flash('The picture was discarded.');
+    } else {
+        flash('That picture is no longer there.', 'bad');
+    }
+    redirect('/settings#make');
 });
 
 route('GET', '/phone/{slug}', function (string $slug) {
