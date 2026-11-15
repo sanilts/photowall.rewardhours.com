@@ -21,38 +21,35 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
       <h1>Share photos taken on your iPhone&nbsp;<?= $min ?> or newer</h1>
       <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro'])) ?></p><?php endif; ?>
       <p class="hero-lead hero-both">Photos already in your library or fresh captures. Both are welcome.</p>
-      <?php if ($phones): ?>
-      <div class="phones">
-        <p class="phones-label" id="phones-label">iPhones we accept</p>
-        <ul class="phones-list" aria-labelledby="phones-label">
-          <?php foreach ($phones as $ph): ?><li><?= icon('phone') ?><?= e($ph) ?></li><?php endforeach; ?>
-          <li class="phones-more">and any newer iPhone</li>
-        </ul>
-      </div>
-      <?php endif; ?>
       <a class="btn btn-sun btn-big hero-cta" href="#start"><?= $closed ? 'See your photos' : 'Start uploading' ?></a>
     </div>
-
-    <?php if ($subjects): ?>
-    <div class="vf" id="viewfinder" aria-hidden="true">
-      <div class="vf-screen">
-        <span class="vf-corner vf-tl"></span><span class="vf-corner vf-tr"></span><span class="vf-corner vf-bl"></span><span class="vf-corner vf-br"></span>
-        <div class="vf-status"><span class="vf-rec"></span><span>iPhone <?= $min ?></span><span class="vf-format">HEIC</span></div>
-        <?php foreach ($subjects as $i => $s): ?>
-          <div class="vf-slide tone-<?= e($s['tone']) ?><?= $i === 0 ? ' is-on' : '' ?>"><?= icon($s['icon']) ?></div>
-        <?php endforeach; ?>
-        <span class="vf-focus"></span>
-        <span class="vf-flash"></span>
-      </div>
-      <div class="vf-modes">
-        <div class="vf-track">
-          <?php foreach ($subjects as $i => $s): ?><span class="vf-mode<?= $i === 0 ? ' is-on' : '' ?>"><?= e($s['short']) ?></span><?php endforeach; ?>
-        </div>
-      </div>
-      <div class="vf-shutter"><span></span></div>
-    </div>
-    <?php endif; ?>
   </div>
+
+  <?php if ($phones): ?>
+  <?php // Every accepted iPhone, sliding past. The second copy only exists to make the loop seamless. ?>
+  <div class="rail" role="group" aria-label="iPhones we accept">
+    <div class="rail-track">
+      <?php foreach ([false, true] as $copy): ?>
+      <ul class="rail-set"<?= $copy ? ' aria-hidden="true"' : '' ?>>
+        <?php foreach ($phones as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; ?>
+          <li class="phone">
+            <div class="phone-body tone-<?= e($look['tone']) ?>">
+              <span class="phone-status"><span class="phone-dot"></span>HEIC</span>
+              <span class="phone-focus"><?= icon($look['icon']) ?></span>
+              <span class="phone-shutter"></span>
+            </div>
+            <p class="phone-name"><?= e($ph) ?></p>
+          </li>
+        <?php endforeach; ?>
+        <li class="phone phone-next">
+          <div class="phone-body"><span class="phone-plus">+</span></div>
+          <p class="phone-name">Any newer iPhone</p>
+        </li>
+      </ul>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
 </section>
 
 <section class="band band-tint start-band" id="start">

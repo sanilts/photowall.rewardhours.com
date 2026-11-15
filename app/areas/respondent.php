@@ -50,7 +50,7 @@ route('GET', '/p/{slug}', function (string $slug) {
     if (rp_me($project)) redirect("/p/$slug/upload");
     view('respondent/landing', [
         'title' => $project['name'], 'project' => $project, 'state' => rp_window($project), 'email' => $_SESSION['pending']['email'] ?? '',
-        'bare' => true, 'scripts' => ['landing.js'], 'headerLink' => ['Sign in', '#start'],
+        'bare' => true, 'headerLink' => ['Sign in', '#start'],
         'description' => 'Share photos taken on your iPhone ' . (int) $project['min_iphone'] . ' or newer. ' . mb_strimwidth((string) $project['intro'], 0, 140, '...'),
     ]);
 });
