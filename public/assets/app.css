@@ -106,7 +106,7 @@ a.who-link:hover > span:last-child { text-decoration: underline; }
 .client-head p { margin: 4px 0 0; }
 .client-head .who-link { font-weight: inherit; align-items: center; gap: 16px; }
 .table-flat { margin: 0; border-radius: 12px; }
-.table-flat .table { min-width: 780px; }
+.table-flat .table { min-width: 860px; }
 .table .chip { white-space: nowrap; }
 .sub + form { margin-top: 12px; }
 .acts { gap: 8px; }
@@ -131,6 +131,19 @@ a.who-link:hover > span:last-child { text-decoration: underline; }
   .manage-row form { justify-content: flex-start; }
 }
 
+.table-mail { min-width: 700px; }
+.table-mail td:nth-child(2) { white-space: nowrap; }
+.table-mail td:nth-child(3), .table-mail td:nth-child(4) { overflow-wrap: break-word; }
+.table-mail td:nth-child(4) { min-width: 15em; }
+.mail-why { color: var(--bad); font-size: .9rem; }
+.mail-week { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 14px; }
+.mail-week strong { font: 700 1.3rem/1 var(--display); }
+.mail-week .bad { color: var(--bad); }
+.mail-week .warn { color: var(--warn); }
+.acts .btn .ico { width: 16px; height: 16px; }
+.acts { flex-wrap: wrap; }
+.acts .btn { white-space: nowrap; }
+.table .row.acts { flex-wrap: wrap; max-width: 22em; }
 .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .pill { padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font-weight: 600; font-size: .92rem; text-decoration: none; }
 .pill:hover { border-color: var(--navy); }

@@ -114,6 +114,15 @@ in; nothing is deleted) or deleted (the company, its people, their download requ
 projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
 removed. Database change 011 adds `clients.active`.
 
+## Email sending log and client invitations
+
+Every email the application tries to send goes through `Mailer::send()` and is written to `mail_log`: who to,
+what kind, and whether it was sent, failed (with the mail server's reason) or only written to the file because
+email is switched off. A sign-in code in the subject is blanked. The console shows it under Settings, Email,
+and in full at `/settings/mail-log`; the hourly cron keeps 90 days. A client person is emailed an invitation
+with the portal link when access is given, and "Send invitation again" on the client's page repeats it.
+Database change 012 adds `mail_log` and `client_users.invited_at`.
+
 ## Console settings page
 
 Settings is one page in five parts (Email, Sign-in checks, Example photos, Invitation, Storage), switched by

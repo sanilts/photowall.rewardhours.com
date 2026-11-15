@@ -10,12 +10,24 @@ final class Mailer
     /** Why the last send failed, in words an administrator can act on. */
     public static string $lastError = '';
 
-    public static function send(string $to, string $subject, string $text, ?string $html = null): bool
+    /** What each kind of email is, for the sending log in the console. */
+    public const KINDS = [
+        'code' => 'Sign-in code', 'accepted' => 'Photos accepted', 'invite' => 'Client invitation', 'request' => 'Download request to staff',
+        'answer' => 'Answer to a download request', 'test' => 'Test email', '' => 'Other',
+    ];
+
+    /**
+     * Send one email. $kind (a key of KINDS) only labels it in the sending log.
+     * Every attempt is written to that log: sent, failed (with the mail server's reason), or only written
+     * to the file because email is switched off.
+     */
+    public static function send(string $to, string $subject, string $text, ?string $html = null, string $kind = ''): bool
     {
         $m = Settings::mail();
+        $driver = in_array((string) ($m['driver'] ?? 'log'), ['smtp', 'postmark'], true) ? (string) $m['driver'] : 'log';
         self::$lastError = '';
         try {
-            return match ((string) ($m['driver'] ?? 'log')) {
+            $ok = match ($driver) {
                 'smtp' => self::smtp($m, $to, $subject, $text, $html),
                 'postmark' => self::postmark($m, $to, $subject, $text, $html),
                 default => self::log($to, $subject, $text),
@@ -23,8 +35,39 @@ final class Mailer
         } catch (Throwable $ex) {
             self::$lastError = $ex->getMessage();
             error_log('Photowall mail error: ' . $ex->getMessage());
-            return false;
+            $ok = false;
         }
+        self::record($to, $subject, $kind, $driver, $ok ? ($driver === 'log' ? 'file' : 'sent') : 'failed', self::$lastError);
+        return $ok;
+    }
+
+    /** One line in the sending log. A sign-in code in the subject is blanked: the log must never show a working code. */
+    private static function record(string $to, string $subject, string $kind, string $driver, string $result, string $error): void
+    {
+        try {
+            Db::q('INSERT INTO mail_log (to_email, subject, kind, driver, result, error, created_at) VALUES (?,?,?,?,?,?,?)',
+                [mb_substr($to, 0, 190), mb_substr((string) preg_replace('/\b\d{6}\b/', '******', $subject), 0, 255), isset(self::KINDS[$kind]) ? $kind : '', $driver, $result, mb_substr($error, 0, 500), now()]);
+        } catch (Throwable $e) {
+            error_log('Photowall mail log: ' . $e->getMessage());
+        }
+    }
+
+    /** Lines of the sending log, newest first. $only: '' for all, or 'sent', 'failed', 'file'. */
+    public static function logRows(string $only, int $limit, int $offset = 0): array
+    {
+        $where = in_array($only, ['sent', 'failed', 'file'], true) ? 'WHERE result = ?' : '';
+        return Db::all("SELECT * FROM mail_log $where ORDER BY id DESC LIMIT " . (int) $limit . ' OFFSET ' . (int) $offset, $where !== '' ? [$only] : []);
+    }
+
+    /** How many emails were sent, failed, or only written to the file. $days 0 counts everything. */
+    public static function logCounts(int $days = 0): array
+    {
+        $out = ['sent' => 0, 'failed' => 0, 'file' => 0];
+        $rows = $days > 0
+            ? Db::all('SELECT result, COUNT(*) AS n FROM mail_log WHERE created_at >= ? GROUP BY result', [date('Y-m-d H:i:s', time() - $days * 86400)])
+            : Db::all('SELECT result, COUNT(*) AS n FROM mail_log GROUP BY result');
+        foreach ($rows as $r) $out[$r['result']] = (int) $r['n'];
+        return $out + ['total' => array_sum($out)];
     }
 
     public static function isSetUp(): bool

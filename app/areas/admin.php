@@ -561,9 +561,10 @@ route('POST', '/clients/{id}/users', function (string $id) {
     } elseif (Db::val('SELECT id FROM client_users WHERE email = ?', [$email])) {
         flash('That email address already has client access.', 'bad');
     } else {
-        Db::q('INSERT INTO client_users (client_id, email, name, created_at) VALUES (?,?,?,?)', [$client['id'], $email, $name, now()]);
+        $uid = Db::insert('INSERT INTO client_users (client_id, email, name, created_at) VALUES (?,?,?,?)', [$client['id'], $email, $name, now()]);
         audit('client.user.add', "$email for {$client['name']}");
-        flash("$email can now sign in at " . cfg('hosts.client') . ' with an emailed code.');
+        [$sent, $why] = ad_invite(Db::one('SELECT * FROM client_users WHERE id = ?', [$uid]), $client);
+        flash("$email can now sign in at " . cfg('hosts.client') . ' with an emailed code. ' . ($sent ? 'An invitation with the link was emailed to them.' : "The invitation was not sent: $why"), $sent ? 'ok' : 'bad');
     }
     redirect('/clients/' . $client['id']);
 });
@@ -611,6 +612,34 @@ route('POST', '/clients/{id}/delete', function (string $id) {
     redirect('/clients');
 });
 
+/**
+ * Email a client person the link to the client portal and how to sign in. Returns [sent, reason when not].
+ * With email switched off nothing can be sent, and that is said plainly instead of pretending.
+ */
+function ad_invite(array $u, array $client): array
+{
+    if (!Mailer::isSetUp()) return [false, 'email is not set up yet (Settings, Email). Send it from this page once email works.'];
+    $link = area_url('client', '/login');
+    $company = cfg('company', 'Research and Metric Corporation');
+    $text = "Hello {$u['name']},\n\nYou have access to the photo portal for {$client['name']}. It shows the photos we have checked and accepted for your projects.\n\n"
+        . "Sign in here:\n$link\n\nUse this email address ({$u['email']}). We send you a 6-digit code each time, so there is no password to remember.\n\n$company";
+    $html = '<div style="margin:0;padding:24px;background:#f2f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a1e3c">'
+        . '<div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden">'
+        . '<div style="background:#0a1e3c;color:#fffef0;padding:18px 28px;font-size:18px;font-weight:bold">Photowall client portal</div>'
+        . '<div style="padding:28px">'
+        . '<p style="margin:0 0 14px;font-size:16px;line-height:1.5">Hello ' . e($u['name']) . ',</p>'
+        . '<p style="margin:0 0 18px;font-size:16px;line-height:1.5">You have access to the photo portal for <strong>' . e($client['name']) . '</strong>. It shows the photos we have checked and accepted for your projects.</p>'
+        . '<p style="margin:0 0 20px"><a href="' . e($link) . '" style="display:inline-block;background:#0a1e3c;color:#fffef0;text-decoration:none;font-weight:bold;font-size:16px;padding:13px 24px;border-radius:10px">Sign in to the portal</a></p>'
+        . '<p style="margin:0;font-size:14px;line-height:1.5;color:#5a6780">Use this email address (' . e($u['email']) . '). We send you a 6-digit code each time, so there is no password to remember.</p>'
+        . '</div></div>'
+        . '<p style="max-width:520px;margin:14px auto 0;font-size:12px;color:#5a6780;text-align:center">' . e($company) . '</p></div>';
+    if (!Mailer::send($u['email'], "Your access to the {$client['name']} photo portal", $text, $html, 'invite')) {
+        return [false, Mailer::$lastError !== '' ? Mailer::$lastError : 'the mail server did not accept it.'];
+    }
+    Db::q('UPDATE client_users SET invited_at = ? WHERE id = ?', [now(), $u['id']]);
+    return [true, ''];
+}
+
 function ad_client_user(string $id): array
 {
     $u = ctype_digit($id) ? Db::one('SELECT * FROM client_users WHERE id = ?', [(int) $id]) : null;
@@ -624,6 +653,22 @@ route('POST', '/client-users/{id}/toggle', function (string $id) {
     Db::q('UPDATE client_users SET active = 1 - active WHERE id = ?', [$u['id']]);
     audit($u['active'] ? 'client.user.disable' : 'client.user.enable', $u['email']);
     flash($u['active'] ? "Access for {$u['email']} is switched off." : "Access for {$u['email']} is switched on.");
+    redirect('/clients/' . $u['client_id']);
+});
+
+route('POST', '/client-users/{id}/invite', function (string $id) {
+    ad_need(true);
+    $u = ad_client_user($id);
+    $client = ad_client((string) $u['client_id']);
+    if (!$u['active'] || !$client['active']) {
+        flash('Switch this ' . (!$client['active'] ? 'client' : 'person') . ' on first. An invitation would lead to a sign-in that is refused.', 'bad');
+    } elseif (!throttle('invite:' . $u['id'], 6, 3600)) {
+        flash('This person has been sent several invitations in the last hour. Please wait a little.', 'bad');
+    } else {
+        [$sent, $why] = ad_invite($u, $client);
+        if ($sent) audit('client.user.invite', $u['email']);
+        flash($sent ? "The invitation was emailed to {$u['email']}." : "The invitation was not sent: $why", $sent ? 'ok' : 'bad');
+    }
     redirect('/clients/' . $u['client_id']);
 });
 
@@ -686,7 +731,7 @@ route('POST', '/clients/requests/{id}/decide', function (string $id) {
         audit('download.approve', "$what from {$r['project_name']} for {$r['user_email']} (request {$r['id']})");
         $sent = Mailer::send($r['user_email'], "Your download is approved: $what from {$r['project_name']}",
             "Hello {$r['user_name']},\n\nYour request to download $what from \"{$r['project_name']}\" is approved." . ($reply !== '' ? "\n\n$reply" : '')
-            . "\n\nThe download waits for you here until " . nice_date($until) . ":\n$link\n\n" . cfg('company', 'Research and Metric Corporation'));
+            . "\n\nThe download waits for you here until " . nice_date($until) . ":\n$link\n\n" . cfg('company', 'Research and Metric Corporation'), null, 'answer');
         flash("Approved. {$r['user_email']} can download $what for " . ClientLog::VALID_DAYS . ' days' . ($sent ? ' and was told by email.' : '. The email could not be sent, so please tell them yourself.'), $sent ? 'ok' : 'bad');
     } else {
         $was = $r['status'];
@@ -694,7 +739,7 @@ route('POST', '/clients/requests/{id}/decide', function (string $id) {
         audit($was === 'approved' ? 'download.withdraw' : 'download.decline', "$what from {$r['project_name']} for {$r['user_email']} (request {$r['id']})");
         $sent = Mailer::send($r['user_email'], ($was === 'approved' ? 'Your download is no longer available' : 'Your download request was declined') . ": $what from {$r['project_name']}",
             "Hello {$r['user_name']},\n\n" . ($was === 'approved' ? "The approved download of $what from \"{$r['project_name']}\" has been withdrawn." : "Your request to download $what from \"{$r['project_name']}\" was declined.")
-            . ($reply !== '' ? "\n\n$reply" : '') . "\n\nYour requests are listed here:\n$link\n\n" . cfg('company', 'Research and Metric Corporation'));
+            . ($reply !== '' ? "\n\n$reply" : '') . "\n\nYour requests are listed here:\n$link\n\n" . cfg('company', 'Research and Metric Corporation'), null, 'answer');
         flash(($was === 'approved' ? 'The approval is withdrawn.' : 'Declined.') . ($sent ? " {$r['user_email']} was told by email." : ' The email could not be sent, so please tell them yourself.'), $sent ? 'ok' : 'bad');
     }
     redirect('/clients/requests');
@@ -800,6 +845,7 @@ route('GET', '/settings', function () {
         'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '',
         'models' => picture_subjects(),
         'gemini' => Gemini::settings(), 'made' => $_SESSION['made'] ?? [], 'guard' => Guard::settings(),
+        'mailLog' => Mailer::logRows('', 12), 'mailWeek' => Mailer::logCounts(7),
         'invite' => (Settings::get('invite') ?? []) + ['on' => true, 'title' => 'Join Reward Hours', 'text' => 'Reward Hours is our research community. Join to be invited to more studies from Research and Metric.', 'button' => 'Visit Reward Hours', 'link' => 'https://rewardhours.com']]);
 });
 
@@ -1025,6 +1071,16 @@ route('POST', '/settings/mail', function () {
     redirect('/settings');
 });
 
+route('GET', '/settings/mail-log', function () {
+    ad_need(true);
+    $only = in_array($_GET['show'] ?? '', ['sent', 'failed', 'file'], true) ? (string) $_GET['show'] : '';
+    $counts = Mailer::logCounts();
+    $total = $only === '' ? $counts['total'] : $counts[$only];
+    [$offset, $pages, $page] = paging($total, 100, (int) ($_GET['page'] ?? 1));
+    view('admin/mail_log', ['title' => 'Email sending log', 'nav' => ad_nav('settings'), 'rows' => Mailer::logRows($only, 100, $offset), 'only' => $only,
+        'counts' => $counts, 'total' => $total, 'pages' => $pages, 'page' => $page]);
+});
+
 route('POST', '/settings/mail/test', function () {
     ad_need(true);
     $to = clean_email(post('to'));
@@ -1034,7 +1090,7 @@ route('POST', '/settings/mail/test', function () {
         flash('Email sending is not set up yet. Choose SMTP or Postmark, save, then test.', 'bad');
     } elseif (!throttle('mailtest:' . client_ip(), 20, 3600)) {
         flash('Too many test emails in a short time. Please wait a little.', 'bad');
-    } elseif (Mailer::send($to, 'Photowall test email', "This is a test from the Photowall console.\n\nIf you are reading it, sign-in codes can be delivered.\n")) {
+    } elseif (Mailer::send($to, 'Photowall test email', "This is a test from the Photowall console.\n\nIf you are reading it, sign-in codes can be delivered.\n", null, 'test')) {
         flash("The test email was accepted for $to. Check that inbox (and its spam folder).");
     } else {
         flash('The test email could not be sent. ' . Mailer::$lastError, 'bad');

@@ -1,5 +1,5 @@
 <?php
-/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken @var array $models @var array $gemini @var array $made @var array $guard @var array $invite */
+/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken @var array $models @var array $gemini @var array $made @var array $guard @var array $invite @var array $mailLog @var array $mailWeek */
 $driver = (string) ($m['driver'] ?? 'log');
 if ($driver === 'log' && ($m['source'] ?? '') === 'file') $driver = 'smtp'; // nothing chosen yet: offer the usual choice
 $smtp = (array) ($m['smtp'] ?? []);
@@ -130,6 +130,24 @@ $state = static function (bool $on, bool $hasKey): string {
         <input id="to" name="to" type="email" required maxlength="190" value="<?= e($me['email']) ?>">
         <button class="btn" type="submit"><?= icon('mail') ?> Send test email</button>
       </form>
+    </section>
+
+    <section class="card" id="mail-log">
+      <div class="head head-sub">
+        <h2>Emails sent</h2>
+        <a class="btn btn-small" href="/settings/mail-log">See the whole log</a>
+      </div>
+      <p class="mail-week">
+        <span><strong><?= (int) $mailWeek['sent'] ?></strong> sent</span>
+        <span<?= $mailWeek['failed'] ? ' class="bad"' : '' ?>><strong><?= (int) $mailWeek['failed'] ?></strong> failed</span>
+        <?php if ($mailWeek['file']): ?><span class="warn"><strong><?= (int) $mailWeek['file'] ?></strong> not sent because email is off</span><?php endif; ?>
+        <span class="muted">in the last 7 days</span>
+      </p>
+      <?php if ($mailWeek['failed']): ?><p class="note note-bad" role="status">Some emails failed in the last 7 days. The reason from the mail server is shown beside each one. <a href="/settings/mail-log?show=failed">Show only the failed ones</a>.</p><?php endif; ?>
+      <?php if (!$mailLog): ?><p class="muted">No email has been sent yet. Every sign-in code, accepted-photo email, invitation and test appears here with its result.</p>
+      <?php else: $rows = $mailLog; require PW_ROOT . '/app/views/admin/mail_rows.php'; ?>
+      <p class="muted hint">The latest <?= count($mailLog) ?> emails. "Sent" means the mail server accepted the email; it can still land in a spam folder. Sign-in codes are blanked out. The log keeps 90 days.</p>
+      <?php endif; ?>
     </section>
   </section>
 

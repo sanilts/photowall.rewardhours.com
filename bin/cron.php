@@ -6,6 +6,7 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 
 Db::q('DELETE FROM otps WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 2 * 86400)]);
 Db::q('DELETE FROM rate_limits WHERE reset_at < ?', [now()]);
+Db::q('DELETE FROM mail_log WHERE created_at < ?', [date('Y-m-d H:i:s', time() - 90 * 86400)]); // the sending log keeps 90 days
 foreach (glob(Storage::dir('tmp') . '/*') ?: [] as $f) {
     if (is_file($f) && filemtime($f) < time() - 3600) @unlink($f);
 }

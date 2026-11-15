@@ -32,7 +32,7 @@ final class Notify
                 continue;
             }
             [$subject, $text, $html] = self::message($project, $who, $photos);
-            if (Mailer::send($who['email'], $subject, $text, $html)) {
+            if (Mailer::send($who['email'], $subject, $text, $html, 'accepted')) {
                 Db::q("UPDATE photos SET notified_at = ? WHERE id IN ($marks)", [now(), ...$ids]);
                 $sent++;
             } else {

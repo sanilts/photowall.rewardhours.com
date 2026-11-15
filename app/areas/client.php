@@ -82,7 +82,7 @@ function cl_ask(array $me, array $p, ?array $ids, string $note): ?int
     $text = "{$me['name']} ({$me['email']}) of {$me['client_name']} asks to download $what from \"{$p['name']}\"."
         . (trim($note) !== '' ? "\n\nTheir note: " . mb_substr(trim($note), 0, 500) : '') . "\n\nApprove or decline it here:\n$link\n";
     foreach (Db::all("SELECT email FROM staff WHERE active = 1 AND role = 'admin'") as $s) {
-        try { Mailer::send($s['email'], "Download request: {$me['client_name']}, $what", $text); } catch (Throwable $e) { error_log('Photowall request mail: ' . $e->getMessage()); }
+        try { Mailer::send($s['email'], "Download request: {$me['client_name']}, $what", $text, null, 'request'); } catch (Throwable $e) { error_log('Photowall request mail: ' . $e->getMessage()); }
     }
     return $rid;
 }

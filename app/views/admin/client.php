@@ -37,12 +37,16 @@ $names = countries();
       <tr<?= (int) $u['active'] ? '' : ' class="row-off"' ?>>
         <th scope="row"><span class="who-link"><span class="avatar avatar-soft"><?= e(initials($u['name'])) ?></span><span><?= e($u['name']) ?><br><span class="muted"><?= e($u['email']) ?></span></span></span></th>
         <td><?= (int) $u['active'] ? '<span class="chip chip-approved">Can sign in</span>' : '<span class="chip chip-rejected">Switched off</span>' ?></td>
-        <td><?= e($u['last_login_at'] ? nice_date($u['last_login_at']) : 'Never') ?></td>
+        <td class="nowrap"><?= e($u['last_login_at'] ? nice_date($u['last_login_at']) : 'Never') ?><br><span class="muted"><?= $u['invited_at'] ? 'Invited ' . e(nice_date($u['invited_at'], 'j M Y')) : 'No invitation sent' ?></span></td>
         <td class="num"><a href="/clients/activity?user=<?= $uid ?>#timeline"><?= (int) $u['logins'] ?></a></td>
         <td class="num"><?= (int) $u['viewed'] ?></td>
         <td class="num"><?= (int) $u['downloaded'] ?></td>
         <td>
           <div class="row acts">
+            <form method="post" action="/client-users/<?= $uid ?>/invite">
+              <?= csrf_field() ?>
+              <button class="btn btn-small" type="submit"><?= icon('mail') ?> <?= $u['invited_at'] ? 'Send invitation again' : 'Send invitation' ?></button>
+            </form>
             <form method="post" action="/client-users/<?= $uid ?>/toggle">
               <?= csrf_field() ?>
               <button class="btn btn-small" type="submit"><?= (int) $u['active'] ? 'Switch off' : 'Switch on' ?></button>
@@ -79,7 +83,7 @@ $names = countries();
     <input id="ue" name="email" type="email" required maxlength="190" placeholder="Work email">
     <button class="btn btn-main" type="submit"><?= icon('plus') ?> Give access</button>
   </form>
-  <p class="muted hint">They sign in with this email and a 6-digit code we send them. No password is set.</p>
+  <p class="muted hint">They get an email with the link to the client portal. They sign in with this email and a 6-digit code we send them. No password is set.</p>
 </section>
 
 <div class="cols">

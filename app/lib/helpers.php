@@ -387,7 +387,7 @@ function activity_words(): array
         'staff.enable' => ['Switched a staff account on', 'people'], 'client.create' => ['Added a client company', 'people'], 'client.user.add' => ['Gave a client person access', 'people'],
         'client.user.disable' => ['Switched client access off', 'people'], 'client.user.enable' => ['Switched client access on', 'people'],
         'client.rename' => ['Renamed a client company', 'people'], 'client.disable' => ['Switched a client company off', 'people'], 'client.enable' => ['Switched a client company on', 'people'],
-        'client.delete' => ['Deleted a client company', 'people'], 'client.user.edit' => ['Changed a client person', 'people'], 'client.user.delete' => ['Removed a client person', 'people'],
+        'client.delete' => ['Deleted a client company', 'people'], 'client.user.edit' => ['Changed a client person', 'people'], 'client.user.invite' => ['Sent a client invitation', 'people'], 'client.user.delete' => ['Removed a client person', 'people'],
         'respondent.block' => ['Blocked a contributor', 'people'], 'respondent.unblock' => ['Unblocked a contributor', 'people'],
     ];
 }

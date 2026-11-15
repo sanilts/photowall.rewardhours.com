@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS mail_log (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  to_email VARCHAR(190) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  kind VARCHAR(20) NOT NULL DEFAULT '',
+  driver VARCHAR(12) NOT NULL DEFAULT '',
+  result VARCHAR(8) NOT NULL,
+  error VARCHAR(500) NOT NULL DEFAULT '',
+  created_at DATETIME NOT NULL,
+  KEY (created_at),
+  KEY (result, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE client_users ADD COLUMN invited_at DATETIME NULL AFTER created_at

@@ -34,7 +34,7 @@ final class Otp
             . '<p style="margin:0;font-size:13px;line-height:1.5;color:#5a6780">If you did not ask for this code, you can ignore this email.</p>'
             . '</div></div>'
             . '<p style="max-width:480px;margin:14px auto 0;font-size:12px;color:#5a6780;text-align:center">' . e(cfg('company', 'Photowall')) . '</p></div>';
-        if (!Mailer::send($email, "$code is your Photowall code", $text, $html)) {
+        if (!Mailer::send($email, "$code is your Photowall code", $text, $html, 'code')) {
             return 'We could not send the email right now. Please try again in a minute.';
         }
         return null;
