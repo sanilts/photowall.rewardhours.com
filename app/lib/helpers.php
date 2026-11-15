@@ -235,3 +235,41 @@ function query_with(array $changes): string
     $q = array_filter($q, static fn($v) => $v !== '' && $v !== null);
     return $q ? '?' . http_build_query($q) : '';
 }
+
+/* ---- accepted phone models and their pictures ---- */
+
+const PW_IPHONES = ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 16e', 'iPhone 17', 'iPhone 17 Pro',
+    'iPhone 17 Pro Max', 'iPhone Air', 'iPhone 17e', 'iPhone 18 Pro', 'iPhone 18 Pro Max', 'iPhone Duo', 'Another newer iPhone'];
+
+function phone_slug(string $model): string
+{
+    return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($model)), '-');
+}
+
+/** Path of the picture staff uploaded for a phone model, or null when there is none. */
+function phone_picture_file(string $slug): ?string
+{
+    if (!preg_match('/^[a-z0-9-]{1,60}$/', $slug)) return null;
+    foreach (['png', 'jpg', 'webp'] as $ext) {
+        $f = rtrim((string) cfg('storage'), '/') . '/phones/' . $slug . '.' . $ext;
+        if (is_file($f)) return $f;
+    }
+    return null;
+}
+
+/** Address of that picture for use in a page, or null. */
+function phone_picture(string $model): ?string
+{
+    $slug = phone_slug($model);
+    $f = phone_picture_file($slug);
+    return $f ? '/phone/' . $slug . '?v=' . filemtime($f) : null;
+}
+
+function send_phone_picture(string $slug): never
+{
+    $f = phone_picture_file($slug);
+    if (!$f) fail_page(404, 'We could not find that picture.');
+    $mime = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp'][pathinfo($f, PATHINFO_EXTENSION)];
+    session_write_close();
+    Storage::send($f, $mime);
+}

@@ -34,6 +34,9 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
+The hero of the public project page slides through every accepted iPhone model, one at a time. It shows a
+simple drawn phone until a picture for that model is uploaded in the console under Settings, Phone pictures.
+
 The public project page is built from the project's settings: its description, the list of what to
 photograph (one line each, shown with a matching icon), the limits and the terms. A respondent can
 resend the code or correct the email on the code screen, and change their email after signing in

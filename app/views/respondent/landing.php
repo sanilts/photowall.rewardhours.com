@@ -23,33 +23,41 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
       <p class="hero-lead hero-both">Photos already in your library or fresh captures. Both are welcome.</p>
       <a class="btn btn-sun btn-big hero-cta" href="#start"><?= $closed ? 'See your photos' : 'Start uploading' ?></a>
     </div>
-  </div>
 
-  <?php if ($phones): ?>
-  <?php // Every accepted iPhone, sliding past. The second copy only exists to make the loop seamless. ?>
-  <div class="rail" role="group" aria-label="iPhones we accept">
-    <div class="rail-track">
-      <?php foreach ([false, true] as $copy): ?>
-      <ul class="rail-set"<?= $copy ? ' aria-hidden="true"' : '' ?>>
-        <?php foreach ($phones as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; ?>
-          <li class="phone">
-            <div class="phone-body tone-<?= e($look['tone']) ?>">
-              <span class="phone-status"><span class="phone-dot"></span>HEIC</span>
-              <span class="phone-focus"><?= icon($look['icon']) ?></span>
-              <span class="phone-shutter"></span>
-            </div>
-            <p class="phone-name"><?= e($ph) ?></p>
+    <?php if ($phones): ?>
+    <?php // One accepted iPhone at a time, sliding to the next. A picture uploaded in the console replaces the drawn phone. ?>
+    <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="iPhones we accept">
+      <div class="slider-window">
+        <ul class="slider-track">
+          <?php foreach ($phones as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; $pic = phone_picture($ph); ?>
+            <li class="slide" data-name="<?= e($ph) ?>">
+              <?php if ($pic): ?>
+                <img class="slide-photo" src="<?= e($pic) ?>" alt="<?= e($ph) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
+              <?php else: ?>
+                <div class="phone-body tone-<?= e($look['tone']) ?>">
+                  <span class="phone-status"><span class="phone-dot"></span>HEIC</span>
+                  <span class="phone-focus"><?= icon($look['icon']) ?></span>
+                  <span class="phone-shutter"></span>
+                </div>
+                <span class="visually-hidden"><?= e($ph) ?></span>
+              <?php endif; ?>
+            </li>
+          <?php endforeach; ?>
+          <li class="slide slide-next" data-name="Any newer iPhone">
+            <div class="phone-body"><span class="phone-plus">+</span></div>
+            <span class="visually-hidden">Any newer iPhone</span>
           </li>
-        <?php endforeach; ?>
-        <li class="phone phone-next">
-          <div class="phone-body"><span class="phone-plus">+</span></div>
-          <p class="phone-name">Any newer iPhone</p>
-        </li>
-      </ul>
-      <?php endforeach; ?>
+        </ul>
+      </div>
+      <div class="slider-bar">
+        <button class="slider-btn slider-prev" type="button" aria-label="Previous iPhone"><?= icon('arrow') ?></button>
+        <p class="slider-name"><?= e($phones[0]) ?></p>
+        <button class="slider-btn" type="button" data-next="1" aria-label="Next iPhone"><?= icon('arrow') ?></button>
+      </div>
+      <p class="slider-count"><?= count($phones) ?> models accepted, and any newer iPhone</p>
     </div>
+    <?php endif; ?>
   </div>
-  <?php endif; ?>
 </section>
 
 <section class="band band-tint start-band" id="start">

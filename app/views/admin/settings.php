@@ -88,6 +88,25 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
   </form>
 </section>
 
+<section class="card" id="phones">
+  <h2>Phone pictures on the project page</h2>
+  <p class="muted">The project page slides through every accepted iPhone. Until you add a picture, a simple drawn phone is shown. Upload a picture of each model that you have the right to use (PNG, JPG or WebP, under 5 MB; an upright phone on a transparent or plain background looks best).</p>
+  <form method="post" action="/settings/phones" enctype="multipart/form-data">
+    <?= csrf_field() ?>
+    <ul class="pics">
+      <?php foreach ($models as $model): $slug = phone_slug($model); $pic = phone_picture($model); ?>
+        <li>
+          <span class="pic-thumb"><?php if ($pic): ?><img src="<?= e($pic) ?>" alt="" loading="lazy"><?php else: ?><?= icon('phone') ?><?php endif; ?></span>
+          <label for="pic-<?= e($slug) ?>"><?= e($model) ?></label>
+          <input id="pic-<?= e($slug) ?>" type="file" name="pic[<?= e($slug) ?>]" accept="image/png,image/jpeg,image/webp">
+          <?php if ($pic): ?><label class="check"><input type="checkbox" name="remove[<?= e($slug) ?>]" value="1"><span>Remove</span></label><?php endif; ?>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+    <button class="btn btn-main" type="submit">Save phone pictures</button>
+  </form>
+</section>
+
 <section class="card">
   <h2>Where photos are kept</h2>
   <p><?= Spaces::on()

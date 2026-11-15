@@ -535,7 +535,51 @@ route('GET', '/settings', function () {
     $me = ad_need(true);
     $m = Settings::mail();
     view('admin/settings', ['title' => 'Settings', 'nav' => ad_nav('settings'), 'm' => $m, 'me' => $me,
-        'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '']);
+        'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '',
+        'models' => array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')))]);
+});
+
+route('GET', '/phone/{slug}', function (string $slug) {
+    ad_need();
+    send_phone_picture($slug);
+});
+
+route('POST', '/settings/phones', function () {
+    ad_need(true);
+    $dir = Storage::dir('phones');
+    $saved = $removed = 0;
+    $problems = [];
+    foreach (array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')) as $model) {
+        $slug = phone_slug($model);
+        $err = $_FILES['pic']['error'][$slug] ?? UPLOAD_ERR_NO_FILE;
+        if (!empty($_POST['remove'][$slug]) && $err === UPLOAD_ERR_NO_FILE) {
+            if ($f = phone_picture_file($slug)) {
+                unlink($f);
+                $removed++;
+            }
+            continue;
+        }
+        if ($err === UPLOAD_ERR_NO_FILE) continue;
+        $tmp = (string) ($_FILES['pic']['tmp_name'][$slug] ?? '');
+        $info = $err === UPLOAD_ERR_OK && is_uploaded_file($tmp) ? @getimagesize($tmp) : false;
+        $ext = $info ? ([IMAGETYPE_PNG => 'png', IMAGETYPE_JPEG => 'jpg', IMAGETYPE_WEBP => 'webp'][$info[2]] ?? null) : null;
+        if (!$ext || filesize($tmp) > 5 * 1048576 || $info[0] > 5000 || $info[1] > 5000) {
+            $problems[] = $model;
+            continue;
+        }
+        foreach (['png', 'jpg', 'webp'] as $old) @unlink("$dir/$slug.$old");
+        if (move_uploaded_file($tmp, "$dir/$slug.$ext")) {
+            @chmod("$dir/$slug.$ext", 0640);
+            $saved++;
+        } else {
+            $problems[] = $model;
+        }
+    }
+    if ($saved || $removed) audit('settings.phones', "$saved saved, $removed removed");
+    if ($problems) flash('These pictures were not saved (use a PNG, JPG or WebP file under 5 MB): ' . implode(', ', $problems) . '.', 'bad');
+    if ($saved || $removed) flash(trim(($saved ? "$saved " . ($saved === 1 ? 'picture' : 'pictures') . ' saved. ' : '') . ($removed ? "$removed removed." : '')));
+    elseif (!$problems) flash('Choose at least one picture first.', 'bad');
+    redirect('/settings#phones');
 });
 
 route('POST', '/settings/mail', function () {

@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 // Respondent site: terms, email code, basic details, upload.
 
-const PW_IPHONES = ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 16e', 'iPhone 17', 'iPhone 17 Pro',
-    'iPhone 17 Pro Max', 'iPhone Air', 'iPhone 17e', 'iPhone 18 Pro', 'iPhone 18 Pro Max', 'iPhone Duo', 'Another newer iPhone'];
-
 function rp_project(string $slug): array
 {
     $p = Db::one("SELECT * FROM projects WHERE slug = ? AND status <> 'draft'", [$slug]);
@@ -41,6 +38,10 @@ route('GET', '/', function () {
     view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true]);
 });
 
+route('GET', '/phone/{slug}', function (string $slug) {
+    send_phone_picture($slug);
+});
+
 route('GET', '/privacy', function () {
     view('respondent/privacy', ['title' => 'Privacy']);
 });
@@ -50,7 +51,7 @@ route('GET', '/p/{slug}', function (string $slug) {
     if (rp_me($project)) redirect("/p/$slug/upload");
     view('respondent/landing', [
         'title' => $project['name'], 'project' => $project, 'state' => rp_window($project), 'email' => $_SESSION['pending']['email'] ?? '',
-        'bare' => true, 'headerLink' => ['Sign in', '#start'],
+        'bare' => true, 'scripts' => ['phones.js'], 'headerLink' => ['Sign in', '#start'],
         'description' => 'Share photos taken on your iPhone ' . (int) $project['min_iphone'] . ' or newer. ' . mb_strimwidth((string) $project['intro'], 0, 140, '...'),
     ]);
 });
