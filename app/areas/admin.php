@@ -617,7 +617,58 @@ route('GET', '/settings', function () {
     view('admin/settings', ['title' => 'Settings', 'nav' => ad_nav('settings'), 'm' => $m, 'me' => $me,
         'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '',
         'models' => picture_subjects(),
-        'gemini' => Gemini::settings(), 'made' => $_SESSION['made'] ?? []]);
+        'gemini' => Gemini::settings(), 'made' => $_SESSION['made'] ?? [], 'guard' => Guard::settings(),
+        'invite' => (Settings::get('invite') ?? []) + ['on' => true, 'title' => 'Join Reward Hours', 'text' => 'Reward Hours is our research community. Join to be invited to more studies from Research and Metric.', 'button' => 'Visit Reward Hours', 'link' => 'https://rewardhours.com']]);
+});
+
+/* ---------- settings: checks at sign-in (IPzentra, BounceBell) and the Reward Hours invitation ---------- */
+
+route('POST', '/settings/guard', function () {
+    ad_need(true);
+    $old = Guard::settings();
+    $ipKey = trim((string) ($_POST['ip_key'] ?? ''));
+    $mailKey = trim((string) ($_POST['mail_key'] ?? ''));
+    $new = [
+        'ip_on' => !empty($_POST['ip_on']), 'ip_key' => Settings::seal(!empty($_POST['ip_forget']) ? '' : ($ipKey !== '' ? $ipKey : $old['ip_key'])),
+        'mail_on' => !empty($_POST['mail_on']), 'mail_key' => Settings::seal(!empty($_POST['mail_forget']) ? '' : ($mailKey !== '' ? $mailKey : $old['mail_key'])),
+    ];
+    Settings::set('guard', $new);
+    unset($_SESSION['ipcheck']);
+    audit('settings.guard', 'connection check ' . ($new['ip_on'] ? 'on' : 'off') . ', email check ' . ($new['mail_on'] ? 'on' : 'off'));
+    $now = Guard::settings();
+    // Try each service straight away, so a wrong key shows now and not when the first contributor signs in.
+    if ($now['ip_on'] && $now['ip_key'] === '') flash('The connection check is switched on but has no IPzentra API key, so it does nothing yet.', 'bad');
+    elseif ($now['ip_key'] !== '') {
+        $r = Guard::ip(client_ip(), true);
+        if ($r === null || isset($r['_failed'])) flash('IPzentra did not accept the request' . (($r['_message'] ?? '') !== '' ? ': ' . $r['_message'] : '') . '. Until this works, the connection check is skipped.', 'bad');
+        elseif (!$r['signals']) flash('IPzentra answered, but this key\'s plan does not include VPN, proxy, Tor and data centre detection, so nobody can be refused. The country is still read.', 'bad');
+        else flash('IPzentra works. Your own connection: ' . ($r['country_name'] ?: 'country unknown') . ($r['blocked'] ? ', seen as ' . $r['why'] . ' (a contributor on this connection would be refused).' : ', an ordinary connection.'));
+    }
+    if ($now['mail_on'] && $now['mail_key'] === '') flash('The email check is switched on but has no BounceBell API key, so it does nothing yet.', 'bad');
+    elseif ($now['mail_key'] !== '') {
+        $ch = curl_init(rtrim((string) cfg('bouncebell.endpoint', 'https://bouncebell.com/api/v1'), '/') . '/credits');
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_TIMEOUT => 8, CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $now['mail_key'], 'Accept: application/json']]);
+        $j = json_decode((string) curl_exec($ch), true);
+        $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+        if ($code === 200 && is_array($j)) flash('BounceBell works. ' . (!empty($j['unlimited']) ? 'This key has unlimited checks.' : 'Credits left: ' . (int) ($j['credits_remaining'] ?? 0) . '.'));
+        else flash('BounceBell did not accept the key' . (is_array($j) && ($j['message'] ?? '') !== '' ? ': ' . $j['message'] : " (status $code)") . '. Until this works, the email check is skipped.', 'bad');
+    }
+    redirect('/settings#checks');
+});
+
+route('POST', '/settings/invite', function () {
+    ad_need(true);
+    $link = trim(post('link'));
+    if (!empty($_POST['on']) && !preg_match('~^https://[^\s"<>]+$~', $link)) {
+        flash('The link must start with https:// for the invitation to be shown. Nothing was saved.', 'bad');
+        redirect('/settings#invite');
+    }
+    Settings::set('invite', ['on' => !empty($_POST['on']), 'title' => mb_substr(post('title'), 0, 80), 'text' => mb_substr(post('text'), 0, 400),
+        'button' => mb_substr(post('button'), 0, 40), 'link' => mb_substr($link, 0, 300)]);
+    audit('settings.invite', !empty($_POST['on']) ? 'shown' : 'hidden');
+    flash(!empty($_POST['on']) ? 'The invitation is shown on the contributor page and in the accepted-photos email.' : 'The invitation is hidden.');
+    redirect('/settings#invite');
 });
 
 /* ---------- settings: phone pictures created with Gemini ---------- */

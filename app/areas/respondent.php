@@ -68,7 +68,25 @@ route('POST', '/p/{slug}/start', function (string $slug) {
         $_SESSION['pending'] = ['email' => $email];
         redirect("/p/$slug#start");
     }
+    // Sign-in checks (switched on in the console): no VPN, proxy, Tor or data centre connections,
+    // and a new person's email address has to be a real, permanent one.
+    $conn = Guard::ip(client_ip());
+    if ($conn && $conn['blocked']) {
+        audit('signin.refused', "$email: connection is {$conn['why']} ({$conn['country_code']})");
+        $_SESSION['pending'] = ['email' => $email];
+        flash('We could not sign you in, because your connection is going through a VPN, proxy or similar service. Please switch it off and try again. On an iPhone, also switch off iCloud Private Relay (Settings, your name, iCloud, Private Relay).', 'bad');
+        redirect("/p/$slug#start");
+    }
     $known = Db::one('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $email]);
+    if (!$known) {
+        $mail = Guard::email($email);
+        if ($mail && $mail['blocked']) {
+            audit('signin.refused', "$email: email is {$mail['status']}" . ($mail['disposable'] ? ', temporary address' : ''));
+            $_SESSION['pending'] = ['email' => $email];
+            flash($mail['message'], 'bad');
+            redirect("/p/$slug#start");
+        }
+    }
     if (!$known && rp_window($project) !== 'open') {
         flash('This project is not accepting new participants right now.', 'bad');
         redirect("/p/$slug#start");
@@ -115,10 +133,11 @@ route('POST', '/p/{slug}/code', function (string $slug) {
         }
         Db::q('UPDATE respondents SET last_login_at = ? WHERE id = ?', [now(), $me['id']]);
         $id = (int) $me['id'];
+        if ($where = Guard::ip(client_ip())) Db::q('UPDATE respondents SET ip_country = ? WHERE id = ?', [substr($where['country_code'], 0, 2), $id]);
     } else {
         $id = Db::insert(
-            'INSERT INTO respondents (project_id, email, age_confirmed, terms_version, terms_agreed_at, terms_ip, created_at, last_login_at) VALUES (?,?,1,?,?,?,?,?)',
-            [$project['id'], $email, $project['terms_version'], now(), client_ip(), now(), now()]
+            'INSERT INTO respondents (project_id, email, age_confirmed, terms_version, terms_agreed_at, terms_ip, ip_country, created_at, last_login_at) VALUES (?,?,1,?,?,?,?,?,?)',
+            [$project['id'], $email, $project['terms_version'], now(), client_ip(), substr((string) (Guard::ip(client_ip())['country_code'] ?? ''), 0, 2), now(), now()]
         );
     }
     session_regenerate_id(true);
@@ -131,7 +150,8 @@ route('POST', '/p/{slug}/code', function (string $slug) {
 route('GET', '/p/{slug}/details', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
-    view('respondent/details', ['title' => 'Your details', 'project' => $project, 'me' => $me, 'models' => PW_IPHONES]);
+    view('respondent/details', ['title' => 'Your details', 'project' => $project, 'me' => $me, 'models' => PW_IPHONES,
+        'here' => countries()[(string) ($me['ip_country'] ?? '')] ?? '']);
 });
 
 route('POST', '/p/{slug}/details', function (string $slug) {
@@ -146,6 +166,11 @@ route('POST', '/p/{slug}/details', function (string $slug) {
         redirect("/p/$slug/details");
     }
     Db::q('UPDATE respondents SET full_name = ?, country = ?, phone = ?, iphone_model = ? WHERE id = ?', [$name, $country, $phone, $model, $me['id']]);
+    // A different country from where the connection is: say so once, but accept it. People travel and move.
+    $here = countries()[(string) ($me['ip_country'] ?? '')] ?? '';
+    if ($here !== '' && country_code($country) !== '' && country_code($country) !== $me['ip_country']) {
+        flash("Your details are saved. You chose $country, and your connection appears to be in $here. If $country is where you live, nothing more is needed. To change it, open Account and choose \"Edit your details\".");
+    }
     redirect("/p/$slug/upload");
 });
 
@@ -217,8 +242,9 @@ route('POST', '/p/{slug}/email/code', function (string $slug) {
 route('GET', '/p/{slug}/upload', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
+    $invite = (Settings::get('invite') ?? []) + ['on' => true, 'title' => 'Join Reward Hours', 'text' => 'Reward Hours is our research community. Join to be invited to more studies from Research and Metric.', 'button' => 'Visit Reward Hours', 'link' => 'https://rewardhours.com'];
     $photos = Db::all("SELECT id, token, orig_name, status, category, category_auto, reject_reason, device_model, created_at, reviewed_at FROM photos WHERE respondent_id = ? AND status <> 'removed' ORDER BY id DESC", [$me['id']]);
-    view('respondent/upload', ['title' => $project['name'], 'project' => $project, 'me' => $me, 'allow' => Intake::allowance($project, $me), 'photos' => $photos]);
+    view('respondent/upload', ['title' => $project['name'], 'project' => $project, 'me' => $me, 'allow' => Intake::allowance($project, $me), 'photos' => $photos, 'invite' => $invite]);
 });
 
 route('POST', '/p/{slug}/upload', function (string $slug) {

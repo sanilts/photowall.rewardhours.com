@@ -49,7 +49,7 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
         <span class="cname-id"><?= e(contributor_id($rid)) ?><?= (int) $r['blocked'] ? ' <span class="chip chip-rejected">Blocked</span>' : '' ?></span>
         <a class="cname-mail" href="mailto:<?= e($r['email']) ?>"><?= e($r['email']) ?></a>
       </th>
-      <td><?= e($r['country'] !== '' ? $r['country'] : 'Not given') ?><br><span class="muted"><?= e($r['iphone_model'] !== '' ? $r['iphone_model'] : 'Phone not given') ?></span></td>
+      <td><?= e($r['country'] !== '' ? $r['country'] : 'Not given') ?><?php if (($r['ip_country'] ?? '') !== '' && $r['country'] !== '' && country_code($r['country']) !== $r['ip_country']): ?> <span class="chip chip-pending" title="The country of their connection when they last signed in">connection: <?= e(countries()[$r['ip_country']] ?? $r['ip_country']) ?></span><?php endif; ?><br><span class="muted"><?= e($r['iphone_model'] !== '' ? $r['iphone_model'] : 'Phone not given') ?></span></td>
       <td class="nowrap"><?= e(nice_date($r['created_at'], 'j M Y')) ?></td>
       <td>
         <span class="tally">

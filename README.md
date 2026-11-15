@@ -89,6 +89,22 @@ photos" makes one picture per kind in turn (skipping those that already have a d
 accepts every draft together. The model name (default `gemini-3.1-flash-image`) can be changed there if Google
 renames it. The code is in `app/lib/Gemini.php`.
 
+## Checks at sign-in and the invitation
+
+Console, Settings, "Checks at sign-in". Both checks are off until a key is saved and the box is ticked.
+
+- **IPzentra** (`GET https://api.ipzentra.com/v1/{ip}`, key in `X-Api-Key`): sign-in is refused when the
+  connection is a VPN, proxy, Tor or data centre address. The country of the connection is saved with the
+  contributor. A different country chosen by the contributor is accepted; they see a note and staff see both.
+- **BounceBell** (`GET https://bouncebell.com/api/v1/verify?email=`, key as a bearer token): new contributors
+  with an address that does not exist or is temporary are refused. Catch-all and unknown are let through.
+
+If a service is off, has no key or does not answer, the check is skipped. Refusals are in Activity as
+`signin.refused`. The visitor's address is `REMOTE_ADDR`: if the site is ever put behind a proxy or CDN, set
+up Apache `mod_remoteip` first, or every visitor will look like a data centre. The code is in
+`app/lib/Guard.php`. The invitation box (Reward Hours by default) is set under "Invitation shown to
+contributors"; it is only a link, and no data is shared with Reward Hours.
+
 The public project page is built from the project's settings: its description, the list of what to
 photograph (one line each, shown with a matching icon), the limits and the terms. A respondent can
 resend the code or correct the email on the code screen, and change their email after signing in

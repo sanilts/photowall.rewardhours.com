@@ -67,7 +67,9 @@ final class Notify
             $text .= image_id($ph['id']) . '  ' . $ph['orig_name'] . '  |  ' . ($ph['category'] !== '' ? $ph['category'] : 'No category')
                 . '  |  accepted ' . nice_date($ph['reviewed_at'], 'j M Y') . "\n";
         }
-        $text .= "\n$totals\n" . ($pay !== '' ? "$pay\n" : '') . "\nYour contributor ID: $cid\nSee all your photos or add more: $link\n\n" . cfg('company', 'Photowall');
+        $inv = (Settings::get('invite') ?? []) + ['on' => true, 'title' => 'Join Reward Hours', 'link' => 'https://rewardhours.com'];
+        $invText = !empty($inv['on']) && preg_match('~^https://~', (string) $inv['link']) ? $inv['title'] . ': ' . $inv['link'] : '';
+        $text .= "\n$totals\n" . ($pay !== '' ? "$pay\n" : '') . "\nYour contributor ID: $cid\nSee all your photos or add more: $link\n" . ($invText !== '' ? "\n$invText\n" : '') . "\n" . cfg('company', 'Photowall');
 
         $cell = 'padding:8px 10px;border-bottom:1px solid #d8dfeb;font-size:14px;text-align:left;vertical-align:top';
         $rows = '';
@@ -91,6 +93,7 @@ final class Notify
             . ($pay !== '' ? '<p style="margin:0 0 8px;font-size:15px;line-height:1.5;background:#fff6d6;border-radius:8px;padding:10px 12px">' . e($pay) . '</p>' : '')
             . '<p style="margin:14px 0 18px;font-size:15px;line-height:1.5">Your contributor ID: <strong>' . e($cid) . '</strong></p>'
             . '<p style="margin:0"><a href="' . e($link) . '" style="display:inline-block;background:#ffd60a;color:#0a1e3c;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:10px">See your photos or add more</a></p>'
+            . ($invText !== '' ? '<p style="margin:22px 0 0;padding-top:16px;border-top:1px solid #d8dfeb;font-size:14px;line-height:1.5">' . e($inv['title']) . ': <a href="' . e($inv['link']) . '" style="color:#0a1e3c;font-weight:bold">' . e(preg_replace('~^https://~', '', (string) $inv['link'])) . '</a></p>' : '')
             . '</div></div>'
             . '<p style="max-width:600px;margin:14px auto 0;font-size:12px;color:#5a6780;text-align:center">' . e(cfg('company', 'Photowall')) . '</p></div>';
         return [$subject, $text, $html];

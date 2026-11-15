@@ -106,6 +106,15 @@
     else if (document.execCommand && document.execCommand('copy')) done();
   });
 
+  // Details form: a note when the chosen country is not where the connection is. It informs; it does not stop anyone.
+  var country = document.getElementById('country');
+  var countryNote = document.getElementById('country-note');
+  if (country && countryNote && country.dataset.here) {
+    var tell = function () { countryNote.hidden = !country.value || country.value === country.dataset.here; };
+    country.addEventListener('change', tell);
+    tell();
+  }
+
   // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
   var secure = document.getElementById('smtp_secure');
   var port = document.getElementById('smtp_port');

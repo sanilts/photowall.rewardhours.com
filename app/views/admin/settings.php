@@ -1,5 +1,5 @@
 <?php
-/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken @var array $models @var array $gemini @var array $made */
+/** @var array $m @var array $me @var bool $hasPass @var bool $hasToken @var array $models @var array $gemini @var array $made @var array $guard @var array $invite */
 $driver = (string) ($m['driver'] ?? 'log');
 if ($driver === 'log' && ($m['source'] ?? '') === 'file') $driver = 'smtp'; // nothing chosen yet: offer the usual choice
 $smtp = (array) ($m['smtp'] ?? []);
@@ -177,6 +177,47 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
     <?php endforeach; ?>
   </ul>
   <?php endif; ?>
+</section>
+
+<section class="card" id="checks">
+  <h2>Checks at sign-in</h2>
+  <p class="muted">Two checks can run when someone asks for a sign-in code. If a service is switched off, has no key or does not answer, that check is skipped and sign-in carries on.</p>
+  <form method="post" action="/settings/guard" class="form">
+    <?= csrf_field() ?>
+    <h3 class="sub">Connection check with IPzentra</h3>
+    <label class="check"><input type="checkbox" name="ip_on" value="1"<?= $guard['ip_on'] ? ' checked' : '' ?>><span>Refuse sign-in from a VPN, proxy, Tor or data centre connection</span></label>
+    <label for="ip_key">IPzentra API key <?= $guard['ip_key'] !== '' ? '<span class="muted">(saved; leave empty to keep it)</span>' : '' ?></label>
+    <input id="ip_key" name="ip_key" type="password" autocomplete="new-password" placeholder="<?= $guard['ip_key'] !== '' ? 'Saved' : '' ?>">
+    <?php if ($guard['ip_key'] !== ''): ?><label class="check"><input type="checkbox" name="ip_forget" value="1"><span>Remove the saved IPzentra key</span></label><?php endif; ?>
+    <p class="muted hint">The same lookup also tells us the country of the connection. If a contributor chooses a different country they are told, but they can keep their choice; the Contributors list shows both. The key needs a plan that includes VPN, proxy, Tor and hosting detection. iPhone users with iCloud Private Relay switched on are seen as a data centre connection and are asked to switch it off.</p>
+
+    <h3 class="sub">Email check with BounceBell</h3>
+    <label class="check"><input type="checkbox" name="mail_on" value="1"<?= $guard['mail_on'] ? ' checked' : '' ?>><span>Refuse email addresses that do not exist or are temporary (new contributors only)</span></label>
+    <label for="mail_key">BounceBell API key <?= $guard['mail_key'] !== '' ? '<span class="muted">(saved; leave empty to keep it)</span>' : '' ?></label>
+    <input id="mail_key" name="mail_key" type="password" autocomplete="new-password" placeholder="<?= $guard['mail_key'] !== '' ? 'Saved' : '' ?>">
+    <?php if ($guard['mail_key'] !== ''): ?><label class="check"><input type="checkbox" name="mail_forget" value="1"><span>Remove the saved BounceBell key</span></label><?php endif; ?>
+    <p class="muted hint">Each new contributor uses one BounceBell credit. Addresses BounceBell cannot decide on (catch-all, unknown) are let through. People who already take part are not checked again.</p>
+    <button class="btn btn-main" type="submit">Save and test the checks</button>
+  </form>
+  <p class="muted">Every refused sign-in is listed under Activity as "signin.refused", with the reason.</p>
+</section>
+
+<section class="card" id="invite">
+  <h2>Invitation shown to contributors</h2>
+  <p class="muted">A box on the contributor's page and a line in the accepted-photos email, inviting people to Reward Hours or anywhere else you choose.</p>
+  <form method="post" action="/settings/invite" class="form">
+    <?= csrf_field() ?>
+    <label class="check"><input type="checkbox" name="on" value="1"<?= !empty($invite['on']) ? ' checked' : '' ?>><span>Show the invitation</span></label>
+    <label for="inv_title">Heading</label>
+    <input id="inv_title" name="title" maxlength="80" value="<?= e($invite['title']) ?>">
+    <label for="inv_text">Text</label>
+    <textarea id="inv_text" name="text" rows="3" maxlength="400"><?= e($invite['text']) ?></textarea>
+    <div class="grid2">
+      <div><label for="inv_button">Words on the button</label><input id="inv_button" name="button" maxlength="40" value="<?= e($invite['button']) ?>"></div>
+      <div><label for="inv_link">Link <span class="muted">(must start with https://)</span></label><input id="inv_link" name="link" type="url" maxlength="300" value="<?= e($invite['link']) ?>"></div>
+    </div>
+    <button class="btn btn-main" type="submit">Save invitation</button>
+  </form>
 </section>
 
 <section class="card">

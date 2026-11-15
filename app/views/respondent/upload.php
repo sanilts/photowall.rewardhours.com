@@ -1,5 +1,5 @@
 <?php
-/** @var array $project @var array $me @var array $allow @var array $photos */
+/** @var array $project @var array $me @var array $allow @var array $photos @var array $invite */
 $slug = $project['slug'];
 $total = (int) $project['photos_per_person'];
 $reward = reward($project);
@@ -151,11 +151,20 @@ $infoTab = $reward ? 'Reward' : 'Info';
     </ul>
   </section>
 
+  <?php if (!empty($invite['on']) && preg_match('~^https://~', (string) $invite['link'])): ?>
+  <section class="card invite screen" data-screen="info">
+    <h2><?= e($invite['title']) ?></h2>
+    <p><?= e($invite['text']) ?></p>
+    <p><a class="btn btn-main" href="<?= e($invite['link']) ?>" target="_blank" rel="noopener"><?= e($invite['button']) ?> <?= icon('arrow') ?></a></p>
+  </section>
+  <?php endif; ?>
+
   <section class="card screen" id="account" data-screen="account">
     <h2>Your account</h2>
     <p class="acct">Signed in as<br><strong><?= e($me['email']) ?></strong></p>
     <p class="acct">Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></p>
-    <p><a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a></p>
+    <p class="acct"><?= e($me['full_name']) ?><br><span class="muted"><?= e($me['country']) ?><?= $me['iphone_model'] !== '' ? ', ' . e($me['iphone_model']) : '' ?></span></p>
+    <p class="row"><a class="btn btn-small" href="/p/<?= e($slug) ?>/details"><?= icon('user') ?> Edit your details</a> <a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a></p>
     <p class="muted">To come back later, open the same link and enter this email again.
        To withdraw from the project or have your data removed, email <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>.</p>
   </section>
