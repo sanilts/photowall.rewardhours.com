@@ -22,7 +22,7 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
 
 <form method="get" class="row filters" role="search">
   <label class="visually-hidden" for="q">Search by name, email or contributor ID</label>
-  <input id="q" name="q" value="<?= e($q) ?>" placeholder="Name, email or RM-C number">
+  <input id="q" name="q" value="<?= e($q) ?>" placeholder="Name, email or contributor ID">
   <label class="visually-hidden" for="show">Show</label>
   <select id="show" name="show">
     <?php foreach ($shows as $k => $label): ?><option value="<?= e($k) ?>"<?= $show === $k ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?>

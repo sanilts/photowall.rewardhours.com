@@ -1,0 +1,1 @@
+ALTER TABLE projects ADD COLUMN target_photos INT UNSIGNED NOT NULL DEFAULT 0 AFTER daily_limit

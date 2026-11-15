@@ -238,10 +238,24 @@ function query_with(array $changes): string
 
 /* ---- IDs shown to people, and the categories a photo can be filed under ---- */
 
-/** Contributor ID, given automatically when someone joins a project: RM-C0001. */
+/**
+ * Contributor ID, given automatically when someone joins a project: RM-C758947.
+ * It is worked out from the person's row number, so it never changes and never repeats, but it is six digits
+ * long and the numbers do not run in order: an ID does not show how many people joined before.
+ * (387119 shares no factor with 900000, so every row number up to 900000 gets its own ID.)
+ */
 function contributor_id(int|string $id): string
 {
-    return sprintf('RM-C%04d', (int) $id);
+    return 'RM-C' . (100000 + ((int) $id * 387119 + 271828) % 900000);
+}
+
+/** The row number behind a contributor ID that staff typed ("RM-C758947" or "758947"), or null when it is not one. */
+function contributor_from_id(string $text): ?int
+{
+    if (!preg_match('/^(?:RM-?C)?(\d{6})$/i', trim($text), $m)) return null;
+    $n = (int) $m[1] - 100000 - 271828;
+    $n = (($n % 900000) + 900000) % 900000;
+    return ($n * 30479) % 900000; // 30479 undoes the multiplication by 387119
 }
 
 /** Image ID of a photo that was kept: RM-I00001. */

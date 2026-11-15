@@ -214,6 +214,13 @@
         addThumb(res.photo);
       } else {
         finish(job, false, res.message);
+        if (res.code === 'closed') { // the project closed while photos were waiting: say it once, not once per photo
+          waiting.splice(0).forEach(function (j) {
+            j.row.li.remove();
+            run.total--;
+          });
+          report();
+        }
       }
       if (res) applyAllowance(res.allow);
       busy = false;
@@ -227,16 +234,41 @@
     xhr.send(data);
   }
 
-  input.addEventListener('change', function () {
+  function addFiles(files) {
+    if (!files || !files.length) return;
     var chosen = category ? category.value : 'auto'; // no box on the page: the server files each photo itself
-    Array.prototype.forEach.call(input.files, function (file) {
+    Array.prototype.forEach.call(files, function (file) {
       waiting.push({ file: file, row: addRow(file), category: chosen });
       run.total++;
     });
-    input.value = '';
     report();
     next();
+  }
+
+  input.addEventListener('change', function () {
+    addFiles(input.files);
+    input.value = '';
   });
+
+  // On a computer, photos can also be dragged onto the upload box.
+  var drop = byId('drop');
+  if (drop) {
+    ['dragenter', 'dragover'].forEach(function (name) {
+      drop.addEventListener(name, function (ev) { ev.preventDefault(); drop.classList.add('over'); });
+    });
+    ['dragleave', 'dragend'].forEach(function (name) {
+      drop.addEventListener(name, function () { drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function (ev) {
+      ev.preventDefault();
+      drop.classList.remove('over');
+      if (can > 0 && ev.dataTransfer) addFiles(ev.dataTransfer.files);
+    });
+    // A photo dropped beside the box must not make the browser leave the page to show it.
+    ['dragover', 'drop'].forEach(function (name) {
+      window.addEventListener(name, function (ev) { if (!ev.defaultPrevented) ev.preventDefault(); });
+    });
+  }
 
   // Stop: the photo being checked finishes; the ones still waiting are dropped.
   runStop.addEventListener('click', function () {

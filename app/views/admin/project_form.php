@@ -54,6 +54,11 @@ $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : 
         <input id="daily_limit" name="daily_limit" type="number" min="0" max="10000" value="<?= (int) $p['daily_limit'] ?>">
       </div>
       <div>
+        <label for="target_photos">Close the project after this many photos <span class="muted">(0 means no target)</span></label>
+        <input id="target_photos" name="target_photos" type="number" min="0" max="100000000" value="<?= (int) ($p['target_photos'] ?? 0) ?>">
+        <p class="muted hint">Photos that are accepted or waiting for review count. When the number is reached, the upload page says the project is closed. If you later reject photos, uploads open again until the number is reached once more.</p>
+      </div>
+      <div>
         <label for="reward_amount">Reward <span class="muted">(amount paid; 0 means no reward)</span></label>
         <div class="pay">
           <input id="reward_symbol" name="reward_symbol" maxlength="8" value="<?= e($p['reward_symbol'] ?? '$') ?>" aria-label="Currency sign">

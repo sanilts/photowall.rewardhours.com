@@ -13,6 +13,12 @@ final class Intake
         elseif ($project['status'] === 'closed') $state = 'closed';
         elseif ($project['opens_at'] && strtotime($project['opens_at']) > $now) $state = 'not_open';
         elseif ($project['closes_at'] && strtotime($project['closes_at']) < $now) $state = 'closed';
+        // A project can close by itself once it has collected the number of photos it set out to get.
+        $full = false;
+        if ($state === 'open' && (int) ($project['target_photos'] ?? 0) > 0 && self::collected($project) >= (int) $project['target_photos']) {
+            $state = 'closed';
+            $full = true;
+        }
 
         $used = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status IN ('pending','approved')", [$resp['id']]);
         $today = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status <> 'removed' AND created_at >= ?", [$resp['id'], date('Y-m-d 00:00:00')]);
@@ -23,9 +29,15 @@ final class Intake
         $todayLeft = $daily > 0 ? max(0, $daily - $today) : null;
         $caps = array_filter([$left, $todayLeft], static fn($v) => $v !== null);
         return [
-            'state' => $state, 'used' => $used, 'left' => $left, 'today' => $today, 'today_left' => $todayLeft,
+            'state' => $state, 'full' => $full, 'used' => $used, 'left' => $left, 'today' => $today, 'today_left' => $todayLeft,
             'can' => $state === 'open' && !(int) $resp['blocked'] ? ($caps ? min($caps) : 1000000) : 0,
         ];
+    }
+
+    /** Photos that count towards a project's target: accepted, or still waiting for review. */
+    public static function collected(array $project): int
+    {
+        return (int) Db::val("SELECT COUNT(*) FROM photos WHERE project_id = ? AND status IN ('pending','approved')", [$project['id']]);
     }
 
     /** @return array{ok:bool, code:string, message:string, photo?:array} */
@@ -57,7 +69,9 @@ final class Intake
         $thumb = $tmp . '.thumb.jpg';
         try {
             $allow = self::allowance($project, $resp);
-            if ($allow['state'] !== 'open') return self::no('closed', 'This project is not accepting photos right now.');
+            if ($allow['state'] !== 'open') {
+                return self::no('closed', $allow['full'] ? 'This project has collected all the photos it needs and is now closed. Thank you.' : 'This project is not accepting photos right now.');
+            }
             if ((int) $resp['blocked']) return self::no('closed', 'Your account cannot upload photos to this project.');
             if ($allow['left'] === 0) return self::no('limit', 'You have already uploaded all ' . $project['photos_per_person'] . ' photos for this project.');
             if ($allow['today_left'] === 0) return self::no('limit', 'You have reached today\'s limit of ' . $project['daily_limit'] . ' photos. Please come back tomorrow.');

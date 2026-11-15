@@ -1,5 +1,5 @@
 <?php
-/** @var array $p @var array $counts @var array $why @var int $people @var ?array $client @var string $state @var array $byCategory @var string $rewardTotal @var int $turned @var ?string $lastUpload */
+/** @var array $p @var array $counts @var array $why @var int $people @var ?array $client @var string $state @var array $byCategory @var string $rewardTotal @var int $turned @var ?string $lastUpload @var int $collected */
 $pid = (int) $p['id'];
 $link = area_url('respondent', '/p/' . $p['slug']);
 $isAdmin = (ad_me()['role'] ?? '') === 'admin';
@@ -9,6 +9,8 @@ $pending = (int) $counts['pending'];
 $flagged = (int) $counts['flagged'];
 $catMax = max(1, ...array_map(static fn($c) => (int) $c['total'], $byCategory ?: [['total' => 1]]));
 $whyMax = max(1, ...array_map(static fn($w) => (int) $w['n'], $why ?: [['n' => 1]]));
+$target = (int) ($p['target_photos'] ?? 0);
+$reached = $target > 0 && $collected >= $target;
 $tab = 'overview';
 require PW_ROOT . '/app/views/admin/project_tabs.php';
 ?>
@@ -16,6 +18,16 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
 
 <?php if ($p['status'] === 'open' && $state !== 'open'): ?>
   <div class="note note-warn">This project is switched to Open, but it is outside its opening and closing dates, so uploads are not accepted right now.</div>
+<?php endif; ?>
+
+<?php if ($target > 0): ?>
+<section class="goal<?= $reached ? ' goal-done' : '' ?>">
+  <div class="goal-top">
+    <p class="goal-n"><strong><?= number_format($collected) ?></strong> of <?= number_format($target) ?> photos collected</p>
+    <p class="goal-sub"><?= $reached ? 'The target is reached, so the upload page now says the project is closed.' : number_format($target - $collected) . ' to go. Uploads close by themselves when the target is reached.' ?></p>
+  </div>
+  <progress max="<?= $target ?>" value="<?= min($collected, $target) ?>"><?= $collected ?> of <?= $target ?></progress>
+</section>
 <?php endif; ?>
 
 <section class="todo <?= $pending ? 'todo-go' : 'todo-done' ?>">
@@ -96,6 +108,7 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
       <dl class="facts">
         <div><dt>Photos per person</dt><dd><?= (int) $p['photos_per_person'] ?: 'No limit' ?></dd></div>
         <div><dt>Per day</dt><dd><?= (int) $p['daily_limit'] ?: 'No daily limit' ?></dd></div>
+        <div><dt>Target</dt><dd><?= $target > 0 ? 'Closes after ' . number_format($target) . ' photos' : 'No target' ?></dd></div>
         <div><dt>Reward</dt><dd><?= ($rw = reward($p)) ? e($rw['amount']) . ' for every ' . $rw['every'] . ' accepted photos' : 'None' ?></dd></div>
         <div><dt>Opens</dt><dd><?= e($p['opens_at'] ? nice_date($p['opens_at']) : 'As soon as it is Open') ?></dd></div>
         <div><dt>Closes</dt><dd><?= e($p['closes_at'] ? nice_date($p['closes_at']) : 'No closing date') ?></dd></div>

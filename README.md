@@ -34,7 +34,14 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
-Everyone who joins gets a contributor ID (RM-C0001), and every kept photo an image ID (RM-I00001).
+Everyone who joins gets a contributor ID such as RM-C758947, and every kept photo an image ID (RM-I00001).
+Contributor IDs are six digits and do not run in order, so an ID does not show how many people joined before;
+each is worked out from the person's row number (`contributor_id()` in `app/lib/helpers.php`), so it never
+changes and never repeats.
+
+A project can have a target number of photos (Settings, Limits). Photos that are accepted or waiting for
+review count. When the target is reached the project closes by itself: the upload page says it has collected
+all the photos it needs, and new uploads are refused. The overview shows the progress towards the target.
 
 The upload page is built for adding many photos at once. The contributor picks any number of photos and each
 is uploaded and checked in turn, with a running total. Every photo has a category: one of the project's "What

@@ -37,7 +37,7 @@ $infoTab = $reward ? 'Reward' : 'Info';
   <?php if ((int) $me['blocked']): ?>
     <div class="note note-bad">Your account cannot upload photos to this project. If you think this is a mistake, email <?= e(cfg('privacy_email')) ?>.</div>
   <?php elseif ($allow['state'] !== 'open'): ?>
-    <div class="note note-warn">This project is <?= $allow['state'] === 'closed' ? 'closed' : 'not open yet' ?>, so photos cannot be added right now.</div>
+    <div class="note note-warn"><?= !empty($allow['full']) ? 'This project has collected all the photos it needs and is now closed. Thank you for taking part. You can still see your photos and their status here.' : 'This project is ' . ($allow['state'] === 'closed' ? 'closed' : 'not open yet') . ', so photos cannot be added right now.' ?></div>
   <?php elseif ($allow['left'] === 0): ?>
     <div class="note note-ok">You have uploaded all <?= $total ?> photos. Thank you. If one is not accepted, you can come back and replace it.</div>
   <?php elseif ($allow['can'] <= 0): ?>
@@ -46,10 +46,12 @@ $infoTab = $reward ? 'Reward' : 'Info';
 
   <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
     <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
-    <label class="drop" for="files">
-      <span class="drop-ico"><?= icon('plus') ?></span>
-      <span class="drop-title">Choose photos</span>
-      <span class="drop-sub">Pick as many as you like from <strong>Photo Library</strong>. Each one is checked as it uploads.</span>
+    <label class="drop" for="files" id="drop">
+      <span class="drop-ico"><?= icon('upload') ?></span>
+      <span class="drop-title">Upload your photos</span>
+      <span class="drop-drag">Drag photos here, or</span>
+      <span class="drop-btn">Choose photos</span>
+      <span class="drop-sub">JPEG or HEIC, up to <?= (int) cfg('max_upload_mb', 60) ?> MB each. You can choose many at once.</span>
     </label>
   </div>
 
