@@ -34,18 +34,19 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
-The hero of the public project page shows the accepted iPhones on the right. Real pictures are uploaded in the
-console under Settings, Phone pictures. As soon as one picture is saved the page shows only those pictures: one
-picture stays still, two or more slide from one to the next. With no pictures it slides through a drawn phone
-for every accepted model.
+The hero of the public project page shows a phone on the right for each kind of photo the project asks for
+(its "What to photograph" lines), sliding from one to the next. The phone itself is drawn by the page. An
+example photo saved in the console under Settings, "Photos inside the phones", fills that phone's screen;
+without one the phone shows an icon. Photos are kept per line of text, so projects that ask for the same kind
+of photo share the example. Uploaded photos are turned upright and reduced to 1200 px tall.
 
-Phone pictures can also be created with Google's Gemini API, in the console under Settings, "Create a phone
-picture with Gemini". Staff paste their own Gemini API key (stored encrypted), choose the phone, and write the
-description, which is sent to Google as written. The result is kept as a draft and only appears on the project
-page after "Use this picture". The model name (default `gemini-3.1-flash-image`) can be changed there if Google
-renames it. The code is in `app/lib/Gemini.php`. Writing `{phone}` in the description inserts the name of the chosen
-phone, so one description can be reused: "Create for all phones" then makes one picture per phone in turn
-(skipping phones that already have a draft), and "Use all pictures" accepts every draft together.
+The example photos can also be created with Google's Gemini API, in the console under Settings, "Create the
+photos with Gemini". Staff paste their own Gemini API key (stored encrypted), choose the kind of photo, and
+adjust the description, which is sent to Google as written with `{subject}` replaced by the kind of photo.
+The result is kept as a draft and only appears on the project page after "Use this picture". "Create all
+photos" makes one picture per kind in turn (skipping those that already have a draft), and "Use all pictures"
+accepts every draft together. The model name (default `gemini-3.1-flash-image`) can be changed there if Google
+renames it. The code is in `app/lib/Gemini.php`.
 
 The public project page is built from the project's settings: its description, the list of what to
 photograph (one line each, shown with a matching icon), the limits and the terms. A respondent can

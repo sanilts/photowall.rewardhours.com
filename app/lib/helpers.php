@@ -236,17 +236,37 @@ function query_with(array $changes): string
     return $q ? '?' . http_build_query($q) : '';
 }
 
-/* ---- accepted phone models and their pictures ---- */
+/* ---- accepted phone models, and the example photos shown inside the phones on the project page ---- */
 
 const PW_IPHONES = ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 16e', 'iPhone 17', 'iPhone 17 Pro',
     'iPhone 17 Pro Max', 'iPhone Air', 'iPhone 17e', 'iPhone 18 Pro', 'iPhone 18 Pro Max', 'iPhone Duo', 'Another newer iPhone'];
 
+const PW_SUBJECTS = ['Portraits and human activities', 'Outdoor landscapes', 'Indoor environments', 'Animals and pets',
+    'Food and dining', 'Still life', 'Macro and texture photography'];
+
+/** Short name for files and addresses, made from a "what to photograph" line. */
 function phone_slug(string $model): string
 {
-    return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($model)), '-');
+    return trim(substr(trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($model)), '-'), 0, 60), '-');
 }
 
-/** Path of the picture staff uploaded for a phone model, or null when there is none. */
+/**
+ * Every "what to photograph" line used by any project, in order of first use.
+ * The project page shows one phone per line, and the example photo inside it is kept per line.
+ */
+function picture_subjects(): array
+{
+    $all = [];
+    foreach (Db::all('SELECT wanted FROM projects ORDER BY id') as $row) {
+        foreach (preg_split('/\R/', (string) $row['wanted']) ?: [] as $line) {
+            $slug = phone_slug($line);
+            if ($slug !== '') $all[$slug] ??= trim($line);
+        }
+    }
+    return array_values($all) ?: PW_SUBJECTS;
+}
+
+/** Path of the example photo staff saved for one kind of photo, or null when there is none. */
 function phone_picture_file(string $slug): ?string
 {
     if (!preg_match('/^[a-z0-9-]{1,60}$/', $slug)) return null;

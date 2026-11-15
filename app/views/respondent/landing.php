@@ -12,12 +12,9 @@ $closed = $state === 'closed';
 // Every model the project accepts, by name, so people can see at a glance whether theirs counts.
 $extraModels = preg_split('/\R/', (string) $project['extra_models']) ?: [];
 $phones = array_values(array_filter(PW_IPHONES, static fn($m) => str_starts_with($m, 'iPhone') && PhotoCheck::modelAllowed($m, $min, $extraModels)));
-// Real pictures uploaded in the console. As soon as there is one, only the pictured models are shown and nothing is drawn.
-$pics = [];
-foreach ($phones as $m) {
-    if ($u = phone_picture($m)) $pics[$m] = $u;
-}
-$shown = $pics ? array_keys($pics) : $phones;
+// The hero shows one phone per kind of photo wanted. An example photo saved in the console fills the phone's screen;
+// without one, an icon stands in.
+$slides = $subjects ?: [['label' => 'Your photos', 'icon' => 'camera', 'tone' => 'sky']];
 $messages = take_flashes(); // shown beside the form they are about, not at the top of a long page
 ?>
 <section class="hero">
@@ -31,47 +28,41 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     </div>
 
     <?php if ($phones): ?>
-    <?php // One accepted iPhone at a time, sliding to the next. Real pictures from the console when there are any, otherwise a drawn handset per model. ?>
-    <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="iPhones we accept">
+    <?php // One phone per kind of photo, sliding to the next. ?>
+    <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="Kinds of photo we are looking for">
       <div class="slider-window">
         <ul class="slider-track">
-          <?php foreach ($shown as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; $pic = $pics[$ph] ?? null; ?>
-            <li class="slide" data-name="<?= e($ph) ?>">
-              <?php if ($pic): ?>
-                <img class="slide-photo" src="<?= e($pic) ?>" alt="<?= e($ph) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
-              <?php else: ?>
-                <div class="phone finish-<?= $i % 5 ?>">
-                  <div class="phone-screen tone-<?= e($look['tone']) ?>">
-                    <span class="phone-cam"></span>
-                    <span class="phone-chip">HEIC</span>
+          <?php foreach ($slides as $i => $look): $pic = phone_picture($look['label']); ?>
+            <li class="slide" data-name="<?= e($look['label']) ?>">
+              <div class="phone finish-<?= $i % 5 ?>">
+                <div class="phone-screen tone-<?= e($look['tone']) ?><?= $pic ? ' has-photo' : '' ?>">
+                  <?php if ($pic): ?>
+                    <img class="phone-photo" src="<?= e($pic) ?>" alt="Example photo: <?= e($look['label']) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
+                  <?php else: ?>
                     <span class="phone-focus"><?= icon($look['icon']) ?></span>
-                    <div class="phone-ui">
-                      <p class="phone-modes"><span>Video</span><span class="on">Photo</span><span>Portrait</span></p>
-                      <div class="phone-keys">
-                        <span class="phone-last"></span>
-                        <span class="phone-shutter"></span>
-                        <span class="phone-flip"><?= icon('refresh') ?></span>
-                      </div>
+                  <?php endif; ?>
+                  <span class="phone-cam"></span>
+                  <span class="phone-chip">HEIC</span>
+                  <div class="phone-ui">
+                    <p class="phone-modes"><span>Video</span><span class="on">Photo</span><span>Portrait</span></p>
+                    <div class="phone-keys">
+                      <?php if ($pic): ?><img class="phone-last" src="<?= e($pic) ?>" alt="" loading="lazy"><?php else: ?><span class="phone-last"></span><?php endif; ?>
+                      <span class="phone-shutter"></span>
+                      <span class="phone-flip"><?= icon('refresh') ?></span>
                     </div>
                   </div>
                 </div>
-                <span class="visually-hidden"><?= e($ph) ?></span>
-              <?php endif; ?>
+              </div>
+              <?php if (!$pic): ?><span class="visually-hidden"><?= e($look['label']) ?></span><?php endif; ?>
             </li>
           <?php endforeach; ?>
-          <?php if (!$pics): ?>
-          <li class="slide slide-next" data-name="Any newer iPhone">
-            <div class="phone finish-0 phone-next"><div class="phone-screen"><span class="phone-cam"></span><span class="phone-plus">+</span></div></div>
-            <span class="visually-hidden">Any newer iPhone</span>
-          </li>
-          <?php endif; ?>
         </ul>
       </div>
       <div class="slider-bar">
-        <?php $many = count($shown) + ($pics ? 0 : 1) > 1; // a single picture stays still, so it needs no arrows ?>
-        <?php if ($many): ?><button class="slider-btn slider-prev" type="button" aria-label="Previous iPhone"><?= icon('arrow') ?></button><?php endif; ?>
-        <p class="slider-name"><?= e($shown[0]) ?></p>
-        <?php if ($many): ?><button class="slider-btn" type="button" data-next="1" aria-label="Next iPhone"><?= icon('arrow') ?></button><?php endif; ?>
+        <?php $many = count($slides) > 1; // a single phone stays still, so it needs no arrows ?>
+        <?php if ($many): ?><button class="slider-btn slider-prev" type="button" aria-label="Previous kind of photo"><?= icon('arrow') ?></button><?php endif; ?>
+        <p class="slider-name"><?= e($slides[0]['label']) ?></p>
+        <?php if ($many): ?><button class="slider-btn" type="button" data-next="1" aria-label="Next kind of photo"><?= icon('arrow') ?></button><?php endif; ?>
       </div>
       <p class="slider-count"><?= count($phones) ?> models accepted, and any newer iPhone</p>
     </div>

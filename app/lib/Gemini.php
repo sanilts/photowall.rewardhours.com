@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 /**
  * Creates a picture from a written description with Google's Gemini API.
- * Staff use it in the console to make the phone pictures for the project page.
+ * Staff use it in the console to make the example photos shown inside the phones on the project page.
  * The API key is entered in the console and stored encrypted. A new picture is kept
  * as a draft until a member of staff chooses to use it.
  */
 final class Gemini
 {
     public const DEFAULT_MODEL = 'gemini-3.1-flash-image';
+    /** Offered in the console as a starting point; staff can change every word. */
+    public const DEFAULT_PROMPT = 'A photorealistic photograph, as taken on a modern phone, for this theme: {subject}. '
+        . 'Bright natural light, vivid colours, sharp focus, modern and cheerful. '
+        . 'Upright picture that fills the whole frame from edge to edge, with the main subject in the middle. '
+        . 'No text, no logos, no borders, and no phone or camera in the picture.';
     public static string $lastError = '';
 
     /** Key (decrypted) and model name in use. */
@@ -86,16 +91,33 @@ final class Gemini
         return null;
     }
 
-    /** Generated pictures are far larger than the page needs: bring them down to 1200 px tall. */
-    private static function shrink(string $bytes, string $ext): array
+    /**
+     * Created and uploaded pictures are far larger than the page needs: bring them down to 1200 px tall.
+     * A camera photo that is stored sideways (with a turn note in its data) is turned upright first.
+     */
+    public static function shrink(string $bytes, string $ext): array
     {
         $keep = ['bytes' => $bytes, 'ext' => $ext];
         if (!function_exists('imagecreatefromstring')) return $keep;
+        $turn = 0;
+        if ($ext === 'jpg') {
+            if (!function_exists('exif_read_data')) return $keep; // cannot tell which way up it is: leave it as it is
+            $exif = @exif_read_data('data://image/jpeg;base64,' . base64_encode($bytes));
+            $turn = [3 => 180, 6 => -90, 8 => 90][(int) ($exif['Orientation'] ?? 1)] ?? 0;
+        }
+        if (!$turn && strlen($bytes) <= 900 * 1024) {
+            $size = @getimagesizefromstring($bytes);
+            if ($size && $size[1] <= 1200) return $keep;
+        }
+        @ini_set('memory_limit', '768M'); // a 48 megapixel photo needs about 200 MB while it is open
         $src = @imagecreatefromstring($bytes);
         if (!$src) return $keep;
+        if ($turn) {
+            $turned = imagerotate($src, $turn, 0);
+            if ($turned) $src = $turned;
+        }
         $w = imagesx($src);
         $h = imagesy($src);
-        if ($h <= 1200 && strlen($bytes) <= 900 * 1024) return $keep;
         $nh = min($h, 1200);
         $nw = max(1, (int) round($w * $nh / $h));
         $dst = imagecreatetruecolor($nw, $nh);

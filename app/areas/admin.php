@@ -536,7 +536,7 @@ route('GET', '/settings', function () {
     $m = Settings::mail();
     view('admin/settings', ['title' => 'Settings', 'nav' => ad_nav('settings'), 'm' => $m, 'me' => $me,
         'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '',
-        'models' => array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone'))),
+        'models' => picture_subjects(),
         'gemini' => Gemini::settings(), 'made' => $_SESSION['made'] ?? []]);
 });
 
@@ -570,14 +570,14 @@ route('POST', '/settings/gemini', function () {
 
 route('POST', '/settings/phones/make', function () {
     ad_need(true);
-    $models = array_values(array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')));
+    $models = picture_subjects();
     $slugs = array_map('phone_slug', $models);
     $slug = post('slug');
     $prompt = mb_substr(post('prompt'), 0, 2000);
     $_SESSION['made'] = ['slug' => $slug, 'prompt' => $prompt]; // so the description is still there for another try
     $ok = false;
     if (!in_array($slug, $slugs, true)) {
-        $msg = 'Choose which phone the picture is for.';
+        $msg = 'Choose what the picture is for.';
     } elseif (mb_strlen($prompt) < 10) {
         $msg = 'Describe the picture you want in a sentence or two.';
     } elseif (!Gemini::isSetUp()) {
@@ -588,14 +588,14 @@ route('POST', '/settings/phones/make', function () {
         $model = $models[array_search($slug, $slugs, true)];
         session_write_close(); // the request to Google can take a minute; do not hold up other pages meanwhile
         @set_time_limit(180);
-        // {phone} in the description stands for the name of the chosen phone
-        $pic = Gemini::picture(str_ireplace('{phone}', $model, $prompt));
+        // {subject} in the description stands for the chosen kind of photo
+        $pic = Gemini::picture(str_ireplace('{subject}', $model, $prompt));
         session_start();
         if ($pic) {
             Gemini::saveDraft($slug, $pic);
             audit('settings.phones.make', $slug);
             $ok = true;
-            $msg = "Picture created for $model. Check it below, then use it or discard it.";
+            $msg = "Picture created for \"$model\". Check it below, then use it or discard it.";
         } else {
             $msg = 'No picture was created. ' . Gemini::$lastError;
         }
@@ -615,7 +615,7 @@ route('POST', '/settings/phones/draft', function () {
     $slug = post('slug');
     if (post('action') === 'use_all') {
         $n = 0;
-        foreach (array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')) as $model) {
+        foreach (picture_subjects() as $model) {
             if (Gemini::useDraft(phone_slug($model))) $n++;
         }
         if ($n) audit('settings.phones.use', "$n pictures");
@@ -644,7 +644,7 @@ route('POST', '/settings/phones', function () {
     $dir = Storage::dir('phones');
     $saved = $removed = 0;
     $problems = [];
-    foreach (array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')) as $model) {
+    foreach (picture_subjects() as $model) {
         $slug = phone_slug($model);
         $err = $_FILES['pic']['error'][$slug] ?? UPLOAD_ERR_NO_FILE;
         if (!empty($_POST['remove'][$slug]) && $err === UPLOAD_ERR_NO_FILE) {
@@ -658,20 +658,21 @@ route('POST', '/settings/phones', function () {
         $tmp = (string) ($_FILES['pic']['tmp_name'][$slug] ?? '');
         $info = $err === UPLOAD_ERR_OK && is_uploaded_file($tmp) ? @getimagesize($tmp) : false;
         $ext = $info ? ([IMAGETYPE_PNG => 'png', IMAGETYPE_JPEG => 'jpg', IMAGETYPE_WEBP => 'webp'][$info[2]] ?? null) : null;
-        if (!$ext || filesize($tmp) > 5 * 1048576 || $info[0] > 5000 || $info[1] > 5000) {
+        if (!$ext || filesize($tmp) > 25 * 1048576 || $info[0] > 12000 || $info[1] > 12000) {
             $problems[] = $model;
             continue;
         }
+        $pic = Gemini::shrink((string) file_get_contents($tmp), $ext); // a full-size camera photo is far more than the page needs
         foreach (['png', 'jpg', 'webp'] as $old) @unlink("$dir/$slug.$old");
-        if (move_uploaded_file($tmp, "$dir/$slug.$ext")) {
-            @chmod("$dir/$slug.$ext", 0640);
+        if (file_put_contents("$dir/$slug.{$pic['ext']}", $pic['bytes'], LOCK_EX) !== false) {
+            @chmod("$dir/$slug.{$pic['ext']}", 0640);
             $saved++;
         } else {
             $problems[] = $model;
         }
     }
     if ($saved || $removed) audit('settings.phones', "$saved saved, $removed removed");
-    if ($problems) flash('These pictures were not saved (use a PNG, JPG or WebP file under 5 MB): ' . implode(', ', $problems) . '.', 'bad');
+    if ($problems) flash('These pictures were not saved (use a PNG, JPG or WebP file under 25 MB): ' . implode(', ', $problems) . '.', 'bad');
     if ($saved || $removed) flash(trim(($saved ? "$saved " . ($saved === 1 ? 'picture' : 'pictures') . ' saved. ' : '') . ($removed ? "$removed removed." : '')));
     elseif (!$problems) flash('Choose at least one picture first.', 'bad');
     redirect('/settings#phones');

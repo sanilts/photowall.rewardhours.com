@@ -44,7 +44,7 @@
     setTimeout(function () { btn.disabled = true; btn.textContent = form.dataset.busy; }, 0);
   });
 
-  // Phone pictures: "Create for all phones" sends one request per phone, one after the other, and reports as it goes.
+  // Example photos: "Create all photos" sends one request per kind of photo, one after the other, and reports as it goes.
   var makeAll = document.getElementById('make-all');
   if (makeAll && window.fetch) {
     makeAll.addEventListener('click', function () {
@@ -60,7 +60,7 @@
         out.classList.toggle('note-bad', !!bad);
         out.classList.toggle('note-ok', !bad);
       }
-      if (!todo.length) { say('Every phone already has a picture waiting below. Use or discard those first.'); return; }
+      if (!todo.length) { say('Every kind of photo already has a picture waiting below. Use or discard those first.'); return; }
       buttons.forEach(function (b) { b.disabled = true; });
       (function next(i) {
         if (i >= todo.length) {

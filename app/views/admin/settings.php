@@ -89,27 +89,27 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
 </section>
 
 <section class="card" id="phones">
-  <h2>Phone pictures on the project page</h2>
-  <p class="muted">Upload real pictures of the accepted iPhones that you have the right to use (PNG, JPG or WebP, under 5 MB; an upright phone on a transparent or plain background looks best). As soon as one picture is saved, the project page shows only your pictures: one picture stays still, two or more slide from one to the next. With no pictures, a drawn phone is shown for each model.</p>
+  <h2>Photos inside the phones on the project page</h2>
+  <p class="muted">The project page shows a phone for each kind of photo your projects ask for (the "What to photograph" lines). Save an example photo for each kind and it fills that phone's screen (PNG, JPG or WebP, under 25 MB; HEIC is not accepted here, so export it as JPG first). Upright photos fit best: the screen is tall, so the sides of a wide photo are cut off and the middle stays visible. Without a photo, the phone shows an icon. Use photos you have the right to use.</p>
   <form method="post" action="/settings/phones" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <ul class="pics">
       <?php foreach ($models as $model): $slug = phone_slug($model); $pic = phone_picture($model); ?>
         <li>
-          <span class="pic-thumb"><?php if ($pic): ?><img src="<?= e($pic) ?>" alt="" loading="lazy"><?php else: ?><?= icon('phone') ?><?php endif; ?></span>
+          <span class="pic-thumb"><?php if ($pic): ?><img src="<?= e($pic) ?>" alt="" loading="lazy"><?php else: ?><?= icon(subject_look($model)['icon']) ?><?php endif; ?></span>
           <label for="pic-<?= e($slug) ?>"><?= e($model) ?></label>
           <input id="pic-<?= e($slug) ?>" type="file" name="pic[<?= e($slug) ?>]" accept="image/png,image/jpeg,image/webp">
           <?php if ($pic): ?><label class="check"><input type="checkbox" name="remove[<?= e($slug) ?>]" value="1"><span>Remove</span></label><?php endif; ?>
         </li>
       <?php endforeach; ?>
     </ul>
-    <button class="btn btn-main" type="submit">Save phone pictures</button>
+    <button class="btn btn-main" type="submit">Save photos</button>
   </form>
 </section>
 
 <section class="card" id="make">
-  <h2>Create a phone picture with Gemini</h2>
-  <p class="muted">Instead of uploading a file, you can have Google's Gemini create a picture from a description you write. This needs your own Gemini API key from Google AI Studio with billing switched on, and Google charges that key for every picture.</p>
+  <h2>Create the photos with Gemini</h2>
+  <p class="muted">Instead of uploading files, you can have Google's Gemini create the example photos from a description. This needs your own Gemini API key from Google AI Studio with billing switched on, and Google charges that key for every picture.</p>
 
   <form method="post" action="/settings/gemini" class="form">
     <?= csrf_field() ?>
@@ -141,13 +141,13 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
       <?php endforeach; ?>
     </select>
     <label for="make_prompt">Describe the picture</label>
-    <textarea id="make_prompt" name="prompt" rows="4" required minlength="10" maxlength="2000"><?= e($made['prompt'] ?? '') ?></textarea>
-    <p class="muted hint">Say what should be in the picture, the angle and the background. Write <code>{phone}</code> where the name of the phone belongs: it is replaced by the phone chosen above, so one description works for every phone. Apart from that your words are sent to Google exactly as written, and the picture comes back upright (9:16). Nothing appears on the project page until you press "Use this picture".</p>
+    <textarea id="make_prompt" name="prompt" rows="5" required minlength="10" maxlength="2000"><?= e(($made['prompt'] ?? '') !== '' ? $made['prompt'] : Gemini::DEFAULT_PROMPT) ?></textarea>
+    <p class="muted hint">A starting description is filled in; change any of it. <code>{subject}</code> is replaced by the kind of photo chosen above, so one description works for all of them. Apart from that your words are sent to Google exactly as written, and the picture comes back upright (9:16). Nothing appears on the project page until you press "Use this picture".</p>
     <div class="row">
       <button class="btn btn-main" type="submit">Create picture</button>
-      <button class="btn" type="button" id="make-all">Create for all <?= count($models) ?> phones</button>
+      <button class="btn" type="button" id="make-all">Create all <?= count($models) ?> photos</button>
     </div>
-    <p class="muted hint">"Create for all" makes one picture per phone with the same description, one after the other, and skips phones that already have a picture waiting below. Google charges for each picture. Keep the page open until it finishes.</p>
+    <p class="muted hint">"Create all" makes one picture for each kind of photo with the same description, one after the other, and skips those that already have a picture waiting below. Google charges for each picture. Keep the page open until it finishes.</p>
     <p id="make-progress" class="note note-ok make-progress" role="status" hidden></p>
   </form>
   <?php endif; ?>
