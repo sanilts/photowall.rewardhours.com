@@ -136,6 +136,7 @@ a.who-link:hover > span:last-child { text-decoration: underline; }
 .table-mail td:nth-child(3), .table-mail td:nth-child(4) { overflow-wrap: break-word; }
 .table-mail td:nth-child(4) { min-width: 15em; }
 .mail-why { color: var(--bad); font-size: .9rem; }
+.mail-note { color: var(--warn); font-size: .9rem; }
 .mail-week { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 14px; }
 .mail-week strong { font: 700 1.3rem/1 var(--display); }
 .mail-week .bad { color: var(--bad); }

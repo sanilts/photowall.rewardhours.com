@@ -1,0 +1,1 @@
+ALTER TABLE mail_log ADD COLUMN from_email VARCHAR(190) NOT NULL DEFAULT '' AFTER to_email

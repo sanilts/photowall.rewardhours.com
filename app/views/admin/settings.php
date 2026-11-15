@@ -5,6 +5,7 @@ if ($driver === 'log' && ($m['source'] ?? '') === 'file') $driver = 'smtp'; // n
 $smtp = (array) ($m['smtp'] ?? []);
 $secure = (string) ($smtp['secure'] ?? 'tls');
 $mailOn = Mailer::isSetUp();
+[$clientFrom, $clientName] = Mailer::clientSender($m);
 $set = count(array_filter($models, static fn($x) => phone_picture($x) !== null));
 $drafts = array_values(array_filter($models, static fn($x) => Gemini::draftFile(phone_slug($x)) !== null));
 $checksOn = (int) ($guard['ip_on'] && $guard['ip_key'] !== '') + (int) ($guard['mail_on'] && $guard['mail_key'] !== '');
@@ -66,7 +67,16 @@ $state = static function (bool $on, bool $hasKey): string {
             <label for="from_name">Sender name people see</label>
             <input id="from_name" name="from_name" maxlength="80" value="<?= e($m['from_name'] ?? 'Photowall') ?>">
           </div>
+          <div>
+            <label for="client_from_email">Send client emails from <span class="muted">(empty means the address above)</span></label>
+            <input id="client_from_email" name="client_from_email" type="email" maxlength="190" value="<?= e($clientFrom) ?>" placeholder="support@yourdomain.com">
+          </div>
+          <div>
+            <label for="client_from_name">Sender name clients see</label>
+            <input id="client_from_name" name="client_from_name" maxlength="80" value="<?= e($clientName) ?>">
+          </div>
         </div>
+        <p class="muted hint">The client address is used for client invitations, client sign-in codes and answers to download requests. Contributors get their emails from the first address. Your mail account must be allowed to send as the client address. If the mail server refuses it, the email still goes out from the first address and the log below says so.</p>
 
         <div class="svc" data-for-driver="smtp">
           <div class="svc-head">
@@ -129,6 +139,7 @@ $state = static function (bool $on, bool $hasKey): string {
         <label class="visually-hidden" for="to">Send the test to</label>
         <input id="to" name="to" type="email" required maxlength="190" value="<?= e($me['email']) ?>">
         <button class="btn" type="submit"><?= icon('mail') ?> Send test email</button>
+        <?php if ($clientFrom !== '' && $clientFrom !== ($m['from_email'] ?? '')): ?><button class="btn" type="submit" name="as" value="client"><?= icon('mail') ?> Send test as a client email</button><?php endif; ?>
       </form>
     </section>
 

@@ -1048,6 +1048,9 @@ route('POST', '/settings/mail', function () {
         'driver' => $driver,
         'from_email' => $from ?? '',
         'from_name' => mb_substr(post('from_name'), 0, 80) ?: 'Photowall',
+        // emails to a client's people (invitation, their sign-in code, answers to download requests); empty means the address above
+        'client_from_email' => clean_email(post('client_from_email')) ?? '',
+        'client_from_name' => mb_substr(trim(post('client_from_name')), 0, 80) ?: 'Research and Metric',
         'smtp' => [
             'host' => mb_substr(preg_replace('#^\w+://#', '', post('smtp_host')), 0, 190),
             'port' => max(1, min(65535, (int) post('smtp_port') ?: 587)),
@@ -1059,6 +1062,7 @@ route('POST', '/settings/mail', function () {
     ];
     $problem = null;
     if ($driver !== 'log' && !$from) $problem = 'Enter the email address the codes should be sent from.';
+    elseif (trim(post('client_from_email')) !== '' && $m['client_from_email'] === '') $problem = 'The address for client emails is not a valid email address.';
     elseif ($driver === 'smtp' && $m['smtp']['host'] === '') $problem = 'Enter the SMTP server address.';
     elseif ($driver === 'postmark' && $m['postmark_token'] === '') $problem = 'Enter the Postmark server token.';
     if ($problem) {
@@ -1090,6 +1094,16 @@ route('POST', '/settings/mail/test', function () {
         flash('Email sending is not set up yet. Choose SMTP or Postmark, save, then test.', 'bad');
     } elseif (!throttle('mailtest:' . client_ip(), 20, 3600)) {
         flash('Too many test emails in a short time. Please wait a little.', 'bad');
+    } elseif (post('as') === 'client') {
+        // the same test, sent the way client emails are: from the client sender address
+        [$cFrom] = Mailer::clientSender(Settings::mail());
+        if (!Mailer::send($to, 'Photowall test email for clients', "This is a test from the Photowall console, sent the way emails to clients are sent.\n\nIf you are reading it, client invitations and client sign-in codes can be delivered.\n", null, 'test_client')) {
+            flash('The test email could not be sent. ' . Mailer::$lastError, 'bad');
+        } else {
+            $row = Db::one("SELECT from_email, error FROM mail_log WHERE kind = 'test_client' ORDER BY id DESC LIMIT 1") ?: ['from_email' => '', 'error' => ''];
+            if ($row['error'] !== '') flash("The test reached $to, but not from the client address. " . $row['error'] . ' Ask your mail provider to let this mail account send as ' . $cFrom . ', or sign in to the mail server as that mailbox.', 'bad');
+            else flash("The test email was accepted for $to, sent from " . ($row['from_email'] !== '' ? $row['from_email'] : 'the usual address') . '. Check that inbox (and its spam folder).');
+        }
     } elseif (Mailer::send($to, 'Photowall test email', "This is a test from the Photowall console.\n\nIf you are reading it, sign-in codes can be delivered.\n", null, 'test')) {
         flash("The test email was accepted for $to. Check that inbox (and its spam folder).");
     } else {

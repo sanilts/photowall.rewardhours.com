@@ -12,9 +12,25 @@ final class Mailer
 
     /** What each kind of email is, for the sending log in the console. */
     public const KINDS = [
-        'code' => 'Sign-in code', 'accepted' => 'Photos accepted', 'invite' => 'Client invitation', 'request' => 'Download request to staff',
-        'answer' => 'Answer to a download request', 'test' => 'Test email', '' => 'Other',
+        'code' => 'Sign-in code', 'client_code' => 'Client sign-in code', 'accepted' => 'Photos accepted', 'invite' => 'Client invitation',
+        'request' => 'Download request to staff', 'answer' => 'Answer to a download request', 'test' => 'Test email', 'test_client' => 'Test email (client sender)', '' => 'Other',
     ];
+
+    /** The kinds of email that go to a client's people. They are sent from the client sender address when one is set. */
+    public const TO_CLIENTS = ['client_code', 'invite', 'answer', 'test_client'];
+
+    /** Sender used for client emails when Settings has never been saved with one. */
+    public const CLIENT_FROM = 'support@researchandmetric.com';
+
+    /**
+     * The address and name client emails are sent from: [email, name]. An empty email means "same as every other email".
+     * @param array $m the mail settings
+     */
+    public static function clientSender(array $m): array
+    {
+        $email = array_key_exists('client_from_email', $m) ? (string) $m['client_from_email'] : self::CLIENT_FROM;
+        return [$email, (string) ($m['client_from_name'] ?? '') !== '' ? (string) $m['client_from_name'] : 'Research and Metric'];
+    }
 
     /**
      * Send one email. $kind (a key of KINDS) only labels it in the sending log.
@@ -26,27 +42,47 @@ final class Mailer
         $m = Settings::mail();
         $driver = in_array((string) ($m['driver'] ?? 'log'), ['smtp', 'postmark'], true) ? (string) $m['driver'] : 'log';
         self::$lastError = '';
+        $usual = $m;
+        [$cFrom, $cName] = self::clientSender($m);
+        if (in_array($kind, self::TO_CLIENTS, true) && $cFrom !== '' && $cFrom !== (string) ($m['from_email'] ?? '')) {
+            $m['from_email'] = $cFrom;
+            $m['from_name'] = $cName;
+        }
+        $go = static fn(array $with): bool => match ($driver) {
+            'smtp' => self::smtp($with, $to, $subject, $text, $html),
+            'postmark' => self::postmark($with, $to, $subject, $text, $html),
+            default => self::log($to, $subject, $text),
+        };
+        $note = '';
         try {
-            $ok = match ($driver) {
-                'smtp' => self::smtp($m, $to, $subject, $text, $html),
-                'postmark' => self::postmark($m, $to, $subject, $text, $html),
-                default => self::log($to, $subject, $text),
-            };
+            $ok = $go($m);
         } catch (Throwable $ex) {
+            $ok = false;
             self::$lastError = $ex->getMessage();
             error_log('Photowall mail error: ' . $ex->getMessage());
-            $ok = false;
+            // The mail account may not be allowed to send as the client address. The email matters more than
+            // its sender, so it goes out from the usual address instead, and the log says what happened.
+            if ($m['from_email'] !== ($usual['from_email'] ?? '') && ($usual['from_email'] ?? '') !== '') {
+                try {
+                    $ok = $go($usual);
+                    $note = "Sent from {$usual['from_email']} instead, because sending as {$m['from_email']} failed: " . self::$lastError;
+                    $m = $usual;
+                    self::$lastError = '';
+                } catch (Throwable $again) {
+                    self::$lastError = $again->getMessage();
+                }
+            }
         }
-        self::record($to, $subject, $kind, $driver, $ok ? ($driver === 'log' ? 'file' : 'sent') : 'failed', self::$lastError);
+        self::record($to, (string) ($m['from_email'] ?? ''), $subject, $kind, $driver, $ok ? ($driver === 'log' ? 'file' : 'sent') : 'failed', $ok ? $note : self::$lastError);
         return $ok;
     }
 
     /** One line in the sending log. A sign-in code in the subject is blanked: the log must never show a working code. */
-    private static function record(string $to, string $subject, string $kind, string $driver, string $result, string $error): void
+    private static function record(string $to, string $from, string $subject, string $kind, string $driver, string $result, string $error): void
     {
         try {
-            Db::q('INSERT INTO mail_log (to_email, subject, kind, driver, result, error, created_at) VALUES (?,?,?,?,?,?,?)',
-                [mb_substr($to, 0, 190), mb_substr((string) preg_replace('/\b\d{6}\b/', '******', $subject), 0, 255), isset(self::KINDS[$kind]) ? $kind : '', $driver, $result, mb_substr($error, 0, 500), now()]);
+            Db::q('INSERT INTO mail_log (to_email, from_email, subject, kind, driver, result, error, created_at) VALUES (?,?,?,?,?,?,?,?)',
+                [mb_substr($to, 0, 190), mb_substr($from, 0, 190), mb_substr((string) preg_replace('/\b\d{6}\b/', '******', $subject), 0, 255), isset(self::KINDS[$kind]) ? $kind : '', $driver, $result, mb_substr($error, 0, 500), now()]);
         } catch (Throwable $e) {
             error_log('Photowall mail log: ' . $e->getMessage());
         }

@@ -123,6 +123,12 @@ and in full at `/settings/mail-log`; the hourly cron keeps 90 days. A client per
 with the portal link when access is given, and "Send invitation again" on the client's page repeats it.
 Database change 012 adds `mail_log` and `client_users.invited_at`.
 
+Emails to a client's people (invitation, client sign-in code, answers to download requests) are sent from the
+client sender address set under Settings, Email. It is `support@researchandmetric.com` until changed, and an
+empty field means the same address as every other email. The mail account must be allowed to send as that
+address. If the mail server refuses it, the email is sent from the usual address instead and the log says so.
+Database change 013 adds the sender address to the log.
+
 ## Console settings page
 
 Settings is one page in five parts (Email, Sign-in checks, Example photos, Invitation, Storage), switched by
