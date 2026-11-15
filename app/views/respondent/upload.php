@@ -4,6 +4,7 @@ $slug = $project['slug'];
 $total = (int) $project['photos_per_person'];
 $reward = reward($project);
 $accepted = count(array_filter($photos, static fn($ph) => $ph['status'] === 'approved'));
+$cats = project_categories($project);
 $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'rejected' => 'Not accepted'];
 ?>
 <section class="page-head">
@@ -45,6 +46,15 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
   <?php endif; ?>
 
   <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
+    <div class="cat-pick">
+      <label for="category">1. Choose the category of the photos you are about to add</label>
+      <select id="category" name="category">
+        <option value="">Choose a category</option>
+        <?php foreach ($cats as $c): ?><option><?= e($c) ?></option><?php endforeach; ?>
+      </select>
+      <p class="muted" id="cat-help">Adding photos of different kinds? Add one kind, then change the category and add the next. You can also change the category of each photo below after it uploads.</p>
+    </div>
+    <p class="cat-step">2. Choose the photos</p>
     <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
     <label class="drop" for="files">
       <?= icon('upload') ?>
@@ -72,6 +82,18 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
           <img src="/p/<?= e($slug) ?>/thumb/<?= e($p['token']) ?>" alt="Your uploaded photo" loading="lazy" width="240" height="240">
         <?php endif; ?>
         <span class="chip chip-<?= e($p['status']) ?>"><?= e($labels[$p['status']] ?? $p['status']) ?></span>
+        <?php if ($p['status'] === 'pending'): ?>
+          <form method="post" action="/p/<?= e($slug) ?>/photo/<?= e($p['token']) ?>/category" class="shot-cat">
+            <?= csrf_field() ?>
+            <select name="category" aria-label="Category of this photo">
+              <?php if (!in_array($p['category'], $cats, true)): ?><option value="" selected>Choose a category</option><?php endif; ?>
+              <?php foreach ($cats as $c): ?><option<?= $p['category'] === $c ? ' selected' : '' ?>><?= e($c) ?></option><?php endforeach; ?>
+            </select>
+            <button class="btn btn-small" type="submit">Save</button>
+          </form>
+        <?php elseif ($p['category'] !== ''): ?>
+          <span class="shot-kind"><?= e($p['category']) ?></span>
+        <?php endif; ?>
         <?php if ($p['status'] === 'rejected' && $p['reject_reason'] !== ''): ?><span class="shot-why"><?= e($p['reject_reason']) ?></span><?php endif; ?>
         <?php if ($p['status'] === 'pending'): ?>
           <form method="post" action="/p/<?= e($slug) ?>/photo/<?= e($p['token']) ?>/delete" data-confirm="Delete this photo? This cannot be undone.">
@@ -83,7 +105,7 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
     <?php endforeach; ?>
   </ul>
   <div class="account">
-    <span>Signed in as <strong><?= e($me['email']) ?></strong></span>
+    <span>Signed in as <strong><?= e($me['email']) ?></strong> &middot; Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></span>
     <a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a>
   </div>
   <p class="muted">To come back later, open the same link and enter this email again.

@@ -126,6 +126,9 @@ final class PhotoCheck
         $want = "iPhone $min or newer";
         $how = 'Please choose the original photo from the Photos app on your iPhone. Do not send it through WhatsApp, email or another app first.';
 
+        if ($f['file_type'] === 'PNG' || stripos((string) self::tag($meta, 'UserComment'), 'screenshot') !== false) {
+            return ['screenshot', 'This looks like a screenshot, not a photo taken with the camera. Screenshots are not accepted.'];
+        }
         if (!in_array($f['file_type'], ['JPEG', 'HEIC', 'HEIF'], true)) {
             return ['format', 'This is not a camera photo file (HEIC or JPEG). Screenshots and other file types are not accepted.'];
         }

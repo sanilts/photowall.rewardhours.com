@@ -10,6 +10,38 @@
   var maxBytes = (parseInt(box.dataset.maxMb, 10) || 60) * 1048576;
   var busy = false;
   var waiting = [];
+  var category = document.getElementById('category');
+  var catHelp = document.getElementById('cat-help');
+  var catHelpText = catHelp ? catHelp.textContent : '';
+
+  // The file chooser only opens once a category is chosen.
+  function needCategory(ev) {
+    if (!category || category.value) return;
+    ev.preventDefault();
+    category.classList.add('need');
+    if (catHelp) catHelp.textContent = 'Choose a category first, then choose the photos.';
+    category.focus();
+  }
+  var drop = document.querySelector('label[for=files]');
+  if (drop) drop.addEventListener('click', needCategory);
+  input.addEventListener('click', needCategory);
+  if (category) category.addEventListener('change', function () {
+    category.classList.remove('need');
+    if (catHelp) catHelp.textContent = catHelpText;
+  });
+
+  // Each uploaded photo has its own category box: save a change straight away.
+  document.addEventListener('change', function (ev) {
+    var sel = ev.target;
+    var form = sel.form;
+    if (!form || !form.classList.contains('shot-cat') || !sel.value || !window.fetch) return;
+    var data = new FormData(form);
+    fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { sel.classList.toggle('saved', !!j.ok); sel.classList.toggle('need', !j.ok); })
+      .catch(function () { form.submit(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.shot-cat .btn'), function (b) { b.hidden = true; });
 
   function el(tag, cls, text) {
     var n = document.createElement(tag);
@@ -56,6 +88,7 @@
     img.src = photo.thumb; img.alt = 'Your uploaded photo'; img.width = 240; img.height = 240;
     li.appendChild(img);
     li.appendChild(el('span', 'chip chip-pending', 'Received, in review'));
+    if (photo.category) li.appendChild(el('span', 'shot-kind', photo.category));
     grid.insertBefore(li, grid.firstChild);
   }
 
@@ -75,6 +108,7 @@
     job.row.msg.textContent = 'Uploading';
     var xhr = new XMLHttpRequest();
     var data = new FormData();
+    data.append('category', job.category);
     data.append('photo', job.file, job.file.name);
     xhr.open('POST', box.dataset.url);
     xhr.setRequestHeader('X-CSRF-Token', box.dataset.csrf);
@@ -107,7 +141,7 @@
 
   input.addEventListener('change', function () {
     Array.prototype.forEach.call(input.files, function (file) {
-      waiting.push({ file: file, row: addRow(file) });
+      waiting.push({ file: file, row: addRow(file), category: category ? category.value : '' });
     });
     input.value = '';
     next();

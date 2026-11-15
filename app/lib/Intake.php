@@ -29,7 +29,7 @@ final class Intake
     }
 
     /** @return array{ok:bool, code:string, message:string, photo?:array} */
-    public static function handle(array $project, array $resp, array $file): array
+    public static function handle(array $project, array $resp, array $file, string $category = ''): array
     {
         $maxBytes = (int) cfg('max_upload_mb', 60) * 1048576;
         $err = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
@@ -39,6 +39,9 @@ final class Intake
         if ($err === UPLOAD_ERR_PARTIAL) return self::no('broken', 'The upload was interrupted. Please try this photo again.');
         if ($err !== UPLOAD_ERR_OK || !is_uploaded_file((string) $file['tmp_name'])) {
             return self::no('busy', 'We could not receive this file. Please try again.');
+        }
+        if (!in_array($category, project_categories($project), true)) {
+            return self::no('category', 'Choose a category for this photo first.');
         }
         if (!throttle('upload:' . $resp['id'], 150, 3600)) {
             return self::no('busy', 'Too many uploads in a short time. Please wait a little and try again.');
@@ -60,7 +63,7 @@ final class Intake
             $name = mb_substr(preg_replace('/[^\w.\- ()]+/u', '_', basename((string) ($file['name'] ?? 'photo'))), 0, 200);
             $bytes = (int) filesize($tmp);
             $sha = (string) hash_file('sha256', $tmp);
-            $base = ['orig_name' => $name, 'bytes' => $bytes, 'sha256' => $sha];
+            $base = ['orig_name' => $name, 'bytes' => $bytes, 'sha256' => $sha, 'category' => $category];
 
             if (Db::val("SELECT id FROM photos WHERE project_id = ? AND sha256 = ? AND status <> 'removed' LIMIT 1", [$project['id'], $sha])) {
                 return self::discard($project, $resp, $base, [], 'duplicate', 'This photo has already been uploaded to this project.');
@@ -108,7 +111,7 @@ final class Intake
             $ext = ['JPEG' => 'jpg', 'HEIC' => 'heic', 'HEIF' => 'heif'][$facts['file_type']];
             $photo = [
                 'project_id' => (int) $project['id'], 'respondent_id' => (int) $resp['id'], 'token' => $token,
-                'orig_name' => $name, 'ext' => $ext, 'mime' => $facts['mime'] ?: 'application/octet-stream',
+                'orig_name' => $name, 'category' => $category, 'ext' => $ext, 'mime' => $facts['mime'] ?: 'application/octet-stream',
                 'bytes' => $bytes, 'sha256' => $sha, 'crc32' => hexdec((string) hash_file('crc32b', $tmp)),
                 'width' => (int) $scan['width'], 'height' => (int) $scan['height'],
                 'device_model' => mb_substr($facts['model'], 0, 80), 'lens_model' => mb_substr($facts['lens'], 0, 160),
@@ -158,10 +161,11 @@ final class Intake
     private static function discard(array $project, array $resp, array $base, array $meta, string $code, string $message): array
     {
         Db::q(
-            'INSERT INTO rejections (project_id, respondent_id, orig_name, bytes, sha256, code, message, device_model, meta_json, ip, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO rejections (project_id, respondent_id, orig_name, category, bytes, sha256, code, message, device_model, taken_at, meta_json, ip, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [
-                $project['id'], $resp['id'], $base['orig_name'], $base['bytes'], $base['sha256'], $code, mb_substr($message, 0, 255),
+                $project['id'], $resp['id'], $base['orig_name'], $base['category'] ?? '', $base['bytes'], $base['sha256'], $code, mb_substr($message, 0, 255),
                 mb_substr(trim((string) PhotoCheck::tag($meta, 'Make') . ' ' . (string) PhotoCheck::tag($meta, 'Model')), 0, 80),
+                $meta ? PhotoCheck::facts($meta)['taken_at'] : null,
                 json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR), client_ip(), now(),
             ]
         );

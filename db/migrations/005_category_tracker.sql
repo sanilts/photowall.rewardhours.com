@@ -1,0 +1,5 @@
+ALTER TABLE photos ADD COLUMN category VARCHAR(120) NOT NULL DEFAULT '' AFTER orig_name;
+
+ALTER TABLE rejections
+  ADD COLUMN category VARCHAR(120) NOT NULL DEFAULT '' AFTER orig_name,
+  ADD COLUMN taken_at DATETIME NULL AFTER device_model

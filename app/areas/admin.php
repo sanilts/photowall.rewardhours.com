@@ -339,6 +339,48 @@ route('GET', '/img/{token}/{size}', function (string $token, string $size) {
     fail_page(404, 'We could not find that file.');
 });
 
+/* ---------- tracker: every photo with its status, totals, CSV ---------- */
+
+function ad_tracker_filters(): array
+{
+    return ['status' => (string) ($_GET['status'] ?? ''), 'category' => trim((string) ($_GET['category'] ?? '')), 'person' => (int) ($_GET['person'] ?? 0)];
+}
+
+route('GET', '/projects/{id}/tracker', function (string $id) {
+    ad_need();
+    $p = ad_project($id);
+    $f = ad_tracker_filters();
+    $total = Tracker::count($p, $f);
+    [$offset, $pages, $page] = paging($total, 100, (int) ($_GET['page'] ?? 1));
+    view('admin/tracker', ['title' => 'Tracker', 'nav' => ad_nav('projects'), 'p' => $p, 'f' => $f, 'total' => $total, 'pages' => $pages, 'page' => $page,
+        'rows' => Tracker::rows($p, $f, 100, $offset), 'byCategory' => Tracker::byCategory($p), 'byContributor' => Tracker::byContributor($p),
+        'cats' => project_categories($p)]);
+});
+
+route('GET', '/projects/{id}/tracker.csv', function (string $id) {
+    ad_need();
+    $p = ad_project($id);
+    $which = (string) ($_GET['table'] ?? 'photos');
+    audit('tracker.export', $p['name'] . ' (' . $which . ')');
+    Tracker::sendCsv($p, $which, ad_tracker_filters());
+});
+
+// Staff can file a photo under another category, for example one uploaded before categories existed.
+route('POST', '/photos/{id}/category', function (string $id) {
+    ad_need();
+    $photo = Db::one('SELECT id, project_id FROM photos WHERE id = ?', [(int) $id]);
+    if (!$photo) fail_page(404, 'We could not find that photo.');
+    $category = trim((string) ($_POST['category'] ?? ''));
+    if (in_array($category, project_categories(ad_project((string) $photo['project_id'])), true)) {
+        Db::q('UPDATE photos SET category = ? WHERE id = ?', [$category, $photo['id']]);
+        audit('photo.category', 'photo ' . $photo['id'] . ': ' . $category);
+        flash('Category saved.');
+    } else {
+        flash('Choose one of the categories of this project.', 'bad');
+    }
+    redirect('/photos/' . $photo['id']);
+});
+
 /* ---------- respondents, discarded uploads, downloads ---------- */
 
 route('GET', '/projects/{id}/respondents', function (string $id) {
@@ -377,7 +419,7 @@ route('GET', '/projects/{id}/respondents.csv', function (string $id) {
     fwrite($out, "\xEF\xBB\xBF");
     fputcsv($out, array_keys($rows[0] ?? ['id' => 0]));
     foreach ($rows as $r) {
-        $r['id'] = sprintf('R%05d', $r['id']);
+        $r['id'] = contributor_id($r['id']);
         fputcsv($out, array_map(static fn($v) => preg_match('/^[=+@]/', (string) $v) ? "'" . $v : $v, $r));
     }
     exit;

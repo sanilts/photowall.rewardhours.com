@@ -37,7 +37,7 @@
         <div class="shot-info">
           <label class="check"><input type="checkbox" name="ids[]" value="<?= (int) $ph['id'] ?>" data-group="photo"><span>#<?= (int) $ph['id'] ?></span></label>
           <span><?= e($ph['device_model']) ?></span>
-          <span class="muted"><?= e(sprintf('R%05d', $ph['respondent_id'])) ?> &middot; <?= e(number_format($ph['width'] * $ph['height'] / 1e6, 1)) ?> MP &middot; <?= e(human_bytes((int) $ph['bytes'])) ?></span>
+          <span class="muted"><?= e(contributor_id($ph['respondent_id'])) ?> &middot; <?= e(number_format($ph['width'] * $ph['height'] / 1e6, 1)) ?> MP &middot; <?= e(human_bytes((int) $ph['bytes'])) ?></span>
         </div>
       </li>
     <?php endforeach; ?>

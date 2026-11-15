@@ -63,7 +63,7 @@ final class Storage
     /** Name given to a downloaded original: keeps the format, hides the person's own file name. */
     public static function downloadName(array $photo): string
     {
-        return sprintf('P%06d_R%05d.%s', $photo['id'], $photo['respondent_id'], $photo['ext']);
+        return image_id($photo['id']) . '_' . contributor_id($photo['respondent_id']) . '.' . $photo['ext'];
     }
 
     public static function send(string $file, string $mime, ?string $downloadName = null, bool $cache = true): never

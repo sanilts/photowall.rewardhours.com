@@ -51,9 +51,20 @@ $detail = json_decode($photo['safety_detail'], true) ?: [];
         <?php if (!($detail['engines'] ?? [])): ?><br><span class="muted">The scanner models were not available for this photo.</span><?php endif; ?>
         <?php foreach ($detail['parts'] ?? [] as $part): ?><br><span class="muted"><?= e(ucfirst(strtolower(str_replace('_', ' ', $part['label'])))) ?> <?= e($part['score']) ?></span><?php endforeach; ?></dd></div>
     </dl>
+    <h2>Filed as</h2>
+    <dl class="facts"><div><dt>Image ID</dt><dd><?= e(image_id($photo['id'])) ?></dd></div></dl>
+    <form method="post" action="/photos/<?= (int) $photo['id'] ?>/category" class="row">
+      <?= csrf_field() ?>
+      <label class="visually-hidden" for="photo-category">Category</label>
+      <select id="photo-category" name="category">
+        <?php $cats = project_categories($p); if (!in_array($photo['category'], $cats, true)): ?><option value="" selected>No category chosen</option><?php endif; ?>
+        <?php foreach ($cats as $c): ?><option<?= $photo['category'] === $c ? ' selected' : '' ?>><?= e($c) ?></option><?php endforeach; ?>
+      </select>
+      <button class="btn btn-small" type="submit">Save category</button>
+    </form>
     <h2>Respondent</h2>
     <dl class="facts">
-      <div><dt>Code</dt><dd><?= e(sprintf('R%05d', $photo['respondent_id'])) ?></dd></div>
+      <div><dt>Contributor ID</dt><dd><a href="/projects/<?= (int) $photo['project_id'] ?>/tracker?person=<?= (int) $photo['respondent_id'] ?>"><?= e(contributor_id($photo['respondent_id'])) ?></a></dd></div>
       <div><dt>Name</dt><dd><?= e($photo['full_name']) ?></dd></div>
       <div><dt>Email</dt><dd><?= e($photo['email']) ?></dd></div>
       <div><dt>Country</dt><dd><?= e($photo['country']) ?></dd></div>

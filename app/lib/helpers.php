@@ -236,6 +236,38 @@ function query_with(array $changes): string
     return $q ? '?' . http_build_query($q) : '';
 }
 
+/* ---- IDs shown to people, and the categories a photo can be filed under ---- */
+
+/** Contributor ID, given automatically when someone joins a project: RM-C0001. */
+function contributor_id(int|string $id): string
+{
+    return sprintf('RM-C%04d', (int) $id);
+}
+
+/** Image ID of a photo that was kept: RM-I00001. */
+function image_id(int|string $id): string
+{
+    return sprintf('RM-I%05d', (int) $id);
+}
+
+/** ID of an upload that failed a check and was not kept: RM-X00001. */
+function turned_id(int|string $id): string
+{
+    return sprintf('RM-X%05d', (int) $id);
+}
+
+/** The categories of a project: its "what to photograph" lines, then Other. */
+function project_categories(array $project): array
+{
+    $list = [];
+    foreach (preg_split('/\R/', (string) ($project['wanted'] ?? '')) ?: [] as $line) {
+        $line = mb_substr(trim($line), 0, 120);
+        if ($line !== '' && strcasecmp($line, 'Other') !== 0 && !in_array($line, $list, true)) $list[] = $line;
+    }
+    $list[] = 'Other';
+    return $list;
+}
+
 /* ---- reward paid to people who take part ---- */
 
 /** "$1", "$2.50", "Rs 50": an amount as people read it. */

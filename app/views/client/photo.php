@@ -11,7 +11,7 @@
   </section>
   <section class="card">
     <h2>Photo information</h2>
-    <dl class="facts"><div><dt>Participant</dt><dd><?= e(sprintf('R%05d', $photo['respondent_id'])) ?></dd></div></dl>
+    <dl class="facts"><div><dt>Image ID</dt><dd><?= e(image_id($photo['id'])) ?></dd></div><div><dt>Category</dt><dd><?= e(($photo['category'] ?? '') !== '' ? $photo['category'] : 'Not set') ?></dd></div><div><dt>Contributor ID</dt><dd><?= e(contributor_id($photo['respondent_id'])) ?></dd></div></dl>
     <?php require PW_ROOT . '/app/views/shared/meta.php'; ?>
   </section>
 </div>

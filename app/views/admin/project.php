@@ -26,6 +26,7 @@ $reasons = ['wrong_device' => 'Not an accepted iPhone', 'no_camera_data' => 'No 
   <a class="stat" href="/projects/<?= (int) $p['id'] ?>/photos?status=approved"><span class="stat-n"><?= (int) $counts['approved'] ?></span><span>Approved (<?= e(human_bytes((int) $counts['approved_bytes'])) ?>)</span></a>
   <a class="stat" href="/projects/<?= (int) $p['id'] ?>/photos?status=rejected"><span class="stat-n"><?= (int) $counts['rejected'] ?></span><span>Rejected by staff</span></a>
   <a class="stat" href="/projects/<?= (int) $p['id'] ?>/respondents"><span class="stat-n"><?= (int) $people ?></span><span>Respondents</span></a>
+  <a class="stat" href="/projects/<?= (int) $p['id'] ?>/tracker"><span class="stat-n"><?= icon('doc') ?></span><span>Tracker: every photo, totals, CSV</span></a>
 </div>
 
 <div class="cols">

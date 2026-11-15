@@ -151,6 +151,25 @@ input[type=checkbox] { width: 20px; height: 20px; flex: none; margin: 3px 0 0; a
 .hero-reward strong { color: var(--sun); }
 .pay { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 8px; }
 .pay input:first-child { text-align: center; }
+.filters { margin: 0 0 16px; }
+.filters select { flex: 0 1 240px; }
+.head-sub { margin-top: 6px; }
+.head-sub h2 { margin: 0; }
+.wrap-any { overflow-wrap: anywhere; max-width: 18em; }
+.table-track { min-width: 1040px; }
+.table-track tbody th, .nowrap { white-space: nowrap; }
+.table-track td:last-child { min-width: 16em; }
+.stat-n .ico { width: 34px; height: 34px; }
+.cat-pick { margin: 0 0 14px; }
+.cat-pick select { max-width: 30em; }
+.cat-pick .muted { margin: 8px 0 0; }
+.cat-step { font-weight: 600; margin: 0 0 8px; }
+select.need { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-bg); }
+select.saved { border-color: var(--ok); }
+.shot-cat { display: flex; gap: 6px; margin-top: 6px; }
+.shot-cat select { padding: 6px 8px; font-size: .88rem; min-width: 0; }
+.shot-cat .btn[hidden] { display: none; }
+.shot-kind { display: block; margin-top: 6px; font-size: .88rem; color: var(--soft); }
 .earn { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; padding: 12px 14px; border: 1px solid #efd07a; border-radius: 12px; background: var(--warn-bg); }
 .earn .ico { flex: none; margin-top: 3px; }
 .earn .muted { display: block; margin-top: 2px; }

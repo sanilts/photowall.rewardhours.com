@@ -34,6 +34,16 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
+Everyone who joins gets a contributor ID (RM-C0001), and every kept photo an image ID (RM-I00001). On the upload
+page the contributor chooses a category before choosing photos: the project's "What to photograph" lines plus
+Other. The category can be changed per photo while it waits for review, and by staff on the photo's page.
+
+The console has a Tracker for each project (linked from the project page): one line for every photo that reached
+the project, with image ID, file name, category, iPhone model, date taken, country, contributor ID and status
+(Accepted, In review, or Rejected with the reason and whether staff or an automatic check rejected it). Uploads
+that failed a check are listed with an RM-X ID, because the file itself is not kept. Below it are totals by
+category and by contributor. All three tables download as CSV. The code is in `app/lib/Tracker.php`.
+
 Each project can pay a reward: an amount for every so many accepted photos (set in the project's Settings under
 Limits; new projects start with no photo limit and $1 for every 5). A photo counts once staff have approved it.
 The reward is shown on the project page and the upload page, and the console's Respondents list shows what each

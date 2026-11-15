@@ -5,7 +5,7 @@ declare(strict_types=1);
 final class Export
 {
     private const LIST_SQL = 'SELECT p.id, p.project_id, p.respondent_id, p.token, p.ext, p.mime, p.bytes, p.sha256, p.crc32, p.width, p.height,
-        p.device_model, p.lens_model, p.software, p.taken_at, p.gps_lat, p.gps_lng, p.status, p.created_at, p.orig_name, p.store, p.store_key,
+        p.device_model, p.lens_model, p.software, p.taken_at, p.gps_lat, p.gps_lng, p.status, p.created_at, p.orig_name, p.category, p.store, p.store_key,
         r.full_name, r.email, r.phone, r.country
         FROM photos p JOIN respondents r ON r.id = p.respondent_id';
 
@@ -26,7 +26,7 @@ final class Export
     /** One row per photo. Clients get a respondent code and country, never name, email or phone. */
     public static function csv(array $photos, bool $withPerson): string
     {
-        $head = ['file', 'photo_id', 'respondent_code', 'country', 'device_model', 'lens_model', 'ios_version', 'taken_at',
+        $head = ['file', 'image_id', 'category', 'contributor_id', 'country', 'device_model', 'lens_model', 'ios_version', 'taken_at',
             'width', 'height', 'megapixels', 'bytes', 'sha256', 'gps_latitude', 'gps_longitude', 'uploaded_at', 'status'];
         if ($withPerson) array_push($head, 'respondent_name', 'respondent_email', 'respondent_phone', 'original_file_name');
         $fh = fopen('php://temp', 'w+');
@@ -34,7 +34,7 @@ final class Export
         fputcsv($fh, $head);
         foreach ($photos as $p) {
             $row = [
-                Storage::downloadName($p), $p['id'], sprintf('R%05d', $p['respondent_id']), $p['country'], $p['device_model'], $p['lens_model'],
+                Storage::downloadName($p), image_id($p['id']), $p['category'], contributor_id($p['respondent_id']), $p['country'], $p['device_model'], $p['lens_model'],
                 $p['software'], $p['taken_at'], $p['width'], $p['height'], number_format($p['width'] * $p['height'] / 1e6, 1, '.', ''),
                 $p['bytes'], $p['sha256'], $p['gps_lat'], $p['gps_lng'], $p['created_at'], $p['status'],
             ];

@@ -18,7 +18,7 @@
   <tbody>
   <?php foreach ($rows as $r): ?>
     <tr>
-      <th scope="row"><?= e($r['full_name'] !== '' ? $r['full_name'] : 'Details not filled in') ?><br><span class="muted"><?= e(sprintf('R%05d', $r['id'])) ?> &middot; <?= e($r['email']) ?></span></th>
+      <th scope="row"><?= e($r['full_name'] !== '' ? $r['full_name'] : 'Details not filled in') ?><br><span class="muted"><?= e(contributor_id($r['id'])) ?> &middot; <?= e($r['email']) ?></span></th>
       <td><?= e($r['country']) ?></td>
       <td><?= e($r['iphone_model']) ?></td>
       <td><?= e(nice_date($r['created_at'], 'j M Y')) ?></td>
