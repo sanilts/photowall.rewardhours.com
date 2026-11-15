@@ -16,12 +16,15 @@ final class Intake
 
         $used = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status IN ('pending','approved')", [$resp['id']]);
         $today = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status <> 'removed' AND created_at >= ?", [$resp['id'], date('Y-m-d 00:00:00')]);
-        $left = max(0, (int) $project['photos_per_person'] - $used);
+        // 0 means "no limit" for both settings; null below means nothing holds the person back.
+        $total = (int) $project['photos_per_person'];
+        $left = $total > 0 ? max(0, $total - $used) : null;
         $daily = (int) $project['daily_limit'];
         $todayLeft = $daily > 0 ? max(0, $daily - $today) : null;
+        $caps = array_filter([$left, $todayLeft], static fn($v) => $v !== null);
         return [
             'state' => $state, 'used' => $used, 'left' => $left, 'today' => $today, 'today_left' => $todayLeft,
-            'can' => $state === 'open' && !(int) $resp['blocked'] ? ($todayLeft === null ? $left : min($left, $todayLeft)) : 0,
+            'can' => $state === 'open' && !(int) $resp['blocked'] ? ($caps ? min($caps) : 1000000) : 0,
         ];
     }
 
@@ -50,7 +53,7 @@ final class Intake
             $allow = self::allowance($project, $resp);
             if ($allow['state'] !== 'open') return self::no('closed', 'This project is not accepting photos right now.');
             if ((int) $resp['blocked']) return self::no('closed', 'Your account cannot upload photos to this project.');
-            if ($allow['left'] <= 0) return self::no('limit', 'You have already uploaded all ' . $project['photos_per_person'] . ' photos for this project.');
+            if ($allow['left'] === 0) return self::no('limit', 'You have already uploaded all ' . $project['photos_per_person'] . ' photos for this project.');
             if ($allow['today_left'] === 0) return self::no('limit', 'You have reached today\'s limit of ' . $project['daily_limit'] . ' photos. Please come back tomorrow.');
 
             if (!move_uploaded_file((string) $file['tmp_name'], $tmp)) return self::no('busy', 'We could not save this file. Please try again.');
@@ -116,8 +119,17 @@ final class Intake
                 'safety_score' => round($score, 4), 'safety_detail' => json_encode($scan['safety'] ?? []),
                 'safety' => $safety, 'status' => 'pending', 'created_at' => now(),
             ];
-            if (!rename($tmp, Storage::original($photo))) return self::no('busy', 'We could not save this file. Please try again.');
-            @chmod(Storage::original($photo), 0640);
+            if (Spaces::on()) {
+                $photo['store'] = 'spaces';
+                $photo['store_key'] = Spaces::keyFor($photo);
+                if (!Spaces::put($tmp, $photo['store_key'], $photo['mime'], $sha)) {
+                    error_log('Photowall: upload to the bucket failed: ' . Spaces::$lastError);
+                    return self::no('busy', 'We could not save this photo right now. Please try again in a minute.');
+                }
+            } else {
+                if (!rename($tmp, Storage::original($photo))) return self::no('busy', 'We could not save this file. Please try again.');
+                @chmod(Storage::original($photo), 0640);
+            }
             @rename($preview, Storage::preview($photo));
             @rename($thumb, Storage::thumb($photo));
             $cols = array_keys($photo);

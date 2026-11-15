@@ -11,8 +11,12 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
 
 <section class="card" id="uploader" data-url="/p/<?= e($slug) ?>/upload" data-csrf="<?= e(csrf_token()) ?>" data-can="<?= (int) $allow['can'] ?>" data-max-mb="<?= (int) cfg('max_upload_mb', 60) ?>">
   <div class="meter" aria-live="polite">
-    <div><strong id="used"><?= (int) $allow['used'] ?></strong> of <?= $total ?> photos uploaded</div>
-    <progress id="used-bar" max="<?= $total ?>" value="<?= (int) $allow['used'] ?>"><?= (int) $allow['used'] ?> of <?= $total ?></progress>
+    <?php if ($total > 0): ?>
+      <div><strong id="used"><?= (int) $allow['used'] ?></strong> of <?= $total ?> photos uploaded</div>
+      <progress id="used-bar" max="<?= $total ?>" value="<?= (int) $allow['used'] ?>"><?= (int) $allow['used'] ?> of <?= $total ?></progress>
+    <?php else: ?>
+      <div><strong id="used"><?= (int) $allow['used'] ?></strong> photos uploaded. There is no limit for this project.</div>
+    <?php endif; ?>
     <?php if ($allow['today_left'] !== null): ?>
       <div class="muted">Today you can still add <strong id="today-left"><?= (int) $allow['today_left'] ?></strong> (limit <?= (int) $project['daily_limit'] ?> per day).</div>
     <?php endif; ?>
@@ -23,7 +27,7 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
     <div class="note note-bad">Your account cannot upload photos to this project. If you think this is a mistake, email <?= e(cfg('privacy_email')) ?>.</div>
   <?php elseif ($allow['state'] !== 'open'): ?>
     <div class="note note-warn">This project is <?= $allow['state'] === 'closed' ? 'closed' : 'not open yet' ?>, so photos cannot be added right now.</div>
-  <?php elseif ($allow['left'] <= 0): ?>
+  <?php elseif ($allow['left'] === 0): ?>
     <div class="note note-ok">You have uploaded all <?= $total ?> photos. Thank you. If one is not accepted, you can come back and replace it.</div>
   <?php elseif ($allow['can'] <= 0): ?>
     <div class="note note-warn">You have reached today's limit. Please come back tomorrow to add more.</div>

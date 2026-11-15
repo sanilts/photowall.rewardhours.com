@@ -28,10 +28,22 @@ return [
         'postmark_token' => '',
     ],
 
+    // Where original photos are kept. Off: on this server's disk. On: in a DigitalOcean Spaces bucket
+    // (private files, downloads through links that expire). Set it up with the command: pw-spaces setup
+    'spaces' => [
+        'enabled'  => false,
+        'endpoint' => 'https://atl1.digitaloceanspaces.com',
+        'region'   => 'us-east-1',
+        'bucket'   => 'rm-docs',
+        'prefix'   => 'photowall',
+        'key'      => '',
+        'secret'   => '',
+    ],
+
     'timezone'      => 'Asia/Kolkata',
     'secret'        => 'CHANGE_ME_TO_A_LONG_RANDOM_STRING',
     'max_upload_mb' => 60,
-    'admin_otp'     => true,
+    'admin_otp'     => false,   // true adds an emailed code after the staff password
 
     'company'       => 'Research and Metric Corporation',
     'privacy_email' => 'privacy@researchandmetric.com',

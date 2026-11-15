@@ -43,8 +43,8 @@ $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : 
     <legend>Limits</legend>
     <div class="grid2">
       <div>
-        <label for="photos_per_person">Photos per person</label>
-        <input id="photos_per_person" name="photos_per_person" type="number" min="1" max="10000" required value="<?= (int) $p['photos_per_person'] ?>">
+        <label for="photos_per_person">Photos per person <span class="muted">(0 means no limit)</span></label>
+        <input id="photos_per_person" name="photos_per_person" type="number" min="0" max="100000" required value="<?= (int) $p['photos_per_person'] ?>">
       </div>
       <div>
         <label for="daily_limit">Photos per person per day <span class="muted">(0 means no daily limit)</span></label>

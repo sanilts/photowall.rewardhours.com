@@ -89,7 +89,7 @@ function ad_project_input(?array $old): array
         'status' => in_array(post('status'), ['draft', 'open', 'closed'], true) ? post('status') : 'draft',
         'intro' => post('intro'),
         'terms' => post('terms'),
-        'photos_per_person' => max(1, min(10000, (int) post('photos_per_person'))),
+        'photos_per_person' => max(0, min(100000, (int) post('photos_per_person'))),
         'daily_limit' => max(0, min(10000, (int) post('daily_limit'))),
         'opens_at' => $dt(post('opens_at')),
         'closes_at' => $dt(post('closes_at')),
@@ -327,7 +327,7 @@ route('GET', '/img/{token}/{size}', function (string $token, string $size) {
     if ($size === 'preview') Storage::send(Storage::preview($photo), 'image/jpeg');
     if ($size === 'original') {
         audit('photo.download', 'photo ' . $photo['id']);
-        Storage::send(Storage::original($photo), $photo['mime'], Storage::downloadName($photo), false);
+        Storage::sendOriginal($photo);
     }
     fail_page(404, 'We could not find that file.');
 });

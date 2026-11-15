@@ -32,6 +32,21 @@ Reward Hours site.
 4. The original file is stored byte for byte as uploaded. Previews are separate JPEG copies. Downloads
    (single file or ZIP) return the untouched original, so all metadata is intact.
 
+Photos per person and photos per day can each be set to 0, which means no limit.
+
+## Where the originals are kept
+
+By default on the server's disk. To keep them in a DigitalOcean Spaces bucket instead, run
+`pw-spaces setup` on the server. It asks for the region address, bucket, folder and keys, tests them
+(upload, read back, delete, and that the file is not public), and only then switches the bucket on.
+
+- Every original is uploaded as a private file under `<folder>/originals/<project>/`.
+- A download sends the person to a private link that works for 5 minutes. ZIP downloads are built by
+  the server from the bucket.
+- Rejecting or deleting a photo removes it from the bucket.
+- Small previews and thumbnails stay on the server so pages load fast.
+- `pw-spaces move` moves photos that are already on the server into the bucket.
+
 Every check has its threshold in the project settings, and the console lists every upload that was
 turned away together with the information read from the file.
 
@@ -60,6 +75,8 @@ Updating later is one command: `pw-deploy`. It checks the new code for errors be
 | `pw-admin list` | Show staff accounts |
 | `pw-check` | Check that everything the app needs is working |
 | `pw-check /path/photo.HEIC` | Show exactly what the checks say about one photo |
+| `pw-spaces setup` | Connect a Spaces bucket for the original photos |
+| `pw-spaces status` / `test` / `move` / `off` | Where photos are, check the bucket, move photos into it, stop using it |
 
 ## Where things are
 

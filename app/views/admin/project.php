@@ -32,7 +32,7 @@ $reasons = ['wrong_device' => 'Not an accepted iPhone', 'no_camera_data' => 'No 
   <section class="card">
     <h2>Rules in force</h2>
     <dl class="facts">
-      <div><dt>Photos per person</dt><dd><?= (int) $p['photos_per_person'] ?></dd></div>
+      <div><dt>Photos per person</dt><dd><?= (int) $p['photos_per_person'] ?: 'No limit' ?></dd></div>
       <div><dt>Per day</dt><dd><?= (int) $p['daily_limit'] ?: 'No daily limit' ?></dd></div>
       <div><dt>Opens</dt><dd><?= e($p['opens_at'] ? nice_date($p['opens_at']) : 'As soon as it is Open') ?></dd></div>
       <div><dt>Closes</dt><dd><?= e($p['closes_at'] ? nice_date($p['closes_at']) : 'No closing date') ?></dd></div>

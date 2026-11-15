@@ -136,7 +136,7 @@ route('GET', '/img/{token}/{size}', function (string $token, string $size) {
     if ($size === 'preview') Storage::send(Storage::preview($photo), 'image/jpeg');
     if ($size === 'original') {
         audit('photo.download', 'photo ' . $photo['id']);
-        Storage::send(Storage::original($photo), $photo['mime'], Storage::downloadName($photo), false);
+        Storage::sendOriginal($photo);
     }
     fail_page(404, 'We could not find that file.');
 });

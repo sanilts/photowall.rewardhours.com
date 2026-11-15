@@ -5,7 +5,7 @@ declare(strict_types=1);
 final class Export
 {
     private const LIST_SQL = 'SELECT p.id, p.project_id, p.respondent_id, p.token, p.ext, p.mime, p.bytes, p.sha256, p.crc32, p.width, p.height,
-        p.device_model, p.lens_model, p.software, p.taken_at, p.gps_lat, p.gps_lng, p.status, p.created_at, p.orig_name,
+        p.device_model, p.lens_model, p.software, p.taken_at, p.gps_lat, p.gps_lng, p.status, p.created_at, p.orig_name, p.store, p.store_key,
         r.full_name, r.email, r.phone, r.country
         FROM photos p JOIN respondents r ON r.id = p.respondent_id';
 
@@ -76,7 +76,9 @@ final class Export
             $meta = Db::val('SELECT meta_json FROM photos WHERE id = ?', [$p['id']]);
             fwrite($fh, ($first ? '' : ",\n") . json_encode(['file' => Storage::downloadName($p), 'metadata' => json_decode((string) $meta, true)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             $first = false;
-            $zip->addFile('photos/' . Storage::downloadName($p), Storage::original($p), (int) $p['crc32'], (int) $p['bytes']);
+            [$path, $temp] = Storage::localOriginal($p);
+            if ($path !== null) $zip->addFile('photos/' . Storage::downloadName($p), $path, (int) $p['crc32'], (int) $p['bytes']);
+            if ($temp) @unlink($path);
         }
         fwrite($fh, "\n]\n");
         fclose($fh);

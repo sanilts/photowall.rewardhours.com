@@ -30,9 +30,34 @@ final class Storage
 
     public static function removeFiles(array $photo): void
     {
+        if (($photo['store'] ?? 'local') === 'spaces') {
+            if (!Spaces::delete((string) $photo['store_key'])) error_log('Photowall: could not delete ' . $photo['store_key'] . ' from the bucket: ' . Spaces::$lastError);
+        }
         foreach ([self::original($photo), self::preview($photo), self::thumb($photo)] as $f) {
             if (is_file($f)) @unlink($f);
         }
+    }
+
+    /** Sends the untouched original: from this server's disk, or through a private link to the bucket that expires in 5 minutes. */
+    public static function sendOriginal(array $photo): never
+    {
+        if (($photo['store'] ?? 'local') === 'spaces') {
+            header('Cache-Control: no-store');
+            header('Location: ' . Spaces::link((string) $photo['store_key'], 300, self::downloadName($photo), (string) $photo['mime']), true, 302);
+            exit;
+        }
+        self::send(self::original($photo), (string) $photo['mime'], self::downloadName($photo), false);
+    }
+
+    /**
+     * A local copy of the original for building a ZIP. Returns [path, isTemporary];
+     * path is null when the file cannot be fetched. Delete temporary copies after use.
+     */
+    public static function localOriginal(array $photo): array
+    {
+        if (($photo['store'] ?? 'local') !== 'spaces') return [is_file(self::original($photo)) ? self::original($photo) : null, false];
+        $tmp = self::dir('tmp') . '/dl-' . bin2hex(random_bytes(8));
+        return Spaces::get((string) $photo['store_key'], $tmp) ? [$tmp, true] : [null, false];
     }
 
     /** Name given to a downloaded original: keeps the format, hides the person's own file name. */

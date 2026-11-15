@@ -167,9 +167,10 @@ say "6/8 Commands and hourly clean-up"
 install -m 755 "$APP/deploy/pw-deploy" /usr/local/bin/pw-deploy
 printf '#!/bin/bash\nexec runuser -u %s -- php %s/bin/admin.php "$@"\n' "$WEBUSER" "$APP" > /usr/local/bin/pw-admin
 printf '#!/bin/bash\nexec runuser -u %s -- php %s/bin/selftest.php "$@"\n' "$WEBUSER" "$APP" > /usr/local/bin/pw-check
-chmod 755 /usr/local/bin/pw-admin /usr/local/bin/pw-check
+printf '#!/bin/bash\n# setup and off change the settings file, so they run as root; the rest runs as the web user\ncase "${1:-}" in setup|off) exec php %s/bin/spaces.php "$@";; *) exec runuser -u %s -- php %s/bin/spaces.php "$@";; esac\n' "$APP" "$WEBUSER" "$APP" > /usr/local/bin/pw-spaces
+chmod 755 /usr/local/bin/pw-admin /usr/local/bin/pw-check /usr/local/bin/pw-spaces
 echo "17 * * * * $WEBUSER php $APP/bin/cron.php >/dev/null 2>&1" > /etc/cron.d/photowall
-echo "Commands: pw-deploy, pw-admin, pw-check"
+echo "Commands: pw-deploy, pw-admin, pw-check, pw-spaces"
 
 say "7/8 Secure connection (https)"
 if [ -d "/etc/letsencrypt/live/$H_RESP" ]; then

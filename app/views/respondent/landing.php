@@ -20,7 +20,7 @@ $min = (int) $project['min_iphone'];
     <ul class="checks">
       <li>An <strong>iPhone <?= $min ?> or newer</strong>. Photos from older iPhones or other phones are not accepted.</li>
       <li><strong>Original photos</strong> taken with the iPhone Camera app. No screenshots, no edited or filtered photos, nothing forwarded through WhatsApp or other apps.</li>
-      <li>Up to <strong><?= (int) $project['photos_per_person'] ?> photos</strong> per person<?= (int) $project['daily_limit'] ? ', at most ' . (int) $project['daily_limit'] . ' per day' : '' ?>.</li>
+      <li><?= (int) $project['photos_per_person'] ? 'Up to <strong>' . (int) $project['photos_per_person'] . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= (int) $project['daily_limit'] ? ', at most ' . (int) $project['daily_limit'] . ' per day' : '' ?>.</li>
       <?php if ($project['closes_at']): ?><li>Uploads close on <strong><?= e(nice_date($project['closes_at'])) ?></strong> (<?= e(date('T')) ?>).</li><?php endif; ?>
       <li>Clear, sharp photos. Blurry, very dark and duplicate photos are turned away automatically.</li>
     </ul>

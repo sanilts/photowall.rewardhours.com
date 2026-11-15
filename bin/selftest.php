@@ -44,6 +44,12 @@ $scan = Scanner::run($probe);
 $say(!empty($scan['ok']), 'Scanner opens and measures a picture' . (!empty($scan['ok']) ? " ({$scan['ms']} ms)" : ''), (string) ($scan['detail'] ?? ''));
 $engines = $scan['safety']['engines'] ?? [];
 $say(count($engines) === 2, 'Safety models running: ' . ($engines ? implode(', ', $engines) : 'none'), 'Photos would still be held for staff review, but nothing would be blocked automatically.');
+if (Spaces::on()) {
+    $problem = Spaces::selfTest();
+    $say($problem === null, "Original photos go to the bucket '" . cfg('spaces.bucket') . "' (private files)", (string) $problem);
+} else {
+    echo "  NOTE  Original photos are stored on this server (" . cfg('storage') . "/originals). To use a Spaces bucket: pw-spaces setup\n";
+}
 $say(cfg('mail.driver') !== 'log', 'Email sending is configured (' . cfg('mail.driver') . ')', 'Sign-in codes are only written to ' . cfg('storage') . '/logs/mail.log. Edit the mail section of the settings file.');
 $limit = (int) ini_get('upload_max_filesize');
 echo "  NOTE  PHP on the command line allows uploads of " . ini_get('upload_max_filesize') . "; the web server setting is what counts (needs " . cfg('max_upload_mb', 60) . "M or more).\n";

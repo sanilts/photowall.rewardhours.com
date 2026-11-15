@@ -3,6 +3,7 @@
   <h1>Projects</h1>
   <?php if ($isAdmin): ?><a class="btn btn-main" href="/projects/new">New project</a><?php endif; ?>
 </div>
+<p class="muted">Original photos are stored <?= Spaces::on() ? 'in the Spaces bucket ' . e(cfg('spaces.bucket')) . ' as private files' : 'on this server' ?>.</p>
 <?php foreach ($warnings as $w): ?><div class="note note-warn" role="status"><?= e($w) ?></div><?php endforeach; ?>
 
 <?php if (!$projects): ?>
