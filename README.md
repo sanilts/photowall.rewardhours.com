@@ -106,6 +106,14 @@ header. Clients only ever see accepted photos.
 The code is in `app/lib/ClientLog.php`, `app/areas/client.php` and the `/clients/...` routes of
 `app/areas/admin.php`.
 
+## Clients in the console
+
+`/clients` lists the client companies; `/clients/{id}` is one client's page with its people, linked projects,
+latest activity and a "Manage this client" box. A client can be renamed, switched off (nobody from it can sign
+in; nothing is deleted) or deleted (the company, its people, their download requests and activity go; its
+projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
+removed. Database change 011 adds `clients.active`.
+
 ## Console settings page
 
 Settings is one page in five parts (Email, Sign-in checks, Example photos, Invitation, Storage), switched by

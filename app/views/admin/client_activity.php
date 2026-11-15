@@ -37,7 +37,11 @@ $query = http_build_query(array_filter($f));
     <h2>Everything they did <span class="muted">(<?= (int) $total ?>)</span></h2>
     <a class="btn" href="/clients/activity.csv<?= $query !== '' ? '?' . e($query) : '' ?>">Download as CSV</a>
   </div>
+  <?php if ($f['client'] > 0): $only = ''; foreach ($people as $u) { if ((int) $u['client_id'] === $f['client']) $only = $u['client_name']; } ?>
+  <p><span class="chip chip-dl">Only <?= e($only !== '' ? $only : 'one client') ?></span> <a href="/clients/activity#timeline">Show every client</a></p>
+  <?php endif; ?>
   <form method="get" action="/clients/activity#timeline" class="row filters">
+    <?php if ($f['client'] > 0): ?><input type="hidden" name="client" value="<?= (int) $f['client'] ?>"><?php endif; ?>
     <div><label for="f-user">Person</label>
       <select id="f-user" name="user"><option value="0">Everyone</option>
         <?php foreach ($people as $u): ?><option value="<?= (int) $u['id'] ?>"<?= $f['user'] === (int) $u['id'] ? ' selected' : '' ?>><?= e($u['name']) ?> (<?= e($u['client_name']) ?>)</option><?php endforeach; ?>

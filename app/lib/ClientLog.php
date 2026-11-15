@@ -61,7 +61,7 @@ final class ClientLog
     /** One line per client person with their totals, newest sign-in first. */
     public static function people(): array
     {
-        return Db::all("SELECT u.id, u.name, u.email, u.active, u.last_login_at, c.name AS client_name,
+        return Db::all("SELECT u.id, u.client_id, u.name, u.email, u.active, u.last_login_at, c.name AS client_name,
             (SELECT COUNT(*) FROM client_events e WHERE e.client_user_id = u.id AND e.action = 'login') AS logins,
             (SELECT CONCAT(e.ip, '|', e.country, '|', e.agent) FROM client_events e WHERE e.client_user_id = u.id AND e.action = 'login' ORDER BY e.id DESC LIMIT 1) AS last_from,
             (SELECT COUNT(*) FROM client_events e WHERE e.client_user_id = u.id AND e.action = 'gallery') AS galleries,
@@ -80,6 +80,7 @@ final class ClientLog
         $where = '1 = 1';
         $args = [];
         if (($f['user'] ?? 0) > 0) { $where .= ' AND e.client_user_id = ?'; $args[] = (int) $f['user']; }
+        if (($f['client'] ?? 0) > 0) { $where .= ' AND e.client_id = ?'; $args[] = (int) $f['client']; }
         if (isset(self::ACTIONS[$f['action'] ?? ''])) { $where .= ' AND e.action = ?'; $args[] = $f['action']; }
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($f['from'] ?? ''))) { $where .= ' AND e.created_at >= ?'; $args[] = $f['from'] . ' 00:00:00'; }
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($f['to'] ?? ''))) { $where .= ' AND e.created_at <= ?'; $args[] = $f['to'] . ' 23:59:59'; }
@@ -115,6 +116,28 @@ final class ClientLog
             }
         }
         exit;
+    }
+
+    /** Totals for one client company, across all of its people. */
+    public static function company(int $clientId): array
+    {
+        $e = Db::one("SELECT COALESCE(SUM(action = 'login'), 0) AS logins, MAX(CASE WHEN action = 'login' THEN created_at END) AS last_login FROM client_events WHERE client_id = ?", [$clientId]) ?: [];
+        $l = Db::one("SELECT COUNT(DISTINCT CASE WHEN l.kind = 'view' THEN l.photo_id END) AS viewed, COUNT(DISTINCT CASE WHEN l.kind = 'download' THEN l.photo_id END) AS downloaded
+            FROM client_photo_log l JOIN client_users u ON u.id = l.client_user_id WHERE u.client_id = ?", [$clientId]) ?: [];
+        return ['logins' => (int) ($e['logins'] ?? 0), 'last_login' => $e['last_login'] ?? null, 'viewed' => (int) ($l['viewed'] ?? 0), 'downloaded' => (int) ($l['downloaded'] ?? 0),
+            'waiting' => (int) Db::val("SELECT COUNT(*) FROM download_requests WHERE client_id = ? AND status = 'pending'", [$clientId])];
+    }
+
+    /** Remove everything recorded about some client people: their requests and what they did. */
+    public static function forget(array $userIds): void
+    {
+        foreach (array_chunk(array_values(array_map('intval', $userIds)), 200) as $ids) {
+            $in = rtrim(str_repeat('?,', count($ids)), ',');
+            Db::q("DELETE d FROM download_request_photos d JOIN download_requests r ON r.id = d.request_id WHERE r.client_user_id IN ($in)", $ids);
+            Db::q("DELETE FROM download_requests WHERE client_user_id IN ($in)", $ids);
+            Db::q("DELETE FROM client_photo_log WHERE client_user_id IN ($in)", $ids);
+            Db::q("DELETE FROM client_events WHERE client_user_id IN ($in)", $ids);
+        }
     }
 
     /** How often clients viewed and downloaded one photo. */

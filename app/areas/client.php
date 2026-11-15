@@ -6,7 +6,7 @@ declare(strict_types=1);
 function cl_me(): ?array
 {
     $id = $_SESSION['client_user_id'] ?? null;
-    return $id ? Db::one('SELECT u.*, c.name AS client_name FROM client_users u JOIN clients c ON c.id = u.client_id WHERE u.id = ? AND u.active = 1', [$id]) : null;
+    return $id ? Db::one('SELECT u.*, c.name AS client_name FROM client_users u JOIN clients c ON c.id = u.client_id WHERE u.id = ? AND u.active = 1 AND c.active = 1', [$id]) : null;
 }
 
 function cl_need(): array
@@ -128,7 +128,7 @@ route('POST', '/login', function () {
         redirect('/login');
     }
     // The same answer is given whether or not the address has access, so the form cannot be used to test addresses.
-    $user = Db::one('SELECT * FROM client_users WHERE email = ? AND active = 1', [$email]);
+    $user = Db::one('SELECT u.* FROM client_users u JOIN clients c ON c.id = u.client_id WHERE u.email = ? AND u.active = 1 AND c.active = 1', [$email]);
     if ($user) {
         $problem = Otp::issue('client', $email, 0, 'client portal');
         if ($problem) {
@@ -151,7 +151,7 @@ route('GET', '/login/code', function () {
 route('POST', '/login/resend', function () {
     $email = $_SESSION['pending_client'] ?? null;
     if (!$email) redirect('/login');
-    $problem = Db::val('SELECT id FROM client_users WHERE email = ? AND active = 1', [$email]) ? Otp::issue('client', $email, 0, 'client portal') : null;
+    $problem = Db::val('SELECT u.id FROM client_users u JOIN clients c ON c.id = u.client_id WHERE u.email = ? AND u.active = 1 AND c.active = 1', [$email]) ? Otp::issue('client', $email, 0, 'client portal') : null;
     flash($problem ?: 'If this address has access, a new code is on its way.', $problem ? 'bad' : 'ok');
     redirect('/login/code');
 });
@@ -159,7 +159,7 @@ route('POST', '/login/resend', function () {
 route('POST', '/login/code', function () {
     $email = $_SESSION['pending_client'] ?? null;
     if (!$email) redirect('/login');
-    $user = Db::one('SELECT * FROM client_users WHERE email = ? AND active = 1', [$email]);
+    $user = Db::one('SELECT u.* FROM client_users u JOIN clients c ON c.id = u.client_id WHERE u.email = ? AND u.active = 1 AND c.active = 1', [$email]);
     if (!$user || !throttle('otp:try:' . client_ip(), 40, 3600) || !Otp::verify('client', $email, 0, post('code'))) {
         flash('That code is not right or has expired.', 'bad');
         redirect('/login/code');

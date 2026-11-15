@@ -515,33 +515,48 @@ route('POST', '/projects/{id}/zip', function (string $id) {
 
 /* ---------- clients ---------- */
 
+function ad_client(string $id): array
+{
+    $c = ctype_digit($id) ? Db::one('SELECT * FROM clients WHERE id = ?', [(int) $id]) : null;
+    if (!$c) fail_page(404, 'We could not find that client.');
+    return $c;
+}
+
 route('GET', '/clients', function () {
     ad_need(true);
-    $clients = Db::all('SELECT c.*, (SELECT COUNT(*) FROM projects WHERE client_id = c.id) AS n_projects FROM clients c ORDER BY c.name');
-    $users = [];
-    foreach (Db::all('SELECT * FROM client_users ORDER BY email') as $u) $users[$u['client_id']][] = $u;
-    view('admin/clients', ['title' => 'Clients', 'nav' => ad_nav('clients'), 'clients' => $clients, 'users' => $users]);
+    $clients = Db::all("SELECT c.*,
+        (SELECT COUNT(*) FROM projects WHERE client_id = c.id) AS n_projects,
+        (SELECT COUNT(*) FROM client_users WHERE client_id = c.id) AS n_people,
+        (SELECT COUNT(*) FROM client_users WHERE client_id = c.id AND active = 1) AS n_active,
+        (SELECT MAX(last_login_at) FROM client_users WHERE client_id = c.id) AS last_login,
+        (SELECT COUNT(*) FROM download_requests WHERE client_id = c.id AND status = 'pending') AS n_waiting
+        FROM clients c ORDER BY c.active DESC, c.name");
+    view('admin/clients', ['title' => 'Clients', 'nav' => ad_nav('clients'), 'clients' => $clients]);
 });
 
 route('POST', '/clients', function () {
     ad_need(true);
-    $name = mb_substr(post('name'), 0, 160);
+    $name = mb_substr(trim(post('name')), 0, 160);
     if (mb_strlen($name) < 2) {
         flash('Give the client a name.', 'bad');
-    } else {
-        Db::q('INSERT INTO clients (name, created_at) VALUES (?, ?)', [$name, now()]);
-        audit('client.create', $name);
-        flash('Client added. Now add the people who may sign in, and link the client to a project in the project settings.');
+        redirect('/clients');
     }
-    redirect('/clients');
+    if (Db::val('SELECT id FROM clients WHERE name = ?', [$name])) {
+        flash('There is already a client with that name.', 'bad');
+        redirect('/clients');
+    }
+    $id = Db::insert('INSERT INTO clients (name, created_at) VALUES (?, ?)', [$name, now()]);
+    audit('client.create', $name);
+    flash('Client added. Now add the people who may sign in, and link the client to a project in the project settings.');
+    redirect("/clients/$id");
 });
 
 route('POST', '/clients/{id}/users', function (string $id) {
     ad_need(true);
-    $client = Db::one('SELECT * FROM clients WHERE id = ?', [(int) $id]);
+    $client = ad_client($id);
     $email = clean_email(post('email'));
-    $name = mb_substr(post('name'), 0, 120);
-    if (!$client || !$email || $name === '') {
+    $name = mb_substr(trim(post('name')), 0, 120);
+    if (!$email || $name === '') {
         flash('Enter a name and a valid email address.', 'bad');
     } elseif (Db::val('SELECT id FROM client_users WHERE email = ?', [$email])) {
         flash('That email address already has client access.', 'bad');
@@ -550,18 +565,93 @@ route('POST', '/clients/{id}/users', function (string $id) {
         audit('client.user.add', "$email for {$client['name']}");
         flash("$email can now sign in at " . cfg('hosts.client') . ' with an emailed code.');
     }
+    redirect('/clients/' . $client['id']);
+});
+
+route('POST', '/clients/{id}/edit', function (string $id) {
+    ad_need(true);
+    $client = ad_client($id);
+    $name = mb_substr(trim(post('name')), 0, 160);
+    if (mb_strlen($name) < 2) {
+        flash('Give the client a name.', 'bad');
+    } elseif (Db::val('SELECT id FROM clients WHERE name = ? AND id <> ?', [$name, $client['id']])) {
+        flash('There is already a client with that name.', 'bad');
+    } else {
+        Db::q('UPDATE clients SET name = ? WHERE id = ?', [$name, $client['id']]);
+        audit('client.rename', "{$client['name']} is now $name");
+        flash('Name saved.');
+    }
+    redirect('/clients/' . $client['id']);
+});
+
+route('POST', '/clients/{id}/toggle', function (string $id) {
+    ad_need(true);
+    $client = ad_client($id);
+    Db::q('UPDATE clients SET active = 1 - active WHERE id = ?', [$client['id']]);
+    audit($client['active'] ? 'client.disable' : 'client.enable', $client['name']);
+    flash($client['active'] ? "{$client['name']} is switched off. Nobody from this client can sign in, and anyone signed in is signed out. Nothing was deleted." : "{$client['name']} is switched on again.");
+    redirect('/clients/' . $client['id']);
+});
+
+route('POST', '/clients/{id}/delete', function (string $id) {
+    ad_need(true);
+    $client = ad_client($id);
+    if (trim(post('confirm')) !== $client['name']) {
+        flash('To delete the client, type its name exactly as shown. Nothing was deleted.', 'bad');
+        redirect('/clients/' . $client['id'] . '#manage');
+    }
+    $people = array_column(Db::all('SELECT id FROM client_users WHERE client_id = ?', [$client['id']]), 'id');
+    $projects = (int) Db::val('SELECT COUNT(*) FROM projects WHERE client_id = ?', [$client['id']]);
+    ClientLog::forget($people);
+    Db::q('DELETE FROM client_users WHERE client_id = ?', [$client['id']]);
+    Db::q('UPDATE projects SET client_id = NULL WHERE client_id = ?', [$client['id']]);
+    Db::q('DELETE FROM clients WHERE id = ?', [$client['id']]);
+    audit('client.delete', "{$client['name']}: " . count($people) . ' people removed, ' . $projects . ' projects unlinked');
+    flash("{$client['name']} is deleted, with its people and their activity." . ($projects ? " $projects " . ($projects === 1 ? 'project is' : 'projects are') . ' no longer linked to a client. The photos are untouched.' : ''));
     redirect('/clients');
 });
 
+function ad_client_user(string $id): array
+{
+    $u = ctype_digit($id) ? Db::one('SELECT * FROM client_users WHERE id = ?', [(int) $id]) : null;
+    if (!$u) fail_page(404, 'We could not find that person.');
+    return $u;
+}
+
 route('POST', '/client-users/{id}/toggle', function (string $id) {
     ad_need(true);
-    $u = Db::one('SELECT * FROM client_users WHERE id = ?', [(int) $id]);
-    if ($u) {
-        Db::q('UPDATE client_users SET active = 1 - active WHERE id = ?', [$u['id']]);
-        audit($u['active'] ? 'client.user.disable' : 'client.user.enable', $u['email']);
-        flash($u['active'] ? 'Access switched off.' : 'Access switched on.');
+    $u = ad_client_user($id);
+    Db::q('UPDATE client_users SET active = 1 - active WHERE id = ?', [$u['id']]);
+    audit($u['active'] ? 'client.user.disable' : 'client.user.enable', $u['email']);
+    flash($u['active'] ? "Access for {$u['email']} is switched off." : "Access for {$u['email']} is switched on.");
+    redirect('/clients/' . $u['client_id']);
+});
+
+route('POST', '/client-users/{id}/edit', function (string $id) {
+    ad_need(true);
+    $u = ad_client_user($id);
+    $email = clean_email(post('email'));
+    $name = mb_substr(trim(post('name')), 0, 120);
+    if (!$email || $name === '') {
+        flash('Enter a name and a valid email address.', 'bad');
+    } elseif (Db::val('SELECT id FROM client_users WHERE email = ? AND id <> ?', [$email, $u['id']])) {
+        flash('That email address already has client access.', 'bad');
+    } else {
+        Db::q('UPDATE client_users SET name = ?, email = ? WHERE id = ?', [$name, $email, $u['id']]);
+        audit('client.user.edit', $u['email'] . ($email !== $u['email'] ? " is now $email" : ''));
+        flash('Saved.' . ($email !== $u['email'] ? " They now sign in with $email." : ''));
     }
-    redirect('/clients');
+    redirect('/clients/' . $u['client_id']);
+});
+
+route('POST', '/client-users/{id}/delete', function (string $id) {
+    ad_need(true);
+    $u = ad_client_user($id);
+    ClientLog::forget([(int) $u['id']]);
+    Db::q('DELETE FROM client_users WHERE id = ?', [$u['id']]);
+    audit('client.user.delete', $u['email']);
+    flash("{$u['email']} is removed, with their download requests and activity.");
+    redirect('/clients/' . $u['client_id']);
 });
 
 /* ---------- clients: download requests ---------- */
@@ -614,7 +704,7 @@ route('POST', '/clients/requests/{id}/decide', function (string $id) {
 
 function ad_activity_filter(): array
 {
-    return ['user' => (int) ($_GET['user'] ?? 0), 'action' => (string) ($_GET['action'] ?? ''), 'from' => (string) ($_GET['from'] ?? ''), 'to' => (string) ($_GET['to'] ?? '')];
+    return ['user' => (int) ($_GET['user'] ?? 0), 'client' => (int) ($_GET['client'] ?? 0), 'action' => (string) ($_GET['action'] ?? ''), 'from' => (string) ($_GET['from'] ?? ''), 'to' => (string) ($_GET['to'] ?? '')];
 }
 
 route('GET', '/clients/activity', function () {
@@ -630,6 +720,23 @@ route('GET', '/clients/activity.csv', function () {
     ad_need(true);
     audit('client.activity.export');
     ClientLog::sendCsv(ad_activity_filter());
+});
+
+/* ---------- one client: its people, projects and what it did (after the fixed /clients/... pages above) ---------- */
+
+route('GET', '/clients/{id}', function (string $id) {
+    ad_need(true);
+    $c = ad_client($id);
+    $people = Db::all("SELECT u.*,
+        (SELECT COUNT(*) FROM client_events e WHERE e.client_user_id = u.id AND e.action = 'login') AS logins,
+        (SELECT COUNT(DISTINCT l.photo_id) FROM client_photo_log l WHERE l.client_user_id = u.id AND l.kind = 'view') AS viewed,
+        (SELECT COUNT(DISTINCT l.photo_id) FROM client_photo_log l WHERE l.client_user_id = u.id AND l.kind = 'download') AS downloaded
+        FROM client_users u WHERE u.client_id = ? ORDER BY u.active DESC, u.name", [$c['id']]);
+    $projects = Db::all("SELECT p.id, p.name, p.status, p.client_approval, p.client_bulk,
+        (SELECT COUNT(*) FROM photos WHERE project_id = p.id AND status = 'approved') AS n_approved
+        FROM projects p WHERE p.client_id = ? ORDER BY p.id DESC", [$c['id']]);
+    view('admin/client', ['title' => $c['name'], 'nav' => ad_nav('clients'), 'c' => $c, 'people' => $people, 'projects' => $projects,
+        'sum' => ClientLog::company((int) $c['id']), 'recent' => ClientLog::rows(['client' => (int) $c['id']], 8, 0)]);
 });
 
 /* ---------- staff ---------- */

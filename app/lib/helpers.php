@@ -386,6 +386,8 @@ function activity_words(): array
         'staff.create' => ['Added a staff account', 'people'], 'staff.password' => ['Changed a staff password', 'people'], 'staff.disable' => ['Switched a staff account off', 'people'],
         'staff.enable' => ['Switched a staff account on', 'people'], 'client.create' => ['Added a client company', 'people'], 'client.user.add' => ['Gave a client person access', 'people'],
         'client.user.disable' => ['Switched client access off', 'people'], 'client.user.enable' => ['Switched client access on', 'people'],
+        'client.rename' => ['Renamed a client company', 'people'], 'client.disable' => ['Switched a client company off', 'people'], 'client.enable' => ['Switched a client company on', 'people'],
+        'client.delete' => ['Deleted a client company', 'people'], 'client.user.edit' => ['Changed a client person', 'people'], 'client.user.delete' => ['Removed a client person', 'people'],
         'respondent.block' => ['Blocked a contributor', 'people'], 'respondent.unblock' => ['Unblocked a contributor', 'people'],
     ];
 }
@@ -398,6 +400,14 @@ function mask_key(string $key): string
 {
     if ($key === '') return '';
     return strlen($key) >= 12 ? substr($key, 0, 4) . '****' . substr($key, -3) : '****';
+}
+
+/** Up to two capital letters to stand for a name, for the small coloured tile beside it. */
+function initials(string $name): string
+{
+    $words = preg_split('/[^\p{L}\p{N}]+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $first = mb_substr($words[0] ?? '?', 0, 1);
+    return mb_strtoupper($first . (count($words) > 1 ? mb_substr($words[1], 0, 1) : ''));
 }
 
 /* ---- reward paid to people who take part ---- */
