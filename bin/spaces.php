@@ -69,7 +69,7 @@ if ($cmd === 'setup') {
     echo "Photowall: keep original photos in a DigitalOcean Spaces bucket.\nPress Enter to keep the value shown in [brackets].\n\n";
     $sp = [
         'enabled' => true,
-        'endpoint' => rtrim(ask('Region address', (string) ($now['endpoint'] ?? 'https://atl1.digitaloceanspaces.com')), '/'),
+        'endpoint' => rtrim(ask('Region address, without the bucket name', (string) ($now['endpoint'] ?? 'https://atl1.digitaloceanspaces.com')), '/'),
         'region' => (string) ($now['region'] ?? 'us-east-1'),
         'bucket' => ask('Bucket name', (string) ($now['bucket'] ?? 'rm-docs')),
         'prefix' => trim(ask('Folder inside the bucket', (string) ($now['prefix'] ?? 'photowall')), '/'),
@@ -79,6 +79,11 @@ if ($cmd === 'setup') {
     $secret = ask('Secret key (not shown while you type' . (($now['secret'] ?? '') !== '' ? ', Enter keeps the saved one' : '') . ')', '', true);
     $sp['secret'] = $secret !== '' ? $secret : (string) ($now['secret'] ?? '');
     if (!empty($now['path_style'])) $sp['path_style'] = true;
+    // People often paste the bucket's own address (https://BUCKET.region...). The region address is the part after the bucket name.
+    if (stripos($sp['endpoint'], '://' . $sp['bucket'] . '.') !== false) {
+        $sp['endpoint'] = str_ireplace('://' . $sp['bucket'] . '.', '://', $sp['endpoint']);
+        echo "\nNote: using {$sp['endpoint']} as the region address (the bucket name is added automatically).\n";
+    }
     if (!preg_match('#^https?://[^/]+$#', $sp['endpoint']) || $sp['key'] === '' || $sp['secret'] === '' || $sp['bucket'] === '') {
         exit("The region address, bucket, access key and secret key are all needed. Nothing changed.\n");
     }
