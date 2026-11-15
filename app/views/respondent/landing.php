@@ -74,13 +74,29 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
   <div class="wrap start">
     <div class="start-side">
       <h2 class="band-title"><?= $closed ? 'Sign in to see your photos' : 'Take part' ?></h2>
-      <ul class="start-facts">
-        <li><?= icon('image') ?><span><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?></span></li>
-        <?php if ($project['closes_at']): ?><li><?= icon('calendar') ?><span>Open until <?= e(nice_date($project['closes_at'], 'j M Y, H:i')) ?> (<?= e(date('T')) ?>)</span></li><?php endif; ?>
-        <li><?= icon('lock') ?><span>No password. We email you a code.</span></li>
-      </ul>
+      <?php if ($closed): ?>
+        <p class="start-lead">Use the email address you took part with. We email you a code, so there is no password to remember.</p>
+      <?php else: ?>
+        <p class="start-lead">Three short steps. You are on the first one.</p>
+        <ol class="steps">
+          <li class="step step-now">
+            <span class="step-n" aria-hidden="true">1</span>
+            <div><p class="step-t">Agree to the terms and enter your email</p><p class="step-d">Tick the box and tell us where to send your sign-in code.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-n" aria-hidden="true">2</span>
+            <div><p class="step-t">Enter the code we email you</p><p class="step-d">Six digits, valid for 10 minutes. There is no password to remember.</p></div>
+          </li>
+          <li class="step">
+            <span class="step-n" aria-hidden="true">3</span>
+            <div><p class="step-t">Add your details and upload your photos</p><p class="step-d"><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?>. Choose them from your library or take new ones.</p></div>
+          </li>
+        </ol>
+      <?php endif; ?>
+      <?php if ($project['closes_at'] && !$closed): ?><p class="start-until"><?= icon('calendar') ?><span>Open until <strong><?= e(nice_date($project['closes_at'], 'j M Y, H:i')) ?></strong> (<?= e(date('T')) ?>)</span></p><?php endif; ?>
     </div>
     <div class="start-card">
+      <h3 class="start-h"><?= $closed ? 'Sign in' : 'Start here' ?></h3>
       <?php foreach ($messages as [$type, $msg]): ?>
         <div class="note note-<?= e($type) ?>" role="<?= $type === 'bad' ? 'alert' : 'status' ?>"><?= e($msg) ?></div>
       <?php endforeach; ?>
@@ -94,8 +110,9 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
         </label>
         <label for="email">Your email address</label>
         <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="190" value="<?= e($email) ?>" placeholder="you@example.com">
-        <button class="btn btn-main btn-big" type="submit">Email me a sign-in code</button>
+        <button class="btn btn-main btn-big" type="submit"><?= icon('mail') ?> Email me a sign-in code</button>
       </form>
+      <p class="start-safe"><?= icon('lock') ?><span>We send one email with a 6-digit code. It works for 10 minutes.</span></p>
     </div>
   </div>
 </section>
