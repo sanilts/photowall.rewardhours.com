@@ -575,33 +575,53 @@ route('POST', '/settings/phones/make', function () {
     $slug = post('slug');
     $prompt = mb_substr(post('prompt'), 0, 2000);
     $_SESSION['made'] = ['slug' => $slug, 'prompt' => $prompt]; // so the description is still there for another try
+    $ok = false;
     if (!in_array($slug, $slugs, true)) {
-        flash('Choose which phone the picture is for.', 'bad');
+        $msg = 'Choose which phone the picture is for.';
     } elseif (mb_strlen($prompt) < 10) {
-        flash('Describe the picture you want in a sentence or two.', 'bad');
+        $msg = 'Describe the picture you want in a sentence or two.';
     } elseif (!Gemini::isSetUp()) {
-        flash('Save the Gemini API key first.', 'bad');
-    } elseif (!throttle('gemini:' . client_ip(), 60, 3600)) {
-        flash('Too many pictures in a short time. Please wait a little.', 'bad');
+        $msg = 'Save the Gemini API key first.';
+    } elseif (!throttle('gemini:' . client_ip(), 120, 3600)) {
+        $msg = 'Too many pictures in a short time. Please wait a little.';
     } else {
+        $model = $models[array_search($slug, $slugs, true)];
         session_write_close(); // the request to Google can take a minute; do not hold up other pages meanwhile
         @set_time_limit(180);
-        $pic = Gemini::picture($prompt);
+        // {phone} in the description stands for the name of the chosen phone
+        $pic = Gemini::picture(str_ireplace('{phone}', $model, $prompt));
         session_start();
         if ($pic) {
             Gemini::saveDraft($slug, $pic);
             audit('settings.phones.make', $slug);
-            flash('Picture created for ' . $models[array_search($slug, $slugs, true)] . '. Check it below, then use it or discard it.');
+            $ok = true;
+            $msg = "Picture created for $model. Check it below, then use it or discard it.";
         } else {
-            flash('No picture was created. ' . Gemini::$lastError, 'bad');
+            $msg = 'No picture was created. ' . Gemini::$lastError;
         }
     }
+    // "Create for every phone" sends one of these per phone from the page and reads the answer itself
+    if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => $ok, 'message' => $msg]);
+        exit;
+    }
+    flash($msg, $ok ? 'ok' : 'bad');
     redirect('/settings#make');
 });
 
 route('POST', '/settings/phones/draft', function () {
     ad_need(true);
     $slug = post('slug');
+    if (post('action') === 'use_all') {
+        $n = 0;
+        foreach (array_filter(PW_IPHONES, static fn($x) => str_starts_with($x, 'iPhone')) as $model) {
+            if (Gemini::useDraft(phone_slug($model))) $n++;
+        }
+        if ($n) audit('settings.phones.use', "$n pictures");
+        flash($n ? "$n " . ($n === 1 ? 'picture is' : 'pictures are') . ' now shown on the project page.' : 'There were no pictures waiting.', $n ? 'ok' : 'bad');
+        redirect('/settings#make');
+    }
     if (post('action') === 'use' && Gemini::useDraft($slug)) {
         audit('settings.phones.use', $slug);
         flash('The picture is now shown on the project page.');

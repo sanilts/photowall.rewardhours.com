@@ -44,6 +44,52 @@
     setTimeout(function () { btn.disabled = true; btn.textContent = form.dataset.busy; }, 0);
   });
 
+  // Phone pictures: "Create for all phones" sends one request per phone, one after the other, and reports as it goes.
+  var makeAll = document.getElementById('make-all');
+  if (makeAll && window.fetch) {
+    makeAll.addEventListener('click', function () {
+      var form = document.getElementById('make-form');
+      var out = document.getElementById('make-progress');
+      if (!form.reportValidity()) return;
+      var words = form.elements.prompt.value;
+      var todo = Array.prototype.filter.call(form.elements.slug.options, function (o) { return !o.dataset.draft; });
+      var buttons = form.querySelectorAll('button');
+      function say(text, bad) {
+        out.hidden = false;
+        out.textContent = text;
+        out.classList.toggle('note-bad', !!bad);
+        out.classList.toggle('note-ok', !bad);
+      }
+      if (!todo.length) { say('Every phone already has a picture waiting below. Use or discard those first.'); return; }
+      buttons.forEach(function (b) { b.disabled = true; });
+      (function next(i) {
+        if (i >= todo.length) {
+          say('All ' + todo.length + ' pictures are created. Loading them now.');
+          location.hash = 'make';
+          location.reload();
+          return;
+        }
+        var name = todo[i].textContent;
+        say('Creating picture ' + (i + 1) + ' of ' + todo.length + ': ' + name + '. Keep this page open.');
+        var data = new FormData();
+        data.append('_csrf', form.elements._csrf.value);
+        data.append('slug', todo[i].value);
+        data.append('prompt', words);
+        fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            if (!j.ok) throw new Error(j.message);
+            todo[i].dataset.draft = '1';
+            next(i + 1);
+          })
+          .catch(function (err) {
+            buttons.forEach(function (b) { b.disabled = false; });
+            say('Stopped at ' + name + ' after ' + i + (i === 1 ? ' picture. ' : ' pictures. ') + (err.message || 'The server did not answer.') + ' Reload the page to see the pictures made so far, then press the button again to continue.', true);
+          });
+      })(0);
+    });
+  }
+
   // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
   var secure = document.getElementById('smtp_secure');
   var port = document.getElementById('smtp_port');

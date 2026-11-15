@@ -43,7 +43,9 @@ Phone pictures can also be created with Google's Gemini API, in the console unde
 picture with Gemini". Staff paste their own Gemini API key (stored encrypted), choose the phone, and write the
 description, which is sent to Google as written. The result is kept as a draft and only appears on the project
 page after "Use this picture". The model name (default `gemini-3.1-flash-image`) can be changed there if Google
-renames it. The code is in `app/lib/Gemini.php`.
+renames it. The code is in `app/lib/Gemini.php`. Writing `{phone}` in the description inserts the name of the chosen
+phone, so one description can be reused: "Create for all phones" then makes one picture per phone in turn
+(skipping phones that already have a draft), and "Use all pictures" accepts every draft together.
 
 The public project page is built from the project's settings: its description, the list of what to
 photograph (one line each, shown with a matching icon), the limits and the terms. A respondent can

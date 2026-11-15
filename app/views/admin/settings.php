@@ -132,24 +132,36 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
 
   <?php if ($gemini['key'] !== ''): ?>
   <h3 class="sub">New picture</h3>
-  <form method="post" action="/settings/phones/make" class="form" data-busy="Creating the picture. This can take a minute.">
+  <form method="post" action="/settings/phones/make" class="form" id="make-form" data-busy="Creating the picture. This can take a minute.">
     <?= csrf_field() ?>
     <label for="make_slug">Picture for</label>
     <select id="make_slug" name="slug">
       <?php foreach ($models as $model): $slug = phone_slug($model); ?>
-        <option value="<?= e($slug) ?>"<?= ($made['slug'] ?? '') === $slug ? ' selected' : '' ?>><?= e($model) ?></option>
+        <option value="<?= e($slug) ?>"<?= ($made['slug'] ?? '') === $slug ? ' selected' : '' ?><?= Gemini::draftFile($slug) ? ' data-draft="1"' : '' ?>><?= e($model) ?></option>
       <?php endforeach; ?>
     </select>
     <label for="make_prompt">Describe the picture</label>
     <textarea id="make_prompt" name="prompt" rows="4" required minlength="10" maxlength="2000"><?= e($made['prompt'] ?? '') ?></textarea>
-    <p class="muted hint">Say what should be in the picture, the angle and the background. Your words are sent to Google exactly as written, and the picture comes back upright (9:16). Nothing appears on the project page until you press "Use this picture".</p>
-    <button class="btn btn-main" type="submit">Create picture</button>
+    <p class="muted hint">Say what should be in the picture, the angle and the background. Write <code>{phone}</code> where the name of the phone belongs: it is replaced by the phone chosen above, so one description works for every phone. Apart from that your words are sent to Google exactly as written, and the picture comes back upright (9:16). Nothing appears on the project page until you press "Use this picture".</p>
+    <div class="row">
+      <button class="btn btn-main" type="submit">Create picture</button>
+      <button class="btn" type="button" id="make-all">Create for all <?= count($models) ?> phones</button>
+    </div>
+    <p class="muted hint">"Create for all" makes one picture per phone with the same description, one after the other, and skips phones that already have a picture waiting below. Google charges for each picture. Keep the page open until it finishes.</p>
+    <p id="make-progress" class="note note-ok make-progress" role="status" hidden></p>
   </form>
   <?php endif; ?>
 
   <?php $drafts = array_values(array_filter($models, static fn($x) => Gemini::draftFile(phone_slug($x)) !== null)); ?>
   <?php if ($drafts): ?>
   <h3 class="sub">Waiting for your decision</h3>
+  <?php if (count($drafts) > 1): ?>
+  <form method="post" action="/settings/phones/draft" class="row drafts-all">
+    <?= csrf_field() ?>
+    <button class="btn btn-main" type="submit" name="action" value="use_all" data-confirm="Show all <?= count($drafts) ?> waiting pictures on the project page?">Use all <?= count($drafts) ?> pictures</button>
+    <span class="muted">Look at each one first. Discard any that are wrong before you press this.</span>
+  </form>
+  <?php endif; ?>
   <ul class="drafts">
     <?php foreach ($drafts as $model): $slug = phone_slug($model); ?>
       <li>

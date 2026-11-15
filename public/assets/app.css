@@ -392,6 +392,8 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
 code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: #e9eef6; border-radius: 5px; padding: 1px 6px; }
 
 /* console: phone pictures */
+.drafts-all { margin: 12px 0 0; }
+.make-progress { margin: 14px 0 0; }
 .drafts { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .drafts li { padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
 .drafts img { display: block; width: 100%; height: 340px; object-fit: contain; padding: 14px; border-radius: 8px; background: var(--navy); }
