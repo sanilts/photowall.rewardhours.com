@@ -37,6 +37,8 @@ $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : 
     </div>
     <label for="intro">Short description shown to respondents</label>
     <textarea id="intro" name="intro" rows="4" required><?= e($p['intro']) ?></textarea>
+    <label for="wanted">What to photograph <span class="muted">(one per line; each line is shown on the project page with a matching icon)</span></label>
+    <textarea id="wanted" name="wanted" rows="7"><?= e($p['wanted'] ?? '') ?></textarea>
   </fieldset>
 
   <fieldset class="card">

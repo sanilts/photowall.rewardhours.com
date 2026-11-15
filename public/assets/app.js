@@ -35,6 +35,16 @@
     }
   });
 
+  // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
+  var secure = document.getElementById('smtp_secure');
+  var port = document.getElementById('smtp_port');
+  if (secure && port) {
+    secure.addEventListener('change', function () {
+      var usual = { tls: '587', ssl: '465', none: '25' };
+      if (['587', '465', '25', ''].indexOf(port.value) !== -1) port.value = usual[secure.value];
+    });
+  }
+
   // Photos flagged by the safety scan stay blurred until a member of staff chooses to look.
   document.addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-reveal]');

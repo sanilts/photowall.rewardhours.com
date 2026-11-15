@@ -1,22 +1,35 @@
 <?php
 declare(strict_types=1);
 
-/** Sends plain emails (one-time codes). Drivers: log, smtp, postmark. */
+/**
+ * Sends the sign-in code emails. Methods: smtp, postmark, or log (writes to a file, for before email is set up).
+ * The settings come from the console's Settings page, or from the settings file if the console has none.
+ */
 final class Mailer
 {
-    public static function send(string $to, string $subject, string $text): bool
+    /** Why the last send failed, in words an administrator can act on. */
+    public static string $lastError = '';
+
+    public static function send(string $to, string $subject, string $text, ?string $html = null): bool
     {
-        $driver = (string) cfg('mail.driver', 'log');
+        $m = Settings::mail();
+        self::$lastError = '';
         try {
-            return match ($driver) {
-                'smtp' => self::smtp($to, $subject, $text),
-                'postmark' => self::postmark($to, $subject, $text),
+            return match ((string) ($m['driver'] ?? 'log')) {
+                'smtp' => self::smtp($m, $to, $subject, $text, $html),
+                'postmark' => self::postmark($m, $to, $subject, $text, $html),
                 default => self::log($to, $subject, $text),
             };
         } catch (Throwable $ex) {
+            self::$lastError = $ex->getMessage();
             error_log('Photowall mail error: ' . $ex->getMessage());
             return false;
         }
+    }
+
+    public static function isSetUp(): bool
+    {
+        return in_array((string) (Settings::mail()['driver'] ?? 'log'), ['smtp', 'postmark'], true);
     }
 
     private static function log(string $to, string $subject, string $text): bool
@@ -27,31 +40,36 @@ final class Mailer
         return file_put_contents($dir . '/mail.log', $line, FILE_APPEND | LOCK_EX) !== false;
     }
 
-    private static function postmark(string $to, string $subject, string $text): bool
+    private static function postmark(array $m, string $to, string $subject, string $text, ?string $html): bool
     {
+        $body = ['From' => ($m['from_name'] ?? 'Photowall') . ' <' . ($m['from_email'] ?? '') . '>', 'To' => $to, 'Subject' => $subject, 'TextBody' => $text, 'MessageStream' => 'outbound'];
+        if ($html !== null) $body['HtmlBody'] = $html;
         $ch = curl_init('https://api.postmarkapp.com/email');
         curl_setopt_array($ch, [
-            CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
-            CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'X-Postmark-Server-Token: ' . cfg('mail.postmark_token')],
-            CURLOPT_POSTFIELDS => json_encode([
-                'From' => cfg('mail.from_name') . ' <' . cfg('mail.from_email') . '>',
-                'To' => $to, 'Subject' => $subject, 'TextBody' => $text, 'MessageStream' => 'outbound',
-            ]),
+            CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json', 'X-Postmark-Server-Token: ' . ($m['postmark_token'] ?? '')],
+            CURLOPT_POSTFIELDS => json_encode($body),
         ]);
-        curl_exec($ch);
+        $reply = (string) curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $err = curl_error($ch);
         curl_close($ch);
-        return $code === 200;
+        if ($code !== 200) {
+            throw new RuntimeException($err !== '' ? "Could not reach Postmark: $err" : 'Postmark refused the email: ' . (json_decode($reply, true)['Message'] ?? "answer $code"));
+        }
+        return true;
     }
 
-    private static function smtp(string $to, string $subject, string $text): bool
+    private static function smtp(array $m, string $to, string $subject, string $text, ?string $html): bool
     {
-        $s = (array) cfg('mail.smtp');
+        $s = (array) ($m['smtp'] ?? []);
+        $host = trim((string) ($s['host'] ?? ''));
+        if ($host === '') throw new RuntimeException('No SMTP server address is set.');
         $secure = strtolower((string) ($s['secure'] ?? 'tls'));
         $port = (int) ($s['port'] ?? 587);
-        $fp = stream_socket_client(($secure === 'ssl' ? 'ssl://' : 'tcp://') . $s['host'] . ':' . $port, $errno, $errstr, 15);
-        if (!$fp) throw new RuntimeException("SMTP connect failed: $errstr");
-        stream_set_timeout($fp, 15);
+        $fp = @stream_socket_client(($secure === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port, $errno, $errstr, 15);
+        if (!$fp) throw new RuntimeException("Could not connect to $host on port $port" . ($errstr !== '' ? " ($errstr)" : '') . '. Check the server address, port and security setting.');
+        stream_set_timeout($fp, 20);
         $read = static function () use ($fp): string {
             $out = '';
             while (($line = fgets($fp, 1024)) !== false) {
@@ -60,44 +78,54 @@ final class Mailer
             }
             return $out;
         };
-        $cmd = static function (string $line, string $expect) use ($fp, $read): string {
+        $cmd = static function (string $line, string $expect, string $doing) use ($fp, $read): string {
             fwrite($fp, $line . "\r\n");
             $reply = $read();
-            if (!str_starts_with($reply, $expect)) throw new RuntimeException('SMTP said: ' . trim($reply));
+            if (!str_starts_with($reply, $expect)) {
+                throw new RuntimeException("The mail server refused $doing: " . (trim($reply) !== '' ? trim(preg_replace('/\s+/', ' ', $reply)) : 'no answer'));
+            }
             return $reply;
         };
-        $hello = gethostname() ?: 'localhost';
-        if (!str_starts_with($read(), '220')) throw new RuntimeException('SMTP greeting failed');
-        $cmd('EHLO ' . $hello, '250');
-        if ($secure === 'tls') {
-            $cmd('STARTTLS', '220');
-            if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new RuntimeException('SMTP TLS failed');
-            $cmd('EHLO ' . $hello, '250');
+        try {
+            $hello = gethostname() ?: 'localhost';
+            if (!str_starts_with($read(), '220')) throw new RuntimeException("$host did not answer like a mail server. Check the port and security setting.");
+            $cmd('EHLO ' . $hello, '250', 'the greeting');
+            if ($secure === 'tls') {
+                $cmd('STARTTLS', '220', 'a secure connection (STARTTLS)');
+                if (!@stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new RuntimeException('The secure connection (STARTTLS) could not be set up. Try the SSL setting with port 465.');
+                $cmd('EHLO ' . $hello, '250', 'the greeting');
+            }
+            if (($s['user'] ?? '') !== '') {
+                $cmd('AUTH LOGIN', '334', 'signing in');
+                $cmd(base64_encode((string) $s['user']), '334', 'the username');
+                $cmd(base64_encode((string) ($s['pass'] ?? '')), '235', 'the username or password');
+            }
+            $from = (string) ($m['from_email'] ?? '');
+            $cmd('MAIL FROM:<' . $from . '>', '250', "the sender address $from");
+            $cmd('RCPT TO:<' . $to . '>', '25', "the recipient $to");
+            $cmd('DATA', '354', 'the message');
+            $headers = [
+                'Date: ' . date('r'),
+                'From: ' . self::encodeHeader((string) ($m['from_name'] ?? 'Photowall')) . ' <' . $from . '>',
+                'To: <' . $to . '>',
+                'Subject: ' . self::encodeHeader($subject),
+                'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . substr(strrchr($from, '@') ?: '@localhost', 1) . '>',
+                'MIME-Version: 1.0',
+            ];
+            $part = static fn(string $type, string $content): string => "Content-Type: $type; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($content), 76, "\r\n");
+            if ($html === null) {
+                $message = implode("\r\n", $headers) . "\r\n" . $part('text/plain', $text);
+            } else {
+                $b = 'pw' . bin2hex(random_bytes(10));
+                $message = implode("\r\n", $headers) . "\r\nContent-Type: multipart/alternative; boundary=\"$b\"\r\n\r\n"
+                    . "--$b\r\n" . $part('text/plain', $text) . "--$b\r\n" . $part('text/html', $html) . "--$b--\r\n";
+            }
+            $cmd($message . "\r\n.", '250', 'the message');
+            fwrite($fp, "QUIT\r\n");
+            return true;
+        } finally {
+            fclose($fp);
         }
-        if (($s['user'] ?? '') !== '') {
-            $cmd('AUTH LOGIN', '334');
-            $cmd(base64_encode((string) $s['user']), '334');
-            $cmd(base64_encode((string) $s['pass']), '235');
-        }
-        $from = (string) cfg('mail.from_email');
-        $cmd('MAIL FROM:<' . $from . '>', '250');
-        $cmd('RCPT TO:<' . $to . '>', '25');
-        $cmd('DATA', '354');
-        $headers = [
-            'Date: ' . date('r'),
-            'From: ' . self::encodeHeader((string) cfg('mail.from_name')) . ' <' . $from . '>',
-            'To: <' . $to . '>',
-            'Subject: ' . self::encodeHeader($subject),
-            'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . substr(strrchr($from, '@') ?: '@localhost', 1) . '>',
-            'MIME-Version: 1.0',
-            'Content-Type: text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding: base64',
-        ];
-        $body = chunk_split(base64_encode($text), 76, "\r\n");
-        $cmd(implode("\r\n", $headers) . "\r\n\r\n" . $body . "\r\n.", '250');
-        fwrite($fp, "QUIT\r\n");
-        fclose($fp);
-        return true;
     }
 
     private static function encodeHeader(string $s): string

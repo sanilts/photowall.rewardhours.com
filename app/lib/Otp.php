@@ -23,7 +23,18 @@ final class Otp
             . "Enter it on the page where you asked for it ($context). It works for " . self::MINUTES . " minutes and only once.\n\n"
             . "If you did not ask for this code, you can ignore this email.\n\n"
             . cfg('company', 'Photowall');
-        if (!Mailer::send($email, "$code is your Photowall code", $text)) {
+        $spaced = substr($code, 0, 3) . ' ' . substr($code, 3);
+        $html = '<div style="margin:0;padding:24px;background:#f2f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a1e3c">'
+            . '<div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden">'
+            . '<div style="background:#0a1e3c;color:#fffef0;padding:18px 28px;font-size:18px;font-weight:bold">Photowall</div>'
+            . '<div style="padding:28px">'
+            . '<p style="margin:0 0 8px;font-size:16px">Your sign-in code</p>'
+            . '<p style="margin:0 0 18px;font-size:38px;font-weight:bold;letter-spacing:4px">' . $spaced . '</p>'
+            . '<p style="margin:0 0 12px;font-size:15px;line-height:1.5">Enter it on the page where you asked for it (' . e($context) . '). It works for ' . self::MINUTES . ' minutes and only once.</p>'
+            . '<p style="margin:0;font-size:13px;line-height:1.5;color:#5a6780">If you did not ask for this code, you can ignore this email.</p>'
+            . '</div></div>'
+            . '<p style="max-width:480px;margin:14px auto 0;font-size:12px;color:#5a6780;text-align:center">' . e(cfg('company', 'Photowall')) . '</p></div>';
+        if (!Mailer::send($email, "$code is your Photowall code", $text, $html)) {
             return 'We could not send the email right now. Please try again in a minute.';
         }
         return null;

@@ -50,7 +50,7 @@ if (Spaces::on()) {
 } else {
     echo "  NOTE  Original photos are stored on this server (" . cfg('storage') . "/originals). To use a Spaces bucket: pw-spaces setup\n";
 }
-$say(cfg('mail.driver') !== 'log', 'Email sending is configured (' . cfg('mail.driver') . ')', 'Sign-in codes are only written to ' . cfg('storage') . '/logs/mail.log. Edit the mail section of the settings file.');
+$say(Mailer::isSetUp(), 'Email sending is set up (' . (Settings::mail()['driver'] ?? 'log') . ')', 'Sign-in codes are only written to ' . cfg('storage') . '/logs/mail.log. Add your email details in the console under Settings.');
 $limit = (int) ini_get('upload_max_filesize');
 echo "  NOTE  PHP on the command line allows uploads of " . ini_get('upload_max_filesize') . "; the web server setting is what counts (needs " . cfg('max_upload_mb', 60) . "M or more).\n";
 

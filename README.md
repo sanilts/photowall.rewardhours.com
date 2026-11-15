@@ -34,6 +34,11 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
+The public project page is built from the project's settings: its description, the list of what to
+photograph (one line each, shown with a matching icon), the limits and the terms. A respondent can
+resend the code or correct the email on the code screen, and change their email after signing in
+(confirmed by a code sent to the new address).
+
 ## Where the originals are kept
 
 By default on the server's disk. To keep them in a DigitalOcean Spaces bucket instead, run
@@ -58,8 +63,9 @@ turned away together with the information read from the file.
 3. Run `pw-deploy`. It fetches the code and sets up everything: storage, scanner, database, settings
    file, web server site, https certificate (when DNS is ready and certbot is present), hourly clean-up.
 4. Create your console login: `pw-admin add you@example.com "Your Name"`.
-5. Put your email sending details in `/etc/photowall/config.php` (section `mail`: `smtp` or `postmark`).
-   Until then sign-in codes are only written to `/var/lib/photowall/logs/mail.log`.
+5. Sign in to the console and open **Settings** to enter your email (SMTP or Postmark) details, then use
+   "Send test email". Until email works, sign-in codes are only written to
+   `/var/lib/photowall/logs/mail.log` (`pw-admin code` shows the last one).
 
 Updating later is one command: `pw-deploy`. It checks the new code for errors before switching to it.
 `pw-deploy back` returns to the version that was running before.

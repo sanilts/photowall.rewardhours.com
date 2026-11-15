@@ -4,7 +4,7 @@ $slug = $project['slug'];
 $total = (int) $project['photos_per_person'];
 $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'rejected' => 'Not accepted'];
 ?>
-<section class="hero hero-small">
+<section class="page-head">
   <p class="eyebrow"><?= e($project['name']) ?></p>
   <h1>Upload your photos</h1>
 </section>
@@ -36,6 +36,7 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
   <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
     <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
     <label class="drop" for="files">
+      <?= icon('upload') ?>
       <span class="drop-title">Choose photos</span>
       <span class="muted">Tap here, choose <strong>Photo Library</strong>, then pick photos you took with this iPhone.</span>
     </label>
@@ -70,7 +71,11 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
       </li>
     <?php endforeach; ?>
   </ul>
-  <p class="muted">Signed in as <?= e($me['email']) ?>. To come back later, open the same link and enter this email again.
+  <div class="account">
+    <span>Signed in as <strong><?= e($me['email']) ?></strong></span>
+    <a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a>
+  </div>
+  <p class="muted">To come back later, open the same link and enter this email again.
      To withdraw from the project or have your data removed, email <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>.</p>
 </section>
 <script src="/assets/upload.js?v=<?= e((string) @filemtime(PW_ROOT . '/public/assets/upload.js')) ?>" defer></script>

@@ -38,7 +38,7 @@ function rp_window(array $project): string
 route('GET', '/', function () {
     $open = Db::all("SELECT slug, name, intro, closes_at FROM projects WHERE status = 'open' AND (opens_at IS NULL OR opens_at <= ?) AND (closes_at IS NULL OR closes_at >= ?) ORDER BY id DESC", [now(), now()]);
     if (count($open) === 1) redirect('/p/' . $open[0]['slug']);
-    view('respondent/home', ['title' => 'Share your photos', 'projects' => $open]);
+    view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true]);
 });
 
 route('GET', '/privacy', function () {
@@ -48,7 +48,11 @@ route('GET', '/privacy', function () {
 route('GET', '/p/{slug}', function (string $slug) {
     $project = rp_project($slug);
     if (rp_me($project)) redirect("/p/$slug/upload");
-    view('respondent/landing', ['title' => $project['name'], 'project' => $project, 'state' => rp_window($project), 'email' => $_SESSION['pending']['email'] ?? '']);
+    view('respondent/landing', [
+        'title' => $project['name'], 'project' => $project, 'state' => rp_window($project), 'email' => $_SESSION['pending']['email'] ?? '',
+        'bare' => true, 'scripts' => ['landing.js'], 'headerLink' => ['Sign in', '#start'],
+        'description' => 'Share photos taken on your iPhone ' . (int) $project['min_iphone'] . ' or newer. ' . mb_strimwidth((string) $project['intro'], 0, 140, '...'),
+    ]);
 });
 
 route('POST', '/p/{slug}/start', function (string $slug) {
@@ -56,22 +60,22 @@ route('POST', '/p/{slug}/start', function (string $slug) {
     $email = clean_email(post('email'));
     if (!$email) {
         flash('Please enter a valid email address.', 'bad');
-        redirect("/p/$slug");
+        redirect("/p/$slug#start");
     }
     if (post('agree') !== '1') {
         flash('Please read the terms and tick the box to agree before you continue.', 'bad');
         $_SESSION['pending'] = ['email' => $email];
-        redirect("/p/$slug");
+        redirect("/p/$slug#start");
     }
     $known = Db::one('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $email]);
     if (!$known && rp_window($project) !== 'open') {
         flash('This project is not accepting new participants right now.', 'bad');
-        redirect("/p/$slug");
+        redirect("/p/$slug#start");
     }
     $problem = Otp::issue('respondent', $email, (int) $project['id'], $project['name']);
     if ($problem) {
         flash($problem, 'bad');
-        redirect("/p/$slug");
+        redirect("/p/$slug#start");
     }
     $_SESSION['pending'] = ['email' => $email, 'slug' => $slug, 'agreed' => true];
     redirect("/p/$slug/code");
@@ -81,7 +85,7 @@ route('GET', '/p/{slug}/code', function (string $slug) {
     $project = rp_project($slug);
     $pending = $_SESSION['pending'] ?? null;
     if (!$pending || ($pending['slug'] ?? '') !== $slug) redirect("/p/$slug");
-    view('shared/code', ['title' => 'Enter your code', 'email' => $pending['email'], 'action' => "/p/$slug/code", 'resend' => "/p/$slug/resend", 'back' => "/p/$slug"]);
+    view('shared/code', ['title' => 'Enter your code', 'email' => $pending['email'], 'action' => "/p/$slug/code", 'resend' => "/p/$slug/resend", 'back' => "/p/$slug#start"]);
 });
 
 route('POST', '/p/{slug}/resend', function (string $slug) {
@@ -89,7 +93,7 @@ route('POST', '/p/{slug}/resend', function (string $slug) {
     $pending = $_SESSION['pending'] ?? null;
     if (!$pending || ($pending['slug'] ?? '') !== $slug) redirect("/p/$slug");
     $problem = Otp::issue('respondent', $pending['email'], (int) $project['id'], $project['name']);
-    flash($problem ?: 'We sent you a new code.', $problem ? 'bad' : 'ok');
+    flash($problem ?: 'We sent the code again.', $problem ? 'bad' : 'ok');
     redirect("/p/$slug/code");
 });
 
@@ -141,6 +145,71 @@ route('POST', '/p/{slug}/details', function (string $slug) {
         redirect("/p/$slug/details");
     }
     Db::q('UPDATE respondents SET full_name = ?, country = ?, phone = ?, iphone_model = ? WHERE id = ?', [$name, $country, $phone, $model, $me['id']]);
+    redirect("/p/$slug/upload");
+});
+
+/* ---------- changing the email address after signing in ---------- */
+
+route('GET', '/p/{slug}/email', function (string $slug) {
+    $project = rp_project($slug);
+    $me = rp_need($project);
+    view('respondent/email', ['title' => 'Change your email', 'project' => $project, 'me' => $me]);
+});
+
+route('POST', '/p/{slug}/email', function (string $slug) {
+    $project = rp_project($slug);
+    $me = rp_need($project);
+    $new = clean_email(post('email'));
+    if (!$new) {
+        flash('Please enter a valid email address.', 'bad');
+    } elseif ($new === $me['email']) {
+        flash('That is already your email address.', 'bad');
+    } elseif (Db::val('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $new])) {
+        flash('That email address is already taking part in this project. Sign out and sign in with it instead.', 'bad');
+    } elseif ($problem = Otp::issue('respondent', $new, (int) $project['id'], 'changing your email for ' . $project['name'])) {
+        flash($problem, 'bad');
+    } else {
+        $_SESSION['new_email'][$project['id']] = $new;
+        redirect("/p/$slug/email/code");
+    }
+    redirect("/p/$slug/email");
+});
+
+route('GET', '/p/{slug}/email/code', function (string $slug) {
+    $project = rp_project($slug);
+    rp_need($project);
+    $new = $_SESSION['new_email'][$project['id']] ?? null;
+    if (!$new) redirect("/p/$slug/email");
+    view('shared/code', ['title' => 'Confirm your new email', 'heading' => 'Confirm your new email', 'email' => $new, 'action' => "/p/$slug/email/code", 'resend' => "/p/$slug/email/resend", 'back' => "/p/$slug/email"]);
+});
+
+route('POST', '/p/{slug}/email/resend', function (string $slug) {
+    $project = rp_project($slug);
+    rp_need($project);
+    $new = $_SESSION['new_email'][$project['id']] ?? null;
+    if (!$new) redirect("/p/$slug/email");
+    $problem = Otp::issue('respondent', $new, (int) $project['id'], 'changing your email for ' . $project['name']);
+    flash($problem ?: 'We sent the code again.', $problem ? 'bad' : 'ok');
+    redirect("/p/$slug/email/code");
+});
+
+route('POST', '/p/{slug}/email/code', function (string $slug) {
+    $project = rp_project($slug);
+    $me = rp_need($project);
+    $new = $_SESSION['new_email'][$project['id']] ?? null;
+    if (!$new) redirect("/p/$slug/email");
+    if (!throttle('otp:try:' . client_ip(), 40, 3600) || !Otp::verify('respondent', $new, (int) $project['id'], post('code'))) {
+        flash('That code is not right or has expired. Please try again or send the code again.', 'bad');
+        redirect("/p/$slug/email/code");
+    }
+    if (Db::val('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $new])) {
+        flash('That email address is already taking part in this project.', 'bad');
+        redirect("/p/$slug/email");
+    }
+    Db::q('UPDATE respondents SET email = ? WHERE id = ?', [$new, $me['id']]);
+    unset($_SESSION['new_email'][$project['id']]);
+    $_SESSION['who']['label'] = $new;
+    flash('Your email is now ' . $new . '. Use it the next time you sign in.');
     redirect("/p/$slug/upload");
 });
 

@@ -26,6 +26,7 @@ function ad_nav(string $on): array
         $nav[] = ['Clients', '/clients', $on === 'clients'];
         $nav[] = ['Staff', '/staff', $on === 'staff'];
         $nav[] = ['Activity', '/activity', $on === 'activity'];
+        $nav[] = ['Settings', '/settings', $on === 'settings'];
     }
     return $nav;
 }
@@ -88,6 +89,7 @@ function ad_project_input(?array $old): array
         'client_id' => $clientId > 0 && Db::val('SELECT id FROM clients WHERE id = ?', [$clientId]) ? $clientId : null,
         'status' => in_array(post('status'), ['draft', 'open', 'closed'], true) ? post('status') : 'draft',
         'intro' => post('intro'),
+        'wanted' => post('wanted'),
         'terms' => post('terms'),
         'photos_per_person' => max(0, min(100000, (int) post('photos_per_person'))),
         'daily_limit' => max(0, min(10000, (int) post('daily_limit'))),
@@ -181,7 +183,7 @@ route('GET', '/', function () {
         (SELECT COUNT(*) FROM respondents WHERE project_id = p.id) AS n_people
         FROM projects p LEFT JOIN clients c ON c.id = p.client_id ORDER BY p.id DESC");
     $warnings = [];
-    if (cfg('mail.driver', 'log') === 'log') $warnings[] = 'Email is not set up yet, so sign-in codes are only written to the mail log on the server. Add your email settings to /etc/photowall/config.php.';
+    if (!Mailer::isSetUp()) $warnings[] = 'Email is not set up yet, so respondents and clients cannot receive their sign-in codes. Open Settings to add your email (SMTP) details.';
     if (!is_file((string) cfg('python'))) $warnings[] = 'The photo scanner is not installed (Python was not found). Uploads will fail until it is.';
     elseif (!is_file(cfg('models') . '/resnet_50_1by2_nsfw.caffemodel')) $warnings[] = 'One of the two safety models is missing, so the safety scan is weaker than it should be. Run pw-deploy again to fetch it.';
     view('admin/projects', ['title' => 'Projects', 'nav' => ad_nav('projects'), 'projects' => $projects, 'warnings' => $warnings]);
@@ -189,7 +191,9 @@ route('GET', '/', function () {
 
 route('GET', '/projects/new', function () {
     ad_need(true);
-    $blank = ['id' => 0, 'name' => '', 'slug' => '', 'client_id' => null, 'status' => 'draft', 'intro' => '', 'terms' => ad_default_terms(),
+    $blank = ['id' => 0, 'name' => '', 'slug' => '', 'client_id' => null, 'status' => 'draft', 'terms' => ad_default_terms(),
+        'intro' => 'We are collecting everyday photos for a research project. Choose from the subjects below and upload them straight from your iPhone.',
+        'wanted' => "Portraits and human activities\nOutdoor landscapes\nIndoor environments\nAnimals and pets\nFood and dining\nStill life\nMacro and texture photography",
         'photos_per_person' => 10, 'daily_limit' => 0, 'opens_at' => null, 'closes_at' => null, 'min_iphone' => 16,
         'extra_models' => "iPhone Air\niPhone Duo", 'strict_original' => 1, 'min_megapixels' => 8, 'blur_min' => 25, 'dark_min' => 25,
         'bright_max' => 240, 'dup_distance' => 4, 'safety_block' => 0.85, 'safety_review' => 0.30, 'terms_version' => 1];
@@ -523,6 +527,66 @@ route('POST', '/staff/{id}/toggle', function (string $id) {
         flash('You cannot switch off your own account.', 'bad');
     }
     redirect('/staff');
+});
+
+/* ---------- settings: email for sign-in codes ---------- */
+
+route('GET', '/settings', function () {
+    $me = ad_need(true);
+    $m = Settings::mail();
+    view('admin/settings', ['title' => 'Settings', 'nav' => ad_nav('settings'), 'm' => $m, 'me' => $me,
+        'hasPass' => ($m['smtp']['pass'] ?? '') !== '', 'hasToken' => ($m['postmark_token'] ?? '') !== '']);
+});
+
+route('POST', '/settings/mail', function () {
+    ad_need(true);
+    $cur = Settings::mail();
+    $driver = in_array(post('driver'), ['log', 'smtp', 'postmark'], true) ? post('driver') : 'log';
+    $from = clean_email(post('from_email'));
+    $pass = (string) ($_POST['smtp_pass'] ?? '');
+    $token = trim((string) ($_POST['postmark_token'] ?? ''));
+    $m = [
+        'driver' => $driver,
+        'from_email' => $from ?? '',
+        'from_name' => mb_substr(post('from_name'), 0, 80) ?: 'Photowall',
+        'smtp' => [
+            'host' => mb_substr(preg_replace('#^\w+://#', '', post('smtp_host')), 0, 190),
+            'port' => max(1, min(65535, (int) post('smtp_port') ?: 587)),
+            'user' => mb_substr(post('smtp_user'), 0, 190),
+            'pass' => Settings::seal($pass !== '' ? $pass : (string) ($cur['smtp']['pass'] ?? '')),
+            'secure' => in_array(post('smtp_secure'), ['tls', 'ssl', 'none'], true) ? post('smtp_secure') : 'tls',
+        ],
+        'postmark_token' => Settings::seal($token !== '' ? $token : (string) ($cur['postmark_token'] ?? '')),
+    ];
+    $problem = null;
+    if ($driver !== 'log' && !$from) $problem = 'Enter the email address the codes should be sent from.';
+    elseif ($driver === 'smtp' && $m['smtp']['host'] === '') $problem = 'Enter the SMTP server address.';
+    elseif ($driver === 'postmark' && $m['postmark_token'] === '') $problem = 'Enter the Postmark server token.';
+    if ($problem) {
+        flash($problem . ' Nothing was saved.', 'bad');
+    } else {
+        Settings::set('mail', $m);
+        audit('settings.mail', $driver);
+        flash($driver === 'log' ? 'Saved. Email sending is switched off, so nobody can receive a sign-in code.' : 'Email settings saved. Send a test email below to make sure they work.');
+    }
+    redirect('/settings');
+});
+
+route('POST', '/settings/mail/test', function () {
+    ad_need(true);
+    $to = clean_email(post('to'));
+    if (!$to) {
+        flash('Enter the address the test email should go to.', 'bad');
+    } elseif (!Mailer::isSetUp()) {
+        flash('Email sending is not set up yet. Choose SMTP or Postmark, save, then test.', 'bad');
+    } elseif (!throttle('mailtest:' . client_ip(), 20, 3600)) {
+        flash('Too many test emails in a short time. Please wait a little.', 'bad');
+    } elseif (Mailer::send($to, 'Photowall test email', "This is a test from the Photowall console.\n\nIf you are reading it, sign-in codes can be delivered.\n")) {
+        flash("The test email was accepted for $to. Check that inbox (and its spam folder).");
+    } else {
+        flash('The test email could not be sent. ' . Mailer::$lastError, 'bad');
+    }
+    redirect('/settings');
 });
 
 route('GET', '/activity', function () {
