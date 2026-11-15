@@ -12,6 +12,12 @@ $closed = $state === 'closed';
 // Every model the project accepts, by name, so people can see at a glance whether theirs counts.
 $extraModels = preg_split('/\R/', (string) $project['extra_models']) ?: [];
 $phones = array_values(array_filter(PW_IPHONES, static fn($m) => str_starts_with($m, 'iPhone') && PhotoCheck::modelAllowed($m, $min, $extraModels)));
+// Real pictures uploaded in the console. As soon as there is one, only the pictured models are shown and nothing is drawn.
+$pics = [];
+foreach ($phones as $m) {
+    if ($u = phone_picture($m)) $pics[$m] = $u;
+}
+$shown = $pics ? array_keys($pics) : $phones;
 $messages = take_flashes(); // shown beside the form they are about, not at the top of a long page
 ?>
 <section class="hero">
@@ -25,11 +31,11 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     </div>
 
     <?php if ($phones): ?>
-    <?php // One accepted iPhone at a time, sliding to the next. A picture uploaded in the console replaces the drawn handset. ?>
+    <?php // One accepted iPhone at a time, sliding to the next. Real pictures from the console when there are any, otherwise a drawn handset per model. ?>
     <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="iPhones we accept">
       <div class="slider-window">
         <ul class="slider-track">
-          <?php foreach ($phones as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; $pic = phone_picture($ph); ?>
+          <?php foreach ($shown as $i => $ph): $look = $subjects ? $subjects[$i % count($subjects)] : ['icon' => 'camera', 'tone' => 'sky']; $pic = $pics[$ph] ?? null; ?>
             <li class="slide" data-name="<?= e($ph) ?>">
               <?php if ($pic): ?>
                 <img class="slide-photo" src="<?= e($pic) ?>" alt="<?= e($ph) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
@@ -53,16 +59,19 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
               <?php endif; ?>
             </li>
           <?php endforeach; ?>
+          <?php if (!$pics): ?>
           <li class="slide slide-next" data-name="Any newer iPhone">
             <div class="phone finish-0 phone-next"><div class="phone-screen"><span class="phone-cam"></span><span class="phone-plus">+</span></div></div>
             <span class="visually-hidden">Any newer iPhone</span>
           </li>
+          <?php endif; ?>
         </ul>
       </div>
       <div class="slider-bar">
-        <button class="slider-btn slider-prev" type="button" aria-label="Previous iPhone"><?= icon('arrow') ?></button>
-        <p class="slider-name"><?= e($phones[0]) ?></p>
-        <button class="slider-btn" type="button" data-next="1" aria-label="Next iPhone"><?= icon('arrow') ?></button>
+        <?php $many = count($shown) + ($pics ? 0 : 1) > 1; // a single picture stays still, so it needs no arrows ?>
+        <?php if ($many): ?><button class="slider-btn slider-prev" type="button" aria-label="Previous iPhone"><?= icon('arrow') ?></button><?php endif; ?>
+        <p class="slider-name"><?= e($shown[0]) ?></p>
+        <?php if ($many): ?><button class="slider-btn" type="button" data-next="1" aria-label="Next iPhone"><?= icon('arrow') ?></button><?php endif; ?>
       </div>
       <p class="slider-count"><?= count($phones) ?> models accepted, and any newer iPhone</p>
     </div>

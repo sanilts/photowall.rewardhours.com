@@ -90,7 +90,7 @@ $secure = (string) ($smtp['secure'] ?? 'tls');
 
 <section class="card" id="phones">
   <h2>Phone pictures on the project page</h2>
-  <p class="muted">The project page slides through every accepted iPhone. Until you add a picture, a simple drawn phone is shown. Upload a picture of each model that you have the right to use (PNG, JPG or WebP, under 5 MB; an upright phone on a transparent or plain background looks best).</p>
+  <p class="muted">Upload real pictures of the accepted iPhones that you have the right to use (PNG, JPG or WebP, under 5 MB; an upright phone on a transparent or plain background looks best). As soon as one picture is saved, the project page shows only your pictures: one picture stays still, two or more slide from one to the next. With no pictures, a drawn phone is shown for each model.</p>
   <form method="post" action="/settings/phones" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <ul class="pics">
