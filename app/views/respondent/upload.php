@@ -8,34 +8,29 @@ $cats = project_categories($project);
 $labels = ['pending' => 'Received, in review', 'approved' => 'Accepted', 'rejected' => 'Not accepted'];
 $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0, 'pending' => 0, 'rejected' => 0];
 ?>
-<section class="page-head">
-  <p class="eyebrow"><?= e($project['name']) ?></p>
-  <h1>Upload your photos</h1>
+<section class="up-head">
+  <div>
+    <p class="eyebrow"><?= e($project['name']) ?></p>
+    <h1>Upload your photos</h1>
+  </div>
+  <p class="up-id">Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></p>
 </section>
 
-<section class="card" id="uploader" data-url="/p/<?= e($slug) ?>/upload" data-csrf="<?= e(csrf_token()) ?>" data-can="<?= (int) $allow['can'] ?>" data-max-mb="<?= (int) cfg('max_upload_mb', 60) ?>">
-  <div class="meter" aria-live="polite">
-    <?php if ($total > 0): ?>
-      <div><strong id="used"><?= (int) $allow['used'] ?></strong> of <?= $total ?> photos uploaded</div>
-      <progress id="used-bar" max="<?= $total ?>" value="<?= (int) $allow['used'] ?>"><?= (int) $allow['used'] ?> of <?= $total ?></progress>
-    <?php else: ?>
-      <div><strong id="used"><?= (int) $allow['used'] ?></strong> photos uploaded. There is no limit for this project.</div>
-    <?php endif; ?>
-    <?php if ($allow['today_left'] !== null): ?>
-      <div class="muted">Today you can still add <strong id="today-left"><?= (int) $allow['today_left'] ?></strong> (limit <?= (int) $project['daily_limit'] ?> per day).</div>
-    <?php endif; ?>
-    <?php if ($reward): $toNext = $reward['every'] - $accepted % $reward['every']; ?>
-      <div class="earn">
-        <?= icon('coin') ?>
-        <div>
-          <strong><?= e(reward_earned($reward, $accepted)) ?> earned so far.</strong> We pay <?= e($reward['amount']) ?> for every <?= $reward['every'] ?> accepted photos.
-          <span class="muted"><?= $accepted ?> accepted, <?= $toNext ?> more for the next <?= e($reward['amount']) ?>. A photo counts once our team has accepted it.</span>
-        </div>
-      </div>
-    <?php endif; ?>
-    <?php if ($project['closes_at']): ?><div class="muted">Uploads close on <?= e(nice_date($project['closes_at'])) ?> (<?= e(date('T')) ?>).</div><?php endif; ?>
-  </div>
+<ul class="up-stats" aria-live="polite">
+  <li>
+    <span class="up-n"><strong id="used"><?= (int) $allow['used'] ?></strong><?= $total > 0 ? ' of ' . $total : '' ?></span>
+    <span class="up-l">uploaded</span>
+    <?php if ($total > 0): ?><progress id="used-bar" max="<?= $total ?>" value="<?= (int) $allow['used'] ?>"><?= (int) $allow['used'] ?> of <?= $total ?></progress><?php endif; ?>
+  </li>
+  <li class="st-ok"><span class="up-n"><?= (int) $count['approved'] ?></span><span class="up-l">accepted</span></li>
+  <li class="st-wait"><span class="up-n" id="n-review"><?= (int) $count['pending'] ?></span><span class="up-l">in review</span></li>
+  <li class="st-bad"><span class="up-n"><?= (int) $count['rejected'] ?></span><span class="up-l">not accepted</span></li>
+</ul>
 
+<div class="up">
+<div class="up-main">
+<section class="card" id="uploader" data-url="/p/<?= e($slug) ?>/upload" data-csrf="<?= e(csrf_token()) ?>" data-can="<?= (int) $allow['can'] ?>" data-max-mb="<?= (int) cfg('max_upload_mb', 60) ?>">
+  <h2>Add photos</h2>
   <?php if ((int) $me['blocked']): ?>
     <div class="note note-bad">Your account cannot upload photos to this project. If you think this is a mistake, email <?= e(cfg('privacy_email')) ?>.</div>
   <?php elseif ($allow['state'] !== 'open'): ?>
@@ -47,34 +42,49 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
   <?php endif; ?>
 
   <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
-    <div class="cat-pick">
-      <label for="category">1. Choose the category of the photos you are about to add</label>
-      <select id="category" name="category">
-        <option value="">Choose a category</option>
-        <?php foreach ($cats as $c): ?><option><?= e($c) ?></option><?php endforeach; ?>
-      </select>
-      <p class="muted" id="cat-help">Adding photos of different kinds? Add one kind, then change the category and add the next. You can also change the category of each photo below after it uploads.</p>
-    </div>
-    <p class="cat-step">2. Choose the photos</p>
+    <fieldset class="cats" id="category">
+      <legend><span class="up-step" aria-hidden="true">1</span> What kind of photos are you adding?</legend>
+      <div class="cat-list">
+        <?php foreach ($cats as $c): ?>
+          <label class="cat"><input type="radio" name="category" value="<?= e($c) ?>"><span><?= icon($c === 'Other' ? 'image' : subject_look($c)['icon']) ?><?= e($c) ?></span></label>
+        <?php endforeach; ?>
+      </div>
+      <p class="muted" id="cat-help">Adding more than one kind? Add one kind, then pick the next. You can also change the category of each photo after it uploads.</p>
+    </fieldset>
+
+    <p class="up-label"><span class="up-step" aria-hidden="true">2</span> Choose the photos</p>
     <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
     <label class="drop" for="files">
-      <?= icon('upload') ?>
+      <span class="drop-ico"><?= icon('upload') ?></span>
       <span class="drop-title">Choose photos</span>
       <span class="muted">Tap here, choose <strong>Photo Library</strong>, then pick photos you took with this iPhone.</span>
     </label>
-    <ul class="tips">
-      <li>Take the photo with the iPhone <strong>Camera</strong> app first, then choose it from Photo Library.</li>
-      <li>Do not edit, crop or add filters. Do not use photos you received in WhatsApp or other apps.</li>
-      <li>Each photo is checked as it uploads. If one is turned away you will see why, and you can pick another.</li>
-    </ul>
+
+    <div class="dos">
+      <ul>
+        <li class="do"><?= icon('check') ?><span>Taken with the iPhone <strong>Camera</strong> app on an iPhone <?= (int) $project['min_iphone'] ?> or newer</span></li>
+        <li class="do"><?= icon('check') ?><span>The original photo, picked from Photo Library</span></li>
+      </ul>
+      <ul>
+        <li class="dont"><?= icon('cross') ?><span>No edits, crops or filters</span></li>
+        <li class="dont"><?= icon('cross') ?><span>No screenshots, and no photos received in WhatsApp or other apps</span></li>
+      </ul>
+    </div>
   </div>
-  <ul id="queue" class="queue" aria-live="polite"></ul>
+
+  <div id="results" hidden>
+    <h3 class="results-h">Checks on the photos you just added</h3>
+    <ul id="queue" class="queue" aria-live="polite"></ul>
+  </div>
 </section>
 
 <section class="card">
-  <h2>Your photos</h2>
-  <?php if (!$photos): ?><p class="muted" id="none-yet">Nothing uploaded yet.</p>
-  <?php else: ?><p class="mine-sum"><span class="chip chip-approved"><?= (int) $count['approved'] ?> accepted</span> <span class="chip chip-pending"><?= (int) $count['pending'] ?> in review</span> <span class="chip chip-rejected"><?= (int) $count['rejected'] ?> not accepted</span> <span class="muted">We email you when photos are accepted.</span></p>
+  <div class="head head-sub">
+    <h2>Your photos</h2>
+    <?php if ($photos): ?><p class="mine-sum"><span class="chip chip-approved"><?= (int) $count['approved'] ?> accepted</span> <span class="chip chip-pending"><?= (int) $count['pending'] ?> in review</span> <span class="chip chip-rejected"><?= (int) $count['rejected'] ?> not accepted</span></p><?php endif; ?>
+  </div>
+  <?php if (!$photos): ?>
+    <div class="empty" id="none-yet"><?= icon('image') ?><p><strong>Nothing uploaded yet.</strong><br>Your photos appear here with their status as soon as they pass the checks.</p></div>
   <?php endif; ?>
   <ul class="grid" id="mine">
     <?php foreach ($photos as $p): ?>
@@ -108,11 +118,40 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
       </li>
     <?php endforeach; ?>
   </ul>
-  <div class="account">
-    <span>Signed in as <strong><?= e($me['email']) ?></strong> &middot; Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></span>
-    <a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a>
-  </div>
-  <p class="muted">To come back later, open the same link and enter this email again.
-     To withdraw from the project or have your data removed, email <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>.</p>
+  <p class="muted mine-note"><?= icon('mail') ?> We email you when photos are accepted.</p>
 </section>
+</div>
+
+<aside class="up-side">
+  <?php if ($reward): $done = $accepted % $reward['every']; $toNext = $reward['every'] - $done; ?>
+  <section class="card earn-card">
+    <h2><?= icon('coin') ?> Your reward</h2>
+    <p class="earn-n"><strong><?= e(reward_earned($reward, $accepted)) ?> earned so far.</strong></p>
+    <?php if ($reward['every'] <= 12): ?>
+      <p class="pips" role="img" aria-label="<?= $done ?> of <?= $reward['every'] ?> accepted photos towards the next <?= e($reward['amount']) ?>"><?php for ($i = 0; $i < $reward['every']; $i++): ?><span class="pip<?= $i < $done ? ' on' : '' ?>"></span><?php endfor; ?></p>
+    <?php endif; ?>
+    <p><?= $accepted ?> accepted, <?= $toNext ?> more for the next <?= e($reward['amount']) ?>.</p>
+    <p class="muted">We pay <?= e($reward['amount']) ?> for every <?= $reward['every'] ?> accepted photos. A photo counts once our team has accepted it.</p>
+  </section>
+  <?php endif; ?>
+
+  <section class="card">
+    <h2>Good to know</h2>
+    <ul class="facts-list">
+      <li><?= icon('shield') ?><span>Each photo is checked as it uploads. If one is turned away you see why straight away, and you can pick another.</span></li>
+      <li><?= icon('image') ?><span><?= $total > 0 ? 'You can upload up to ' . $total . ' photos.' : 'There is no limit for this project.' ?><?php if ($allow['today_left'] !== null): ?> Today you can still add <strong id="today-left"><?= (int) $allow['today_left'] ?></strong> (limit <?= (int) $project['daily_limit'] ?> per day).<?php endif; ?></span></li>
+      <?php if ($project['closes_at']): ?><li><?= icon('calendar') ?><span>Uploads close on <?= e(nice_date($project['closes_at'])) ?> (<?= e(date('T')) ?>).</span></li><?php endif; ?>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Your account</h2>
+    <p class="acct">Signed in as<br><strong><?= e($me['email']) ?></strong></p>
+    <p class="acct">Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></p>
+    <p><a class="btn btn-small" href="/p/<?= e($slug) ?>/email"><?= icon('pencil') ?> Change email</a></p>
+    <p class="muted">To come back later, open the same link and enter this email again.
+       To withdraw from the project or have your data removed, email <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>.</p>
+  </section>
+</aside>
+</div>
 <script src="/assets/upload.js?v=<?= e((string) @filemtime(PW_ROOT . '/public/assets/upload.js')) ?>" defer></script>

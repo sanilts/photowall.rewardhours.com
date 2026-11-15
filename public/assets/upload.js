@@ -14,13 +14,19 @@
   var catHelp = document.getElementById('cat-help');
   var catHelpText = catHelp ? catHelp.textContent : '';
 
+  function chosen() {
+    var c = category ? category.querySelector('input:checked') : null;
+    return c ? c.value : '';
+  }
+
   // The file chooser only opens once a category is chosen.
   function needCategory(ev) {
-    if (!category || category.value) return;
+    if (!category || chosen()) return;
     ev.preventDefault();
     category.classList.add('need');
-    if (catHelp) catHelp.textContent = 'Choose a category first, then choose the photos.';
-    category.focus();
+    if (catHelp) catHelp.textContent = 'Choose the kind of photo first, then choose the photos.';
+    var first = category.querySelector('input');
+    if (first) first.focus();
   }
   var drop = document.querySelector('label[for=files]');
   if (drop) drop.addEventListener('click', needCategory);
@@ -28,7 +34,9 @@
   if (category) category.addEventListener('change', function () {
     category.classList.remove('need');
     if (catHelp) catHelp.textContent = catHelpText;
+    if (picker) picker.classList.add('ready');
   });
+  if (picker && chosen()) picker.classList.add('ready'); // the browser may remember the choice after a reload
 
   // Each uploaded photo has its own category box: save a change straight away.
   document.addEventListener('change', function (ev) {
@@ -51,12 +59,16 @@
   }
 
   function addRow(file) {
+    var results = document.getElementById('results');
+    if (results) results.hidden = false;
     var li = el('li', 'q-item');
+    var body = el('div', 'q-body');
     var name = el('span', 'q-name', file.name);
     var bar = el('progress', 'q-bar');
     bar.max = 100; bar.value = 0;
     var msg = el('span', 'q-msg', 'Waiting');
-    li.appendChild(name); li.appendChild(bar); li.appendChild(msg);
+    body.appendChild(name); body.appendChild(msg);
+    li.appendChild(el('span', 'q-mark')); li.appendChild(body); li.appendChild(bar);
     queue.appendChild(li);
     return { li: li, bar: bar, msg: msg };
   }
@@ -83,6 +95,8 @@
     var grid = document.getElementById('mine');
     var none = document.getElementById('none-yet');
     if (none) none.remove();
+    var review = document.getElementById('n-review'); // a new photo starts in review
+    if (review) review.textContent = (parseInt(review.textContent, 10) || 0) + 1;
     var li = el('li', 'shot');
     var img = el('img');
     img.src = photo.thumb; img.alt = 'Your uploaded photo'; img.width = 240; img.height = 240;
@@ -148,7 +162,7 @@
 
   input.addEventListener('change', function () {
     Array.prototype.forEach.call(input.files, function (file) {
-      waiting.push({ file: file, row: addRow(file), category: category ? category.value : '' });
+      waiting.push({ file: file, row: addRow(file), category: chosen() });
     });
     input.value = '';
     next();
