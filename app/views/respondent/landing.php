@@ -25,7 +25,7 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     </div>
 
     <?php if ($phones): ?>
-    <?php // One accepted iPhone at a time, sliding to the next. A picture uploaded in the console replaces the drawn phone. ?>
+    <?php // One accepted iPhone at a time, sliding to the next. A picture uploaded in the console replaces the drawn handset. ?>
     <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="iPhones we accept">
       <div class="slider-window">
         <ul class="slider-track">
@@ -34,17 +34,27 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
               <?php if ($pic): ?>
                 <img class="slide-photo" src="<?= e($pic) ?>" alt="<?= e($ph) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
               <?php else: ?>
-                <div class="phone-body tone-<?= e($look['tone']) ?>">
-                  <span class="phone-status"><span class="phone-dot"></span>HEIC</span>
-                  <span class="phone-focus"><?= icon($look['icon']) ?></span>
-                  <span class="phone-shutter"></span>
+                <div class="phone finish-<?= $i % 5 ?>">
+                  <div class="phone-screen tone-<?= e($look['tone']) ?>">
+                    <span class="phone-cam"></span>
+                    <span class="phone-chip">HEIC</span>
+                    <span class="phone-focus"><?= icon($look['icon']) ?></span>
+                    <div class="phone-ui">
+                      <p class="phone-modes"><span>Video</span><span class="on">Photo</span><span>Portrait</span></p>
+                      <div class="phone-keys">
+                        <span class="phone-last"></span>
+                        <span class="phone-shutter"></span>
+                        <span class="phone-flip"><?= icon('refresh') ?></span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <span class="visually-hidden"><?= e($ph) ?></span>
               <?php endif; ?>
             </li>
           <?php endforeach; ?>
           <li class="slide slide-next" data-name="Any newer iPhone">
-            <div class="phone-body"><span class="phone-plus">+</span></div>
+            <div class="phone finish-0 phone-next"><div class="phone-screen"><span class="phone-cam"></span><span class="phone-plus">+</span></div></div>
             <span class="visually-hidden">Any newer iPhone</span>
           </li>
         </ul>
