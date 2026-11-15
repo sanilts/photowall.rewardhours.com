@@ -146,6 +146,14 @@ input[type=checkbox] { width: 20px; height: 20px; flex: none; margin: 3px 0 0; a
 .hero h1 { font-size: clamp(2.3rem, 5.6vw, 4.1rem); font-weight: 720; line-height: 1.02; letter-spacing: -0.03em; margin-bottom: 18px; text-wrap: balance; }
 .hero-lead { font-size: 1.16rem; line-height: 1.48; color: rgba(255, 254, 240, .86); max-width: 34em; margin-bottom: 8px; }
 .hero-both { color: var(--cream); font-weight: 600; }
+.hero-reward { display: inline-flex; gap: 10px; align-items: flex-start; margin: 18px 0 0; padding: 10px 16px; border: 1px solid rgba(255, 214, 10, .55); border-radius: 12px; background: rgba(255, 214, 10, .1); color: var(--cream); }
+.hero-reward .ico { flex: none; margin-top: 3px; color: var(--sun); }
+.hero-reward strong { color: var(--sun); }
+.pay { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 8px; }
+.pay input:first-child { text-align: center; }
+.earn { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; padding: 12px 14px; border: 1px solid #efd07a; border-radius: 12px; background: var(--warn-bg); }
+.earn .ico { flex: none; margin-top: 3px; }
+.earn .muted { display: block; margin-top: 2px; }
 .hero-cta { margin-top: 24px; padding-left: 32px; padding-right: 32px; }
 
 /* right side of the hero: one accepted iPhone at a time, sliding to the next */

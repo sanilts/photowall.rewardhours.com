@@ -2,6 +2,8 @@
 /** @var array $project @var array $me @var array $allow @var array $photos */
 $slug = $project['slug'];
 $total = (int) $project['photos_per_person'];
+$reward = reward($project);
+$accepted = count(array_filter($photos, static fn($ph) => $ph['status'] === 'approved'));
 $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'rejected' => 'Not accepted'];
 ?>
 <section class="page-head">
@@ -19,6 +21,15 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
     <?php endif; ?>
     <?php if ($allow['today_left'] !== null): ?>
       <div class="muted">Today you can still add <strong id="today-left"><?= (int) $allow['today_left'] ?></strong> (limit <?= (int) $project['daily_limit'] ?> per day).</div>
+    <?php endif; ?>
+    <?php if ($reward): $toNext = $reward['every'] - $accepted % $reward['every']; ?>
+      <div class="earn">
+        <?= icon('coin') ?>
+        <div>
+          <strong><?= e(reward_earned($reward, $accepted)) ?> earned so far.</strong> We pay <?= e($reward['amount']) ?> for every <?= $reward['every'] ?> accepted photos.
+          <span class="muted"><?= $accepted ?> accepted, <?= $toNext ?> more for the next <?= e($reward['amount']) ?>. A photo counts once our team has accepted it.</span>
+        </div>
+      </div>
     <?php endif; ?>
     <?php if ($project['closes_at']): ?><div class="muted">Uploads close on <?= e(nice_date($project['closes_at'])) ?> (<?= e(date('T')) ?>).</div><?php endif; ?>
   </div>

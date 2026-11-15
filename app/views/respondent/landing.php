@@ -9,6 +9,7 @@ foreach (preg_split('/\R/', (string) ($project['wanted'] ?? '')) ?: [] as $line)
     if (trim($line) !== '') $subjects[] = ['label' => trim($line)] + subject_look($line);
 }
 $closed = $state === 'closed';
+$reward = reward($project);
 // Every model the project accepts, by name, so people can see at a glance whether theirs counts.
 $extraModels = preg_split('/\R/', (string) $project['extra_models']) ?: [];
 $phones = array_values(array_filter(PW_IPHONES, static fn($m) => str_starts_with($m, 'iPhone') && PhotoCheck::modelAllowed($m, $min, $extraModels)));
@@ -24,6 +25,9 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
       <h1>Share photos taken on your iPhone&nbsp;<?= $min ?> or newer</h1>
       <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro'])) ?></p><?php endif; ?>
       <p class="hero-lead hero-both">Photos already in your library or fresh captures. Both are welcome.</p>
+      <?php if ($reward && !$closed): ?>
+        <p class="hero-reward"><?= icon('coin') ?><span>We pay <strong><?= e($reward['amount']) ?></strong> for every <strong><?= $reward['every'] ?> accepted photos</strong><?= $perPerson ? '' : ', with no limit on how many you send' ?>.</span></p>
+      <?php endif; ?>
       <a class="btn btn-sun btn-big hero-cta" href="#start"><?= $closed ? 'See your photos' : 'Start uploading' ?></a>
     </div>
 
@@ -89,7 +93,7 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
           </li>
           <li class="step">
             <span class="step-n" aria-hidden="true">3</span>
-            <div><p class="step-t">Add your details and upload your photos</p><p class="step-d"><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?>. Choose them from your library or take new ones.</p></div>
+            <div><p class="step-t">Add your details and upload your photos</p><p class="step-d"><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>No limit on photos</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?>. <?= $reward ? 'We pay ' . e($reward['amount']) . ' for every ' . $reward['every'] . ' accepted photos.' : 'Choose them from your library or take new ones.' ?></p></div>
           </li>
         </ol>
       <?php endif; ?>

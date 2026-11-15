@@ -93,6 +93,9 @@ function ad_project_input(?array $old): array
         'terms' => post('terms'),
         'photos_per_person' => max(0, min(100000, (int) post('photos_per_person'))),
         'daily_limit' => max(0, min(10000, (int) post('daily_limit'))),
+        'reward_amount' => max(0, min(100000, round((float) str_replace(',', '.', post('reward_amount')), 2))),
+        'reward_photos' => max(1, min(10000, (int) post('reward_photos'))),
+        'reward_symbol' => mb_substr(post('reward_symbol'), 0, 8),
         'opens_at' => $dt(post('opens_at')),
         'closes_at' => $dt(post('closes_at')),
         'min_iphone' => max(11, min(99, (int) post('min_iphone'))),
@@ -194,7 +197,7 @@ route('GET', '/projects/new', function () {
     $blank = ['id' => 0, 'name' => '', 'slug' => '', 'client_id' => null, 'status' => 'draft', 'terms' => ad_default_terms(),
         'intro' => 'We are collecting everyday photos for a research project. Choose from the subjects below and upload them straight from your iPhone.',
         'wanted' => "Portraits and human activities\nOutdoor landscapes\nIndoor environments\nAnimals and pets\nFood and dining\nStill life\nMacro and texture photography",
-        'photos_per_person' => 10, 'daily_limit' => 0, 'opens_at' => null, 'closes_at' => null, 'min_iphone' => 16,
+        'photos_per_person' => 0, 'daily_limit' => 0, 'reward_amount' => 1, 'reward_photos' => 5, 'reward_symbol' => '$', 'opens_at' => null, 'closes_at' => null, 'min_iphone' => 16,
         'extra_models' => "iPhone Air\niPhone Duo", 'strict_original' => 1, 'min_megapixels' => 8, 'blur_min' => 25, 'dark_min' => 25,
         'bright_max' => 240, 'dup_distance' => 4, 'safety_block' => 0.85, 'safety_review' => 0.30, 'terms_version' => 1];
     view('admin/project_form', ['title' => 'New project', 'nav' => ad_nav('projects'), 'p' => $blank, 'clients' => Db::all('SELECT id, name FROM clients ORDER BY name')]);

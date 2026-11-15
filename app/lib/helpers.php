@@ -236,6 +236,35 @@ function query_with(array $changes): string
     return $q ? '?' . http_build_query($q) : '';
 }
 
+/* ---- reward paid to people who take part ---- */
+
+/** "$1", "$2.50", "Rs 50": an amount as people read it. */
+function money(string $symbol, float $amount): string
+{
+    $n = number_format($amount, 2, '.', ',');
+    return $symbol . (str_ends_with($n, '.00') ? substr($n, 0, -3) : $n);
+}
+
+/**
+ * The reward of a project: null when it pays nothing, otherwise
+ * ['amount' => "$1", 'every' => 5, 'value' => 1.0, 'symbol' => '$'].
+ * It is paid for every full group of accepted photos (approved by staff).
+ */
+function reward(array $project): ?array
+{
+    $value = (float) ($project['reward_amount'] ?? 0);
+    $every = (int) ($project['reward_photos'] ?? 0);
+    if ($value <= 0 || $every < 1) return null;
+    $symbol = (string) ($project['reward_symbol'] ?? '$');
+    return ['amount' => money($symbol, $value), 'every' => $every, 'value' => $value, 'symbol' => $symbol];
+}
+
+/** What a number of accepted photos has earned, as text ("$3"). */
+function reward_earned(array $reward, int $accepted): string
+{
+    return money($reward['symbol'], intdiv($accepted, $reward['every']) * $reward['value']);
+}
+
 /* ---- accepted phone models, and the example photos shown inside the phones on the project page ---- */
 
 const PW_IPHONES = ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 16e', 'iPhone 17', 'iPhone 17 Pro',

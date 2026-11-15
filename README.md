@@ -34,6 +34,11 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
+Each project can pay a reward: an amount for every so many accepted photos (set in the project's Settings under
+Limits; new projects start with no photo limit and $1 for every 5). A photo counts once staff have approved it.
+The reward is shown on the project page and the upload page, and the console's Respondents list shows what each
+person has earned. Photowall does not make payments itself.
+
 The hero of the public project page shows a phone on the right for each kind of photo the project asks for
 (its "What to photograph" lines), sliding from one to the next. The phone itself is drawn by the page. An
 example photo saved in the console under Settings, "Photos inside the phones", fills that phone's screen;

@@ -12,6 +12,7 @@ function icon(string $name, string $class = ''): string
         'food'     => '<path d="M6 3v6a2.5 2.5 0 0 0 5 0V3M8.5 3v18"/><path d="M17.2 3c-1.8 1.6-2.7 4.1-2.7 7.2V12h2.7zM17.2 12v9"/>',
         'vase'     => '<path d="M9 3h6M10 3v3.4c-2.5 1.5-4 3.9-4 6.6 0 4 2.7 8 6 8s6-4 6-8c0-2.7-1.5-5.1-4-6.6V3"/><path d="M7 11.5h10"/>',
         'flower'   => '<circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="6.3" r="2.5"/><circle cx="16.9" cy="9.2" r="2.5"/><circle cx="16.9" cy="14.8" r="2.5"/><circle cx="12" cy="17.7" r="2.5"/><circle cx="7.1" cy="14.8" r="2.5"/><circle cx="7.1" cy="9.2" r="2.5"/>',
+        'coin'     => '<circle cx="12" cy="12" r="8.6"/><path d="M14.6 9.4c-.5-.9-1.4-1.4-2.6-1.4-1.6 0-2.7.8-2.7 2 0 2.7 5.5 1.3 5.5 4 0 1.2-1.1 2-2.8 2-1.3 0-2.3-.5-2.8-1.5M12 6.2V8M12 16v1.8"/>',
         'camera'   => '<path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.2" r="3.6"/>',
         'image'    => '<rect x="3" y="4" width="18" height="16" rx="2.2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m21 15.5-4.7-4.7L7.5 19.6"/>',
         'phone'    => '<rect x="7" y="2.5" width="10" height="19" rx="2.6"/><path d="M10.6 5.6h2.8"/>',

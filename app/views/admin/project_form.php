@@ -53,6 +53,17 @@ $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : 
         <input id="daily_limit" name="daily_limit" type="number" min="0" max="10000" value="<?= (int) $p['daily_limit'] ?>">
       </div>
       <div>
+        <label for="reward_amount">Reward <span class="muted">(amount paid; 0 means no reward)</span></label>
+        <div class="pay">
+          <input id="reward_symbol" name="reward_symbol" maxlength="8" value="<?= e($p['reward_symbol'] ?? '$') ?>" aria-label="Currency sign">
+          <input id="reward_amount" name="reward_amount" type="number" min="0" max="100000" step="0.01" value="<?= e(rtrim(rtrim(number_format((float) ($p['reward_amount'] ?? 0), 2, '.', ''), '0'), '.')) ?>">
+        </div>
+      </div>
+      <div>
+        <label for="reward_photos">For every how many accepted photos</label>
+        <input id="reward_photos" name="reward_photos" type="number" min="1" max="10000" value="<?= (int) ($p['reward_photos'] ?? 5) ?>">
+      </div>
+      <div>
         <label for="opens_at">Opens on <span class="muted">(optional)</span></label>
         <input id="opens_at" name="opens_at" type="datetime-local" value="<?= e($dt($p['opens_at'])) ?>">
       </div>

@@ -34,6 +34,7 @@ $reasons = ['wrong_device' => 'Not an accepted iPhone', 'no_camera_data' => 'No 
     <dl class="facts">
       <div><dt>Photos per person</dt><dd><?= (int) $p['photos_per_person'] ?: 'No limit' ?></dd></div>
       <div><dt>Per day</dt><dd><?= (int) $p['daily_limit'] ?: 'No daily limit' ?></dd></div>
+      <div><dt>Reward</dt><dd><?= ($rw = reward($p)) ? e($rw['amount']) . ' for every ' . $rw['every'] . ' accepted photos' : 'None' ?></dd></div>
       <div><dt>Opens</dt><dd><?= e($p['opens_at'] ? nice_date($p['opens_at']) : 'As soon as it is Open') ?></dd></div>
       <div><dt>Closes</dt><dd><?= e($p['closes_at'] ? nice_date($p['closes_at']) : 'No closing date') ?></dd></div>
       <div><dt>Accepted phones</dt><dd>iPhone <?= (int) $p['min_iphone'] ?> or newer<?= trim($p['extra_models']) !== '' ? ', plus ' . e(implode(', ', array_filter(array_map('trim', preg_split('/\R/', $p['extra_models']))))) : '' ?></dd></div>

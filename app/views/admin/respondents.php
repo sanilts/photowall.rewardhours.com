@@ -14,7 +14,7 @@
 <div class="table-wrap">
 <table class="table">
   <thead><tr><th scope="col">Person</th><th scope="col">Country</th><th scope="col">iPhone</th><th scope="col">Joined</th>
-    <th scope="col" class="num">In review</th><th scope="col" class="num">Approved</th><th scope="col" class="num">Rejected</th><th scope="col" class="num">Turned away</th><th scope="col">Uploads</th></tr></thead>
+    <th scope="col" class="num">In review</th><th scope="col" class="num">Approved</th><?php if ($rw = reward($p)): ?><th scope="col" class="num">Reward earned</th><?php endif; ?><th scope="col" class="num">Rejected</th><th scope="col" class="num">Turned away</th><th scope="col">Uploads</th></tr></thead>
   <tbody>
   <?php foreach ($rows as $r): ?>
     <tr>
@@ -24,6 +24,7 @@
       <td><?= e(nice_date($r['created_at'], 'j M Y')) ?></td>
       <td class="num"><a href="/projects/<?= (int) $p['id'] ?>/photos?person=<?= (int) $r['id'] ?>"><?= (int) $r['n_pending'] ?></a></td>
       <td class="num"><a href="/projects/<?= (int) $p['id'] ?>/photos?person=<?= (int) $r['id'] ?>&amp;status=approved"><?= (int) $r['n_approved'] ?></a></td>
+      <?php if ($rw): ?><td class="num"><?= e(reward_earned($rw, (int) $r['n_approved'])) ?></td><?php endif; ?>
       <td class="num"><?= (int) $r['n_rejected'] ?></td>
       <td class="num"><?= (int) $r['n_discarded'] ?></td>
       <td>
