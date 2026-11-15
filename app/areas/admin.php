@@ -95,7 +95,7 @@ function ad_project_input(?array $old): array
         'daily_limit' => max(0, min(10000, (int) post('daily_limit'))),
         'reward_amount' => max(0, min(100000, round((float) str_replace(',', '.', post('reward_amount')), 2))),
         'reward_photos' => max(1, min(10000, (int) post('reward_photos'))),
-        'reward_symbol' => mb_substr(post('reward_symbol'), 0, 8),
+        'reward_symbol' => mb_substr(post('reward_symbol'), 0, 8) ?: '$',
         'opens_at' => $dt(post('opens_at')),
         'closes_at' => $dt(post('closes_at')),
         'min_iphone' => max(11, min(99, (int) post('min_iphone'))),

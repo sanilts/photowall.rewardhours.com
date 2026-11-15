@@ -88,6 +88,13 @@
     img.src = photo.thumb; img.alt = 'Your uploaded photo'; img.width = 240; img.height = 240;
     li.appendChild(img);
     li.appendChild(el('span', 'chip chip-pending', 'Received, in review'));
+    if (photo.image_id) {
+      var id = el('span', 'shot-id');
+      id.appendChild(el('strong', '', photo.image_id));
+      id.appendChild(document.createElement('br'));
+      id.appendChild(document.createTextNode(photo.name || ''));
+      li.appendChild(id);
+    }
     if (photo.category) li.appendChild(el('span', 'shot-kind', photo.category));
     grid.insertBefore(li, grid.firstChild);
   }

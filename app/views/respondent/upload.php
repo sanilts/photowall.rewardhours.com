@@ -5,7 +5,8 @@ $total = (int) $project['photos_per_person'];
 $reward = reward($project);
 $accepted = count(array_filter($photos, static fn($ph) => $ph['status'] === 'approved'));
 $cats = project_categories($project);
-$labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'rejected' => 'Not accepted'];
+$labels = ['pending' => 'Received, in review', 'approved' => 'Accepted', 'rejected' => 'Not accepted'];
+$count = array_count_values(array_column($photos, 'status')) + ['approved' => 0, 'pending' => 0, 'rejected' => 0];
 ?>
 <section class="page-head">
   <p class="eyebrow"><?= e($project['name']) ?></p>
@@ -72,7 +73,9 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
 
 <section class="card">
   <h2>Your photos</h2>
-  <?php if (!$photos): ?><p class="muted" id="none-yet">Nothing uploaded yet.</p><?php endif; ?>
+  <?php if (!$photos): ?><p class="muted" id="none-yet">Nothing uploaded yet.</p>
+  <?php else: ?><p class="mine-sum"><span class="chip chip-approved"><?= (int) $count['approved'] ?> accepted</span> <span class="chip chip-pending"><?= (int) $count['pending'] ?> in review</span> <span class="chip chip-rejected"><?= (int) $count['rejected'] ?> not accepted</span> <span class="muted">We email you when photos are accepted.</span></p>
+  <?php endif; ?>
   <ul class="grid" id="mine">
     <?php foreach ($photos as $p): ?>
       <li class="shot">
@@ -81,7 +84,8 @@ $labels = ['pending' => 'Received, in review', 'approved' => 'Approved', 'reject
         <?php else: ?>
           <img src="/p/<?= e($slug) ?>/thumb/<?= e($p['token']) ?>" alt="Your uploaded photo" loading="lazy" width="240" height="240">
         <?php endif; ?>
-        <span class="chip chip-<?= e($p['status']) ?>"><?= e($labels[$p['status']] ?? $p['status']) ?></span>
+        <span class="chip chip-<?= e($p['status']) ?>"><?= e($labels[$p['status']] ?? $p['status']) ?><?= $p['status'] === 'approved' && $p['reviewed_at'] ? ' ' . e(nice_date($p['reviewed_at'], 'j M')) : '' ?></span>
+        <span class="shot-id"><strong><?= e(image_id($p['id'])) ?></strong><br><?= e($p['orig_name']) ?></span>
         <?php if ($p['status'] === 'pending'): ?>
           <form method="post" action="/p/<?= e($slug) ?>/photo/<?= e($p['token']) ?>/category" class="shot-cat">
             <?= csrf_field() ?>

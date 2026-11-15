@@ -217,7 +217,7 @@ route('POST', '/p/{slug}/email/code', function (string $slug) {
 route('GET', '/p/{slug}/upload', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
-    $photos = Db::all("SELECT token, status, category, reject_reason, device_model, created_at FROM photos WHERE respondent_id = ? AND status <> 'removed' ORDER BY id DESC", [$me['id']]);
+    $photos = Db::all("SELECT id, token, orig_name, status, category, reject_reason, device_model, created_at, reviewed_at FROM photos WHERE respondent_id = ? AND status <> 'removed' ORDER BY id DESC", [$me['id']]);
     view('respondent/upload', ['title' => $project['name'], 'project' => $project, 'me' => $me, 'allow' => Intake::allowance($project, $me), 'photos' => $photos]);
 });
 
@@ -232,7 +232,8 @@ route('POST', '/p/{slug}/upload', function (string $slug) {
         $res = Intake::handle($project, $me, $_FILES['photo'], trim((string) ($_POST['category'] ?? '')));
     }
     $out = ['ok' => $res['ok'], 'code' => $res['code'], 'message' => $res['message'], 'allow' => Intake::allowance($project, $me)];
-    if ($res['ok']) $out['photo'] = ['token' => $res['photo']['token'], 'thumb' => "/p/$slug/thumb/" . $res['photo']['token'], 'category' => $res['photo']['category']];
+    if ($res['ok']) $out['photo'] = ['token' => $res['photo']['token'], 'thumb' => "/p/$slug/thumb/" . $res['photo']['token'], 'category' => $res['photo']['category'],
+        'image_id' => image_id($res['photo']['id']), 'name' => $res['photo']['orig_name']];
     json_out($out);
 });
 

@@ -170,6 +170,8 @@ printf '#!/bin/bash\nexec runuser -u %s -- php %s/bin/selftest.php "$@"\n' "$WEB
 printf '#!/bin/bash\n# setup and off change the settings file, so they run as root; the rest runs as the web user\ncase "${1:-}" in setup|off) exec php %s/bin/spaces.php "$@";; *) exec runuser -u %s -- php %s/bin/spaces.php "$@";; esac\n' "$APP" "$WEBUSER" "$APP" > /usr/local/bin/pw-spaces
 chmod 755 /usr/local/bin/pw-admin /usr/local/bin/pw-check /usr/local/bin/pw-spaces
 echo "17 * * * * $WEBUSER php $APP/bin/cron.php >/dev/null 2>&1" > /etc/cron.d/photowall
+# every 10 minutes: email contributors whose photos were accepted
+echo "*/10 * * * * $WEBUSER php $APP/bin/notify.php >/dev/null 2>&1" >> /etc/cron.d/photowall
 echo "Commands: pw-deploy, pw-admin, pw-check, pw-spaces"
 
 say "7/8 Secure connection (https)"

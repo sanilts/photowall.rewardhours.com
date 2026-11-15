@@ -38,6 +38,12 @@ Everyone who joins gets a contributor ID (RM-C0001), and every kept photo an ima
 page the contributor chooses a category before choosing photos: the project's "What to photograph" lines plus
 Other. The category can be changed per photo while it waits for review, and by staff on the photo's page.
 
+When staff accept photos, the contributor gets an email listing them (image ID, file name, category, date),
+their totals, the reward earned so far and their contributor ID. `bin/notify.php` runs every 10 minutes from
+cron and sends one email per contributor, once staff have stopped approving that person's photos for five
+minutes, so a review session gives one email and not one per photo. The contributor's upload page shows the same
+details for every photo. The code is in `app/lib/Notify.php`.
+
 The console has a Tracker for each project (linked from the project page): one line for every photo that reached
 the project, with image ID, file name, category, iPhone model, date taken, country, contributor ID and status
 (Accepted, In review, or Rejected with the reason and whether staff or an automatic check rejected it). Uploads

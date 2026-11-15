@@ -166,10 +166,14 @@ input[type=checkbox] { width: 20px; height: 20px; flex: none; margin: 3px 0 0; a
 .cat-step { font-weight: 600; margin: 0 0 8px; }
 select.need { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-bg); }
 select.saved { border-color: var(--ok); }
-.shot-cat { display: flex; gap: 6px; margin-top: 6px; }
+.shot-cat { display: flex; gap: 6px; }
+.shot > .shot-cat { align-self: stretch; }
 .shot-cat select { padding: 6px 8px; font-size: .88rem; min-width: 0; }
 .shot-cat .btn[hidden] { display: none; }
-.shot-kind { display: block; margin-top: 6px; font-size: .88rem; color: var(--soft); }
+.shot-id { display: block; margin: 0 8px; font-size: .84rem; line-height: 1.35; color: var(--soft); overflow-wrap: anywhere; }
+.shot-id strong { color: var(--ink); }
+.mine-sum { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 14px; }
+.shot-kind { display: block; margin-left: 8px; margin-right: 8px; margin-top: 6px; font-size: .88rem; color: var(--soft); }
 .earn { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; padding: 12px 14px; border: 1px solid #efd07a; border-radius: 12px; background: var(--warn-bg); }
 .earn .ico { flex: none; margin-top: 3px; }
 .earn .muted { display: block; margin-top: 2px; }
@@ -342,7 +346,7 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
 .account { display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center; padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--line); }
 
 /* ---------- photo grids (review, gallery, own uploads) ---------- */
-.grid { list-style: none; padding: 0; margin: 0 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+.grid { list-style: none; padding: 0; margin: 0 0 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 14px; }
 .grid-review { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .shot { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
 .shot img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #e6ebf3; }
