@@ -88,6 +88,34 @@ img { max-width: 100%; height: auto; }
   .area-client .brand img { width: 172px; height: 32px; }
   .area-client .brand-name { display: none; }
 }
+/* client sign-in: the form beside a panel of example photos and what the portal holds */
+.signin { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 24px; align-items: stretch; margin-top: 10px; }
+.signin-form { grid-column: 2; grid-row: 1; margin: 0; padding: 32px; display: flex; flex-direction: column; justify-content: center; }
+.signin-form h1 { margin-top: 0; }
+.signin-notes { list-style: none; padding: 18px 0 0; margin: 22px 0 0; border-top: 1px solid var(--line); color: var(--soft); font-size: .92rem; }
+.signin-notes li, .signin-points li { display: flex; gap: 12px; align-items: flex-start; }
+.signin-notes li + li { margin-top: 10px; }
+.signin-notes .ico { flex: none; width: 20px; height: 20px; margin-top: 2px; }
+.signin-show { grid-column: 1; grid-row: 1; padding: 22px 22px 28px; border-radius: var(--r-card); background: var(--navy); color: var(--cream); }
+.signin-show h2 { margin: 24px 4px 16px; max-width: 17em; font: 700 1.7rem/1.2 var(--display); letter-spacing: -0.015em; color: var(--cream); }
+.signin-points { list-style: none; padding: 0; margin: 0 4px; max-width: 34em; color: rgba(255, 254, 240, .86); }
+.signin-points li + li { margin-top: 12px; }
+.signin-points .ico { flex: none; width: 22px; height: 22px; margin-top: 2px; color: var(--sun); }
+.mosaic { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 8px; }
+.mosaic li { position: relative; overflow: hidden; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(150deg, var(--t1, #d3ecff), var(--t2, #7cc0ff)); color: var(--navy); }
+.mosaic li:first-child { grid-column: span 2; grid-row: span 2; }
+.mosaic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mosaic .ico { width: 44px; height: 44px; opacity: .8; }
+.mosaic li:first-child .ico { width: 72px; height: 72px; }
+.mosaic span { position: absolute; left: 8px; bottom: 8px; padding: 3px 9px; border-radius: 999px; background: rgba(10, 30, 60, .78); color: var(--cream); font-size: .76rem; font-weight: 600; }
+@media (max-width: 899px) {
+  .signin { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 0; }
+  .signin-form, .signin-show { grid-column: 1; grid-row: auto; }
+  .signin-form { padding: 24px; }
+  .signin-show { padding: 14px 14px 22px; }
+  .signin-show h2 { font-size: 1.35rem; margin-top: 18px; }
+  .mosaic { grid-auto-rows: 88px; gap: 6px; }
+}
 .reqs { list-style: none; padding: 0; margin: 0; }
 .req-head { display: flex; gap: 10px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .req-head h2 { margin: 0; font-size: 1.2rem; }

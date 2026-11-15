@@ -95,9 +95,30 @@ function cl_photo(array $me, string $token): array
     return $photo;
 }
 
+/**
+ * Five picture tiles for the sign-in page: the example photos staff set under Settings in the console,
+ * and a coloured tile with an icon where a subject has no photo yet. Never a contributor's photo.
+ */
+function cl_tiles(): array
+{
+    $labels = picture_subjects();
+    foreach (PW_SUBJECTS as $extra) {
+        if (count($labels) >= 5) break;
+        if (!in_array($extra, $labels, true)) $labels[] = $extra;
+    }
+    $tiles = [];
+    foreach ($labels as $label) $tiles[] = ['label' => $label, 'pic' => phone_picture($label)] + subject_look($label);
+    usort($tiles, static fn(array $a, array $b): int => ($b['pic'] !== null) <=> ($a['pic'] !== null));
+    return array_slice($tiles, 0, 5);
+}
+
+route('GET', '/phone/{slug}', function (string $slug) {
+    send_phone_picture($slug);
+});
+
 route('GET', '/login', function () {
     if (cl_me()) redirect('/');
-    view('client/login', ['title' => 'Client sign in']);
+    view('client/login', ['title' => 'Client sign in', 'tiles' => cl_tiles(), 'contact' => (string) cfg('contact_email', 'contact@researchandmetric.com')]);
 });
 
 route('POST', '/login', function () {
