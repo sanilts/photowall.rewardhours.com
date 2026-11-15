@@ -23,7 +23,7 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     <div class="hero-copy">
       <p class="hero-project"><?= e($project['name']) ?></p>
       <h1>Share photos taken on your iPhone&nbsp;<?= $min ?> or newer</h1>
-      <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro'])) ?></p><?php endif; ?>
+      <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro']), false) ?></p><?php endif; ?>
       <p class="hero-lead hero-both">Photos already in your library or fresh captures. Both are welcome.</p>
       <?php if ($reward && !$closed): ?>
         <p class="hero-reward"><?= icon('coin') ?><span>We pay <strong><?= e($reward['amount']) ?></strong> for every <strong><?= $reward['every'] ?> accepted photos</strong><?= $perPerson ? '' : ', with no limit on how many you send' ?>.</span></p>
@@ -36,12 +36,12 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     <div class="slider" id="phones" role="group" aria-roledescription="carousel" aria-label="Kinds of photo we are looking for">
       <div class="slider-window">
         <ul class="slider-track">
-          <?php foreach ($slides as $i => $look): $pic = phone_picture($look['label']); ?>
+          <?php foreach ($slides as $i => $look): $pic = phone_picture($look['label'], 640); ?>
             <li class="slide" data-name="<?= e($look['label']) ?>">
               <div class="phone finish-<?= $i % 5 ?>">
                 <div class="phone-screen tone-<?= e($look['tone']) ?><?= $pic ? ' has-photo' : '' ?>">
                   <?php if ($pic): ?>
-                    <img class="phone-photo" src="<?= e($pic) ?>" alt="Example photo: <?= e($look['label']) ?>"<?= $i ? ' loading="lazy"' : '' ?>>
+                    <img class="phone-photo" src="<?= e($pic) ?>" srcset="<?= e(phone_srcset($look['label'])) ?>" sizes="270px" alt="Example photo: <?= e($look['label']) ?>" decoding="async"<?= $i ? ' loading="lazy"' : ' fetchpriority="high"' ?>>
                   <?php else: ?>
                     <span class="phone-focus"><?= icon($look['icon']) ?></span>
                   <?php endif; ?>
@@ -105,7 +105,7 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
         <div class="note note-<?= e($type) ?>" role="<?= $type === 'bad' ? 'alert' : 'status' ?>"><?= e($msg) ?></div>
       <?php endforeach; ?>
       <p class="terms-label" id="terms-label">Terms and conditions</p>
-      <div class="terms" tabindex="0" role="region" aria-labelledby="terms-label"><?= nl2br(e($project['terms'])) ?></div>
+      <div class="terms" tabindex="0" role="region" aria-labelledby="terms-label"><?= nl2br(e($project['terms']), false) ?></div>
       <form method="post" action="/p/<?= e($slug) ?>/start" class="stack">
         <?= csrf_field() ?>
         <label class="check">

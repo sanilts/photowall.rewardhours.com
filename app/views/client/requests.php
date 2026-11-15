@@ -20,7 +20,7 @@
     </div>
     <?php if ($r['thumbs']): ?>
     <ul class="req-thumbs">
-      <?php foreach ($r['thumbs'] as $t): ?><li><a href="/photo/<?= e($t['token']) ?>"><img src="/img/<?= e($t['token']) ?>/thumb" alt="" loading="lazy" width="64" height="64"></a></li><?php endforeach; ?>
+      <?php foreach ($r['thumbs'] as $t): ?><li><a href="/photo/<?= e($t['token']) ?>"><img src="/img/<?= e($t['token']) ?>/thumb" alt="Photo <?= e(image_id($t['id'])) ?>" loading="lazy" width="64" height="64"></a></li><?php endforeach; ?>
       <?php if ((int) $r['photos'] > count($r['thumbs'])): ?><li class="req-more">and <?= (int) $r['photos'] - count($r['thumbs']) ?> more</li><?php endif; ?>
     </ul>
     <?php endif; ?>

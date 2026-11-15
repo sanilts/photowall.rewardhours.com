@@ -125,6 +125,12 @@ function ad_project_input(?array $old): array
 
 /* ---------- sign in ---------- */
 
+route('GET', '/robots.txt', function () {
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "User-agent: *\nDisallow: /\n";
+    exit;
+});
+
 route('GET', '/login', function () {
     if (ad_me()) redirect('/');
     view('admin/login', ['title' => 'Staff sign in']);

@@ -29,7 +29,7 @@ $names = countries();
 <section class="card" id="people">
   <div class="head head-sub"><h2>People who can sign in</h2></div>
   <?php if (!$people): ?><p class="muted">Nobody from this client can sign in yet. Add the first person below.</p><?php else: ?>
-  <div class="table-wrap table-flat">
+  <div class="table-wrap table-flat" tabindex="0">
   <table class="table">
     <thead><tr><th scope="col">Person</th><th scope="col">Status</th><th scope="col">Last sign-in</th><th scope="col" class="num">Sign-ins</th><th scope="col" class="num">Viewed</th><th scope="col" class="num">Downloaded</th><th scope="col">Manage</th></tr></thead>
     <tbody>

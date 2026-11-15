@@ -31,16 +31,16 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
 <?php endif; ?>
 
 <?php if (!empty($asked)): ?>
-<section class="todo todo-ask">
+<div class="todo todo-ask">
   <div>
     <p class="todo-n"><?= (int) $asked ?> download <?= (int) $asked === 1 ? 'request is' : 'requests are' ?> waiting for an answer</p>
     <p class="todo-sub">The client asked to download photos of this project.</p>
   </div>
   <a class="btn btn-main" href="/clients/requests">Answer</a>
-</section>
+</div>
 <?php endif; ?>
 
-<section class="todo <?= $pending ? 'todo-go' : 'todo-done' ?>">
+<div class="todo <?= $pending ? 'todo-go' : 'todo-done' ?>">
   <?php if ($pending): ?>
     <div>
       <p class="todo-n"><?= $pending ?> <?= $pending === 1 ? 'photo is' : 'photos are' ?> waiting for your review</p>
@@ -56,7 +56,7 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
       <p class="todo-sub"><?= $lastUpload ? 'The last photo arrived on ' . e(nice_date($lastUpload)) . '.' : 'No photos have arrived yet. Share the link below to get started.' ?></p>
     </div>
   <?php endif; ?>
-</section>
+</div>
 
 <div class="stats">
   <a class="stat st-wait" href="/projects/<?= $pid ?>/photos"><span class="stat-n"><?= $pending ?></span><span>Waiting for review</span></a>

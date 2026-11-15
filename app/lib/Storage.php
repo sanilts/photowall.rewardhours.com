@@ -66,14 +66,18 @@ final class Storage
         return image_id($photo['id']) . '_' . contributor_id($photo['respondent_id']) . '.' . $photo['ext'];
     }
 
-    public static function send(string $file, string $mime, ?string $downloadName = null, bool $cache = true): never
+    /**
+     * Send a file. $cache: true keeps it in the visitor's own browser for a day, false never, and 'public' is for
+     * pictures anyone may see whose address changes when they do (kept for a year, also by shared caches).
+     */
+    public static function send(string $file, string $mime, ?string $downloadName = null, bool|string $cache = true): never
     {
         if (!is_file($file)) fail_page(404, 'This file is no longer available.');
         while (ob_get_level()) ob_end_clean();
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($file));
         header('X-Content-Type-Options: nosniff');
-        header('Cache-Control: ' . ($cache ? 'private, max-age=86400' : 'no-store'));
+        header('Cache-Control: ' . ($cache === 'public' ? 'public, max-age=31536000, immutable' : ($cache ? 'private, max-age=86400' : 'no-store')));
         if ($downloadName !== null) header('Content-Disposition: attachment; filename="' . $downloadName . '"');
         readfile($file);
         exit;

@@ -31,7 +31,7 @@ $chip = ['accepted' => 'approved', 'review' => 'pending', 'rejected' => 'rejecte
 <?php if (!$rows): ?>
   <section class="card center"><p>No photos match.</p></section>
 <?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table table-track">
   <thead><tr><th scope="col">Image ID</th><th scope="col">File name</th><th scope="col">Category</th><th scope="col">iPhone model</th><th scope="col">Date taken</th><th scope="col">Country</th><th scope="col">Contributor ID</th><th scope="col">Status</th></tr></thead>
   <tbody>
@@ -65,7 +65,7 @@ $chip = ['accepted' => 'approved', 'review' => 'pending', 'rejected' => 'rejecte
       <h2>Totals by category</h2>
       <a class="btn btn-small" href="<?= e($base) ?>.csv?table=categories">CSV</a>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0">
     <table class="table">
       <thead><tr><th scope="col">Category</th><th scope="col" class="num">Accepted</th><th scope="col" class="num">In review</th><th scope="col" class="num">Rejected</th><th scope="col" class="num">Total</th></tr></thead>
       <tbody>
@@ -83,7 +83,7 @@ $chip = ['accepted' => 'approved', 'review' => 'pending', 'rejected' => 'rejecte
       <h2>Totals by contributor</h2>
       <a class="btn btn-small" href="<?= e($base) ?>.csv?table=contributors">CSV</a>
     </div>
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0">
     <table class="table">
       <thead><tr><th scope="col">Contributor ID</th><th scope="col">Country</th><th scope="col" class="num">Accepted</th><th scope="col" class="num">In review</th><th scope="col" class="num">Rejected</th><th scope="col" class="num">Total</th><?php if (reward($p)): ?><th scope="col" class="num">Reward earned</th><?php endif; ?></tr></thead>
       <tbody>

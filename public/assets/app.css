@@ -280,7 +280,7 @@ legend { font: 650 1.15rem/1.2 var(--display); padding: 0 8px; }
 .crumbs { font-size: .92rem; color: var(--soft); margin-bottom: .5rem; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .row-end { display: flex; gap: 10px; justify-content: flex-end; }
-.tiles { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.tiles { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 20px; }
 .tiles .card { margin: 0; }
 .plain { list-style: none; padding: 0; margin: 0 0 .9rem; }
 .plain li { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); }
@@ -344,7 +344,8 @@ select.saved { border-color: var(--ok); }
 
 /* right side of the hero: one accepted iPhone at a time, sliding to the next */
 .slider { width: min(100%, 340px); margin: 0 auto; text-align: center; }
-.slider-window { overflow: hidden; }
+/* position: relative, so the hidden labels inside far-off slides are clipped too and never widen the page */
+.slider-window { position: relative; overflow: hidden; }
 .slider-track { display: flex; list-style: none; margin: 0; padding: 0; transition: transform .65s cubic-bezier(.2, .7, .2, 1); }
 .slider-track.no-anim { transition: none; }
 .slide { flex: 0 0 100%; display: grid; place-items: center; padding: 8px 0 30px; }
@@ -481,8 +482,9 @@ select.saved { border-color: var(--ok); }
   .slider { animation: develop 1s cubic-bezier(.2, .7, .2, 1) .2s both; }
   .btn, .nav a, .stat { transition: background-color .14s, border-color .14s, color .14s; }
 }
-@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
-@keyframes develop { from { opacity: 0; transform: translateY(26px) scale(.96); } to { opacity: 1; transform: none; } }
+/* movement only: text that starts invisible is not counted as shown by the browser's speed measure, and is slower to read */
+@keyframes rise { from { transform: translateY(18px); } to { transform: none; } }
+@keyframes develop { from { transform: translateY(26px) scale(.96); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .frame, .slider-track { transition: none; }
@@ -741,7 +743,7 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
   .brand img { width: 80px; height: 34px; }
   .brand-name { font-size: 1.08rem; padding-left: 12px; }
   .hero-cta { width: 100%; }
-  .sheet { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sheet { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
   .frame { display: flex; align-items: center; gap: 10px; padding: 7px; }
   .frame-art { flex: none; width: 46px; aspect-ratio: 1; }
   .frame-art .ico { width: 26px; height: 26px; }
@@ -783,12 +785,13 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 
 
 /* ---- contributor pages on a phone: the look and feel of a native iPhone app ----
+   The blue, grey and red are a shade darker than the phone's own, so all text meets the 4.5 to 1 contrast rule.
    System font, grouped rounded cards on a grey ground, filled buttons, a translucent tab bar,
    a segmented control for filters and hairline list separators. Only on small screens, and not on the
    public project page (which is a full-width web page). */
 @media (max-width: 899px) {
   body.area-respondent:not(.is-wide) {
-    --tint: #007aff; --ground: #f2f2f7; --sep: rgba(60, 60, 67, .2); --second: rgba(60, 60, 67, .62); --fill: rgba(118, 118, 128, .12);
+    --tint: #005fcc; --ground: #f2f2f7; --sep: rgba(60, 60, 67, .2); --second: rgba(60, 60, 67, .8); --fill: rgba(118, 118, 128, .12);
     --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
     --soft: var(--second); --line: var(--sep); --ink: #000; --r-card: 12px; --r-control: 12px;
@@ -815,7 +818,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .area-respondent:not(.is-wide) .btn-main, .area-respondent:not(.is-wide) .drop-btn { background: var(--tint); color: #fff; }
   .area-respondent:not(.is-wide) .btn-small { min-height: 34px; padding: 6px 14px; border-radius: 17px; font-size: .88rem; }
   .area-respondent:not(.is-wide) .btn-link, .area-respondent:not(.is-wide) .btn-quiet { background: transparent; }
-  .area-respondent:not(.is-wide) .shot .btn-link { min-height: 30px; padding: 2px 0; color: #ff3b30; font-weight: 400; }
+  .area-respondent:not(.is-wide) .shot .btn-link { min-height: 30px; padding: 2px 0; color: #c4001a; font-weight: 400; }
   .area-respondent:not(.is-wide) .top .btn { min-height: 34px; background: rgba(255, 255, 255, .16); border-radius: 17px; }
   .area-respondent:not(.is-wide) input, .area-respondent:not(.is-wide) select, .area-respondent:not(.is-wide) textarea { min-height: 44px; border: 0; border-radius: 10px; background: var(--fill); font-size: 1rem; }
   .area-respondent:not(.is-wide) input[type=checkbox] { min-height: 0; accent-color: var(--tint); }
@@ -826,7 +829,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   /* the four counters, as small widgets */
   .area-respondent .up-stats li { border: 0; border-radius: 12px; padding: 10px 6px 9px; background: #fff; }
   .area-respondent .up-n { font-family: var(--display); font-size: 1.45rem; font-weight: 700; }
-  .area-respondent .up-stats .st-ok .up-n { color: #248a3d; }
+  .area-respondent .up-stats .st-ok .up-n { color: #1e7d34; }
   .area-respondent .up-stats .st-wait .up-n { color: #b25000; }
   .area-respondent .up-stats .st-bad .up-n { color: #d70015; }
   .area-respondent .up-l { color: var(--second); }
@@ -838,8 +841,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .area-respondent .drop-title { font-family: var(--display); font-size: 1.25rem; }
   .area-respondent .drop-btn { width: 100%; max-width: none; min-height: 50px; border-radius: 12px; font-size: 1rem; }
   .area-respondent .dos { font-size: .88rem; color: var(--second); }
-  .area-respondent .dos .do .ico { color: #34c759; }
-  .area-respondent .dos .dont .ico { color: #ff3b30; }
+  .area-respondent .dos .do .ico { color: #248a3d; }
+  .area-respondent .dos .dont .ico { color: #d70015; }
 
   /* results as a plain list with hairlines */
   .area-respondent .run-text { font-size: .94rem; }
@@ -848,8 +851,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .area-respondent .queue .q-item:last-child { border-bottom: 0; }
   .area-respondent .q-name { font-weight: 600; }
   .area-respondent .q-msg { font-size: .88rem; }
-  .area-respondent .q-ok .q-mark { background: #34c759; }
-  .area-respondent .q-bad .q-mark { background: #ff3b30; }
+  .area-respondent .q-ok .q-mark { background: #1e7d34; }
+  .area-respondent .q-bad .q-mark { background: #d70015; }
   .area-respondent .q-ok .q-msg { color: var(--second); }
   .area-respondent .q-bad .q-msg { color: #d70015; }
   .area-respondent .q-mark { border-top-color: var(--tint); }
@@ -878,10 +881,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 
   /* tab bar */
   .area-respondent .tabbar { padding: 5px 0 calc(1px + env(safe-area-inset-bottom)); border-top: .5px solid var(--sep); background: rgba(249, 249, 249, .92); box-shadow: none; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
-  .area-respondent .tabbar a { gap: 1px; padding: 3px 4px 4px; border-radius: 0; background: transparent; color: #8e8e93; font: 500 .62rem/1.3 var(--text); letter-spacing: 0; }
+  .area-respondent .tabbar a { gap: 1px; padding: 3px 4px 4px; border-radius: 0; background: transparent; color: #6c6c70; font: 500 .62rem/1.3 var(--text); letter-spacing: 0; }
   .area-respondent .tabbar a .ico { width: 27px; height: 27px; stroke-width: 1.7; }
   .area-respondent .tabbar a[aria-current] { background: transparent; color: var(--tint); }
-  .area-respondent .tab-n { top: 0; left: calc(50% + 8px); background: #ff3b30; color: #fff; }
+  .area-respondent .tab-n { top: 0; left: calc(50% + 8px); background: #d70015; color: #fff; }
   body.area-respondent:has(.tabbar) .main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
   /* details the general rules above would get wrong */
@@ -893,3 +896,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .area-respondent .invite h2 { font-size: 1.3rem; }
   .area-respondent .invite .btn { width: 100%; }
 }
+
+/* very narrow screens: one frame per row so nothing is wider than the window */
+@media (max-width: 359px) { .sheet { grid-template-columns: minmax(0, 1fr); } }

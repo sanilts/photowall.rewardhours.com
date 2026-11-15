@@ -23,7 +23,7 @@
 <?php if (!$clients): ?>
   <section class="card center"><h2>No clients yet</h2><p>Add the first client company with the form on this page.</p></section>
 <?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table table-clients">
   <thead><tr><th scope="col">Client</th><th scope="col">Status</th><th scope="col" class="num">People</th><th scope="col" class="num">Projects</th><th scope="col">Last sign-in</th><th scope="col">Download requests</th><th scope="col"><span class="visually-hidden">Open</span></th></tr></thead>
   <tbody>

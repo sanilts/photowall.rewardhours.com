@@ -10,7 +10,7 @@ $tone = ['signin' => 'chip-open', 'photos' => 'chip-pending', 'downloads' => 'ch
   <?php foreach ($groups as $k => $label): ?><a class="pill" href="/activity?kind=<?= e($k) ?>"<?= $kind === $k ? ' aria-current="page"' : '' ?>><?= e($label) ?></a><?php endforeach; ?>
 </nav>
 <?php if (!$rows): ?><section class="card center"><h2>Nothing of this kind yet</h2></section><?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table">
   <thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Details</th><th scope="col">IP address</th></tr></thead>
   <tbody>

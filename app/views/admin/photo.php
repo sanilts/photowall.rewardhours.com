@@ -11,7 +11,7 @@ $detail = json_decode($photo['safety_detail'], true) ?: [];
 </div>
 
 <div class="cols cols-wide">
-  <section class="card">
+  <div class="card">
     <?php if ($gone): ?>
       <div class="shot-gone big">The file was deleted<?= $photo['reject_reason'] !== '' ? ': ' . e($photo['reject_reason']) : '' ?></div>
     <?php else: ?>
@@ -40,7 +40,7 @@ $detail = json_decode($photo['safety_detail'], true) ?: [];
         <button class="btn btn-danger" type="submit">Reject and delete</button>
       </form>
     <?php endif; ?>
-  </section>
+  </div>
 
   <section class="card">
     <h2>Checks</h2>

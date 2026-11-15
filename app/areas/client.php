@@ -109,16 +109,31 @@ function cl_tiles(): array
     $tiles = [];
     foreach ($labels as $label) $tiles[] = ['label' => $label, 'pic' => phone_picture($label)] + subject_look($label);
     usort($tiles, static fn(array $a, array $b): int => ($b['pic'] !== null) <=> ($a['pic'] !== null));
-    return array_slice($tiles, 0, 5);
+    $tiles = array_slice($tiles, 0, 5);
+    // the first tile is large, the rest small: ask for copies of the size each is shown at
+    foreach ($tiles as $i => $t) {
+        $tiles[$i]['pic'] = $t['pic'] !== null ? phone_picture($t['label'], $i === 0 ? 640 : 320) : null;
+        $tiles[$i]['srcset'] = $t['pic'] !== null ? phone_srcset($t['label'], $i === 0 ? [320, 480, 640] : [160, 320, 480]) : '';
+        $tiles[$i]['sizes'] = $i === 0 ? '(max-width: 899px) 46vw, 300px' : '(max-width: 899px) 23vw, 150px';
+    }
+    return $tiles;
 }
 
 route('GET', '/phone/{slug}', function (string $slug) {
     send_phone_picture($slug);
 });
 
+// Search engines may list the sign-in page and nothing else.
+route('GET', '/robots.txt', function () {
+    header('Content-Type: text/plain; charset=utf-8');
+    echo "User-agent: *\nAllow: /login$\nDisallow: /\n";
+    exit;
+});
+
 route('GET', '/login', function () {
     if (cl_me()) redirect('/');
-    view('client/login', ['title' => 'Client sign in', 'tiles' => cl_tiles(), 'contact' => (string) cfg('contact_email', 'contact@researchandmetric.com')]);
+    view('client/login', ['title' => 'Client sign in', 'tiles' => cl_tiles(), 'contact' => (string) cfg('contact_email', 'contact@researchandmetric.com'),
+        'description' => 'Sign in to the Research and Metric client portal for Photowall to view and download the original iPhone photos collected and checked for your projects.']);
 });
 
 route('POST', '/login', function () {
@@ -297,7 +312,7 @@ route('GET', '/requests', function () {
     $me = cl_need();
     $rows = Db::all('SELECT r.*, p.name AS project_name FROM download_requests r JOIN projects p ON p.id = r.project_id WHERE r.client_user_id = ? ORDER BY r.id DESC LIMIT 200', [$me['id']]);
     foreach ($rows as &$r) {
-        $r['thumbs'] = Db::all("SELECT ph.token FROM download_request_photos d JOIN photos ph ON ph.id = d.photo_id AND ph.status = 'approved' WHERE d.request_id = ? ORDER BY ph.id LIMIT 6", [$r['id']]);
+        $r['thumbs'] = Db::all("SELECT ph.id, ph.token FROM download_request_photos d JOIN photos ph ON ph.id = d.photo_id AND ph.status = 'approved' WHERE d.request_id = ? ORDER BY ph.id LIMIT 6", [$r['id']]);
     }
     unset($r);
     view('client/requests', ['title' => 'Download requests', 'nav' => cl_nav($me, 'requests'), 'rows' => $rows, 'days' => ClientLog::VALID_DAYS]);

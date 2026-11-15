@@ -17,10 +17,10 @@
 </div>
 <?php if ($state === 'ask'): ?><p class="muted">Downloads from this project need our approval. We email you when it is decided.</p><?php endif; ?>
 <div class="cols cols-wide">
-  <section class="card">
+  <div class="card">
     <div class="viewer"><img src="/img/<?= e($photo['token']) ?>/preview" alt="Photo <?= e(image_id($photo['id'])) ?>"></div>
     <p class="muted">This is a smaller preview for your browser. The download is the untouched original file.</p>
-  </section>
+  </div>
   <section class="card">
     <h2>Photo information</h2>
     <dl class="facts"><div><dt>Image ID</dt><dd><?= e(image_id($photo['id'])) ?></dd></div><div><dt>Category</dt><dd><?= e(($photo['category'] ?? '') !== '' ? $photo['category'] : 'Not set') ?></dd></div><div><dt>Contributor ID</dt><dd><?= e(contributor_id($photo['respondent_id'])) ?></dd></div></dl>

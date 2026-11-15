@@ -13,7 +13,7 @@
 <?php if (!$rows): ?>
   <section class="card center"><p>Nothing has been turned away.</p></section>
 <?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table">
   <thead><tr><th scope="col">When</th><th scope="col">Person</th><th scope="col">File</th><th scope="col">Phone in the file</th><th scope="col">Why</th><th scope="col">Details</th></tr></thead>
   <tbody>

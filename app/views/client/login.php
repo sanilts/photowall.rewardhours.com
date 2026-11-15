@@ -17,9 +17,9 @@
 
   <section class="signin-show" aria-labelledby="signin-about">
     <ul class="mosaic" aria-label="Examples of the kinds of photos we collect">
-      <?php foreach ($tiles as $t): ?>
+      <?php foreach ($tiles as $i => $t): ?>
       <li class="tone-<?= e($t['tone']) ?>">
-        <?php if ($t['pic']): ?><img src="<?= e($t['pic']) ?>" alt="Example photo: <?= e($t['label']) ?>">
+        <?php if ($t['pic']): ?><img src="<?= e($t['pic']) ?>" srcset="<?= e($t['srcset']) ?>" sizes="<?= e($t['sizes']) ?>" alt="Example photo: <?= e($t['label']) ?>" decoding="async"<?= $i === 0 ? ' fetchpriority="high"' : '' ?>>
         <?php else: ?><?= icon($t['icon']) ?><?php endif; ?>
         <span><?= e($t['short']) ?></span>
       </li>

@@ -38,7 +38,7 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
 <?php if (!$rows): ?>
   <section class="card center"><p><?= $q !== '' || $show !== '' ? 'Nobody matches. Clear the search to see everyone.' : 'Nobody has signed in to this project yet.' ?></p></section>
 <?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table table-people">
   <thead><tr><th scope="col">Contributor</th><th scope="col">Country and phone</th><th scope="col">Joined</th><th scope="col">Photos</th><?php if ($rw): ?><th scope="col" class="num">Reward earned</th><?php endif; ?><th scope="col">Actions</th></tr></thead>
   <tbody>

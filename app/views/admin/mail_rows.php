@@ -1,5 +1,5 @@
 <?php /** @var array $rows  Lines of the email sending log, as a table. */ ?>
-<div class="table-wrap table-flat">
+<div class="table-wrap table-flat" tabindex="0">
 <table class="table table-mail">
   <thead><tr><th scope="col">When</th><th scope="col">To</th><th scope="col">Email</th><th scope="col">Result</th></tr></thead>
   <tbody>

@@ -410,6 +410,12 @@ function initials(string $name): string
     return mb_strtoupper($first . (count($words) > 1 ? mb_substr($words[1], 0, 1) : ''));
 }
 
+/** Address of a file in public/assets, with its date so browsers can keep it for a long time and still get changes. */
+function asset(string $file): string
+{
+    return '/assets/' . $file . '?v=' . (string) @filemtime(PW_ROOT . '/public/assets/' . $file);
+}
+
 /* ---- reward paid to people who take part ---- */
 
 /** "$1", "$2.50", "Rs 50": an amount as people read it. */
@@ -480,19 +486,60 @@ function phone_picture_file(string $slug): ?string
     return null;
 }
 
-/** Address of that picture for use in a page, or null. */
-function phone_picture(string $model): ?string
+/** Widths the example photos are offered in, so a page never downloads a bigger picture than it shows. */
+const PW_PICTURE_WIDTHS = [160, 320, 480, 640];
+
+/** Address of that picture for use in a page, or null. $width (one of PW_PICTURE_WIDTHS) asks for a smaller copy. */
+function phone_picture(string $model, int $width = 0): ?string
 {
     $slug = phone_slug($model);
     $f = phone_picture_file($slug);
-    return $f ? '/phone/' . $slug . '?v=' . filemtime($f) : null;
+    return $f ? '/phone/' . $slug . '?v=' . filemtime($f) . (in_array($width, PW_PICTURE_WIDTHS, true) ? '&w=' . $width : '') : null;
+}
+
+/** The same picture in several widths, for an img's srcset, so each screen takes the smallest that is sharp. */
+function phone_srcset(string $model, array $widths = [320, 480, 640]): string
+{
+    $out = [];
+    foreach ($widths as $w) {
+        $u = phone_picture($model, (int) $w);
+        if ($u !== null) $out[] = $u . ' ' . (int) $w . 'w';
+    }
+    return implode(', ', $out);
+}
+
+/**
+ * A smaller WebP copy of an example photo, made once and kept beside the photos. Returns the original
+ * when the picture is already that small or the copy cannot be made.
+ * @return array{0:string, 1:string} file and its type
+ */
+function phone_picture_sized(string $file, int $width): array
+{
+    $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp'];
+    $same = [$file, $types[pathinfo($file, PATHINFO_EXTENSION)]];
+    if (!in_array($width, PW_PICTURE_WIDTHS, true) || !function_exists('imagewebp')) return $same;
+    $dir = dirname($file) . '/sized';
+    $out = $dir . '/' . pathinfo($file, PATHINFO_FILENAME) . '-' . $width . '-' . filemtime($file) . '.webp';
+    if (is_file($out)) return [$out, 'image/webp'];
+    try {
+        $src = @imagecreatefromstring((string) file_get_contents($file));
+        if (!$src || imagesx($src) <= $width) return $same;
+        if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) return $same;
+        $small = imagescale($src, $width, -1, IMG_BICUBIC);
+        foreach (glob($dir . '/' . pathinfo($file, PATHINFO_FILENAME) . '-' . $width . '-*.webp') ?: [] as $old) @unlink($old);
+        $ok = $small && imagewebp($small, $out, 78);
+        return $ok && is_file($out) && filesize($out) > 0 ? [$out, 'image/webp'] : $same;
+    } catch (Throwable $e) {
+        error_log('Photowall sized picture: ' . $e->getMessage());
+        return $same;
+    }
 }
 
 function send_phone_picture(string $slug): never
 {
     $f = phone_picture_file($slug);
     if (!$f) fail_page(404, 'We could not find that picture.');
-    $mime = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'webp' => 'image/webp'][pathinfo($f, PATHINFO_EXTENSION)];
     session_write_close();
-    Storage::send($f, $mime);
+    [$f, $mime] = phone_picture_sized($f, (int) ($_GET['w'] ?? 0));
+    Storage::send($f, $mime, null, 'public'); // its address carries the file's date, so it can be kept for a long time
 }

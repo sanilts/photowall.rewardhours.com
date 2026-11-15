@@ -7,18 +7,18 @@ $flagOnly = ($_GET['flag'] ?? '') === '1';
 <?php $tab = 'review'; require PW_ROOT . '/app/views/admin/project_tabs.php'; ?>
 <div class="head">
   <h1>Photos <span class="muted">(<?= (int) $total ?>)</span></h1>
-  <div class="tabs" role="tablist">
+  <nav class="tabs" aria-label="Which photos to show">
     <?php foreach ($tabs as $k => $label): ?>
       <a href="<?= e($base . '?status=' . $k) ?>"<?= $status === $k ? ' aria-current="page"' : '' ?>><?= e($label) ?></a>
     <?php endforeach; ?>
     <?php if ($status === 'pending'): ?>
       <a href="<?= e($base . ($flagOnly ? '' : '?flag=1')) ?>"<?= $flagOnly ? ' aria-current="page"' : '' ?>>Flagged only</a>
     <?php endif; ?>
-  </div>
+  </nav>
 </div>
 
 <?php if (!$photos): ?>
-  <section class="card center"><p>Nothing here.</p></section>
+  <div class="card center"><p>Nothing here.</p></div>
 <?php else: ?>
 <form method="post" action="<?= e($base) ?>/bulk">
   <?= csrf_field() ?>

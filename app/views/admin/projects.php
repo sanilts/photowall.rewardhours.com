@@ -12,7 +12,7 @@
     <p>Create a project to get the link you can share with respondents.</p>
   </section>
 <?php else: ?>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table">
   <thead>
     <tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Closes</th><th scope="col" class="num">People</th>

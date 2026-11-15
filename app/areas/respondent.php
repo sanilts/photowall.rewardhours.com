@@ -35,15 +35,42 @@ function rp_window(array $project): string
 route('GET', '/', function () {
     $open = Db::all("SELECT slug, name, intro, closes_at FROM projects WHERE status = 'open' AND (opens_at IS NULL OR opens_at <= ?) AND (closes_at IS NULL OR closes_at >= ?) ORDER BY id DESC", [now(), now()]);
     if (count($open) === 1) redirect('/p/' . $open[0]['slug']);
-    view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true]);
+    view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true,
+        'description' => 'Photowall by Reward Hours. Take part in a photo project: share original photos taken on your iPhone and upload them straight from your phone.']);
 });
 
 route('GET', '/phone/{slug}', function (string $slug) {
     send_phone_picture($slug);
 });
 
+// The picture shown when a link to the site is shared.
+route('GET', '/share.jpg', function () {
+    session_write_close();
+    Storage::send(Share::file(), 'image/jpeg', null, 'public');
+});
+
+// What search engines may read: the public pages, not the pages behind sign-in.
+route('GET', '/robots.txt', function () {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: public, max-age=3600');
+    echo "User-agent: *\nAllow: /\nDisallow: /p/*/code\nDisallow: /p/*/upload\nDisallow: /p/*/details\nDisallow: /p/*/email\n\nSitemap: " . area_url('respondent', '/sitemap.xml') . "\n";
+    exit;
+});
+
+route('GET', '/sitemap.xml', function () {
+    $pages = [area_url('respondent', '/')];
+    foreach (Db::all("SELECT slug FROM projects WHERE status = 'open' ORDER BY id") as $p) $pages[] = area_url('respondent', '/p/' . $p['slug']);
+    $pages[] = area_url('respondent', '/privacy');
+    header('Content-Type: application/xml; charset=utf-8');
+    header('Cache-Control: public, max-age=3600');
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach ($pages as $u) echo '  <url><loc>' . htmlspecialchars($u, ENT_XML1) . "</loc></url>\n";
+    echo "</urlset>\n";
+    exit;
+});
+
 route('GET', '/privacy', function () {
-    view('respondent/privacy', ['title' => 'Privacy']);
+    view('respondent/privacy', ['title' => 'Privacy', 'description' => 'How Photowall by Reward Hours handles the photos and details of people who take part: what is collected, why, who sees it, and how to have it removed.']);
 });
 
 route('GET', '/p/{slug}', function (string $slug) {

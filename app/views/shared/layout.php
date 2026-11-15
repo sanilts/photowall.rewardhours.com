@@ -5,28 +5,55 @@ $who = $_SESSION['who'] ?? null;
 $badge = ['respondent' => '', 'admin' => 'Console', 'client' => 'Client portal'][$area];
 $wide = !empty($bare); // pages that manage their own full-width sections (the public landing page)
 $v = static fn(string $f): string => '/assets/' . $f . '?v=' . (string) @filemtime(PW_ROOT . '/public/assets/' . $f);
+// Public pages (the home page, a project's page, privacy, and the client sign-in page) may be listed by search
+// engines; the rest may not. Link previews with the sharing picture are for the contributor site only.
+$path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$path = rtrim($path, '/') === '' ? '/' : rtrim($path, '/');
+$share = $area === 'respondent' && preg_match('#^/(p/[^/]+|privacy)?$#', $path) === 1 && http_response_code() === 200;
+$public = $share || ($area === 'client' && $path === '/login' && http_response_code() === 200);
+// the small stylesheet made at deploy time is used when it is there and up to date
+$css = is_file(PW_ROOT . '/public/assets/app.min.css') && filemtime(PW_ROOT . '/public/assets/app.min.css') >= filemtime(PW_ROOT . '/public/assets/app.css') ? 'app.min.css' : 'app.css';
+$description = (string) ($description ?? '');
 ?><!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="<?= $area === 'respondent' ? 'index,follow' : 'noindex,nofollow' ?>">
+<meta name="robots" content="<?= $public ? 'index,follow' : 'noindex,nofollow' ?>">
 <meta name="theme-color" content="<?= $area === 'client' ? '#ffffff' : '#0a1e3c' ?>">
 <title><?= e($title) ?> | Photowall</title>
-<?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
+<?php if ($description !== ''): ?><meta name="description" content="<?= e($description) ?>">
+<?php endif; ?>
+<?php if ($public): $canon = area_url($area, $path); ?>
+<link rel="canonical" href="<?= e($canon) ?>">
+<?php endif; ?>
+<?php if ($share): ?>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Photowall">
+<meta property="og:title" content="<?= e($title) ?> | Photowall">
+<?php if ($description !== ''): ?><meta property="og:description" content="<?= e($description) ?>">
+<?php endif; ?>
+<meta property="og:url" content="<?= e($canon) ?>">
+<meta property="og:image" content="<?= e(area_url('respondent', '/share.jpg?v=' . Share::version())) ?>">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Photowall by Reward Hours: share your iPhone photos">
+<meta name="twitter:card" content="summary_large_image">
+<?php endif; ?>
 <link rel="preload" href="/assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="<?= e($v('app.css')) ?>">
-<link rel="icon" href="/assets/<?= $area === 'client' ? 'rm-' : '' ?>icon-48.png" type="image/png">
-<link rel="apple-touch-icon" href="/assets/<?= $area === 'client' ? 'rm-' : '' ?>icon-180.png">
+<link rel="stylesheet" href="<?= e($v($css)) ?>">
+<link rel="icon" href="<?= e($v(($area === 'client' ? 'rm-' : '') . 'icon-48.png')) ?>" type="image/png">
+<link rel="apple-touch-icon" href="<?= e($v(($area === 'client' ? 'rm-' : '') . 'icon-180.png')) ?>">
 </head>
 <body class="area-<?= e($area) ?><?= $wide ? ' is-wide' : '' ?>">
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap top-in">
     <a class="brand" href="/">
-      <?php if ($area === 'client'): ?><img src="/assets/rm-logo.png" alt="Research and Metric" width="215" height="40">
-      <?php else: ?><img src="/assets/logo-white.png" alt="Reward Hours" width="94" height="40"><?php endif; ?>
+      <?php if ($area === 'client'): ?><img src="<?= e($v('rm-logo.png')) ?>" alt="Research and Metric" width="215" height="40">
+      <?php else: ?><img src="<?= e($v('logo-white.png')) ?>" alt="Reward Hours" width="94" height="40"><?php endif; ?>
       <span class="brand-name">Photowall</span>
       <?php if ($badge): ?><span class="brand-tag"><?= e($badge) ?></span><?php endif; ?>
     </a>

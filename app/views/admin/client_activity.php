@@ -9,7 +9,7 @@ $query = http_build_query(array_filter($f));
 <section class="card">
   <h2>By person</h2>
   <?php if (!$people): ?><p class="muted">Nobody has client access yet.</p><?php else: ?>
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0">
   <table class="table">
     <thead><tr><th scope="col">Person</th><th scope="col">Sign-ins</th><th scope="col">Last sign-in</th><th scope="col">From</th><th scope="col">Gallery pages</th><th scope="col">Photos viewed</th><th scope="col">Photos downloaded</th><th scope="col">Requests</th></tr></thead>
     <tbody>
@@ -56,7 +56,7 @@ $query = http_build_query(array_filter($f));
     <?php if ($query !== ''): ?><a class="btn btn-quiet" href="/clients/activity#timeline">Clear</a><?php endif; ?>
   </form>
   <?php if (!$rows): ?><p class="muted">Nothing to show for this choice.</p><?php else: ?>
-  <div class="table-wrap">
+  <div class="table-wrap" tabindex="0">
   <table class="table">
     <thead><tr><th scope="col">When</th><th scope="col">Person</th><th scope="col">What</th><th scope="col">Project</th><th scope="col">Photos</th><th scope="col">From</th></tr></thead>
     <tbody>

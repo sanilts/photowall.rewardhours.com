@@ -143,6 +143,33 @@ EOF
   else
     echo "Keeping the existing Apache site."
   fi
+  # Speed: text is sent compressed, and files under /assets are kept by browsers for a long time (their
+  # addresses change whenever they do). Both rules apply inside this application's folder only.
+  SPEED=/etc/apache2/conf-available/photowall-speed.conf
+  a2enmod -q deflate headers >/dev/null 2>&1
+  cat > "$SPEED" <<EOF
+# Photowall: written again on every pw-deploy. Compression and browser caching for this application only.
+<Directory $APP/public>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml
+    </IfModule>
+    <IfModule mod_brotli.c>
+        AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml
+    </IfModule>
+</Directory>
+<Directory $APP/public/assets>
+    <IfModule mod_headers.c>
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </IfModule>
+</Directory>
+EOF
+  a2enconf -q photowall-speed >/dev/null 2>&1
+  if apache2ctl configtest >/dev/null 2>&1; then
+    echo "Speed settings for Apache are in place (compression, long-lived files)."
+  else
+    a2disconf -q photowall-speed >/dev/null 2>&1; rm -f "$SPEED"
+    echo "NOTE: Apache did not accept the speed settings, so they were left out. Everything else is unchanged."
+  fi
   apache2ctl configtest >/dev/null 2>&1 || stop "Apache does not accept its configuration. Run: apache2ctl configtest"
   systemctl reload apache2 2>/dev/null || apache2ctl graceful >/dev/null 2>&1 || echo "NOTE: could not reload Apache; reload it yourself."
 else
@@ -157,6 +184,9 @@ server {
     root $APP/public;
     index index.php;
     client_max_body_size 75m;
+    gzip on;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml;
+    location /assets/ { add_header Cache-Control "public, max-age=31536000, immutable"; }
     location / { try_files \$uri /index.php?\$query_string; }
     location ~ /\. { deny all; }
     location ~ \.php\$ {
@@ -175,6 +205,8 @@ EOF
   systemctl reload nginx 2>/dev/null || nginx -s reload 2>/dev/null || echo "NOTE: could not reload nginx; reload it yourself."
 fi
 [ -n "$SOCK" ] && systemctl reload "$(basename "$SOCK" .sock)" 2>/dev/null
+
+php "$APP/bin/build.php" || echo "NOTE: the small stylesheet could not be made; pages use the full one, which works the same."
 
 say "6/8 Commands and hourly clean-up"
 install -m 755 "$APP/deploy/pw-deploy" /usr/local/bin/pw-deploy

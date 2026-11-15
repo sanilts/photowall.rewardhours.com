@@ -114,6 +114,21 @@ in; nothing is deleted) or deleted (the company, its people, their download requ
 projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
 removed. Database change 011 adds `clients.active`.
 
+## Sharing picture, search engines and page speed
+
+- **Link previews.** Public pages (home, a project's page, privacy) carry Open Graph and Twitter tags and a
+  canonical link. The picture is `/share.jpg`, 1200 by 630: the first four example photos behind
+  `public/assets/share-frame.png` (`app/lib/Share.php`), or `public/assets/share.jpg` when fewer than four are set.
+- **Search engines.** `/robots.txt` and `/sitemap.xml` on the contributor site list the public pages only. Pages
+  behind sign-in say `noindex`. The console is closed to search engines; on the client portal only `/login` is open.
+- **Speed.** Example photos are served in the width the page shows (`?w=160|320|480|640`, WebP, made once and
+  kept in `storage/phones/sized`). Asset links carry the file's date (`asset()`), and `pw-deploy` writes
+  `/etc/apache2/conf-available/photowall-speed.conf` so files under `/assets` are kept by browsers for a year and
+  text is sent compressed. `bin/build.php` (run by `pw-deploy`) makes `public/assets/app.min.css`; pages use it
+  when it is newer than `app.css`. The font files keep their names for good: rename a font file if it changes.
+- **Checks used.** The W3C Nu HTML checker on every page type, axe on every page type at phone and desktop width,
+  and Lighthouse on the public pages.
+
 ## Email sending log and client invitations
 
 Every email the application tries to send goes through `Mailer::send()` and is written to `mail_log`: who to,

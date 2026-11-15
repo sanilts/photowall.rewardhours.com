@@ -1,6 +1,6 @@
 <?php /** @var array $staff */ $meId = (int) (ad_me()['id'] ?? 0); ?>
 <div class="head"><h1>Staff</h1></div>
-<div class="table-wrap">
+<div class="table-wrap" tabindex="0">
 <table class="table">
   <thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Last sign-in</th><th scope="col">New password</th><th scope="col">Account</th></tr></thead>
   <tbody>

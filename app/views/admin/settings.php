@@ -170,7 +170,7 @@ $state = static function (bool $on, bool $hasKey): string {
       <?= csrf_field() ?>
       <div class="svc">
         <div class="svc-head">
-          <img class="svc-logo" src="/assets/svc-ipzentra.svg" alt="" width="44" height="44">
+          <img class="svc-logo" src="<?= e(asset('svc-ipzentra.svg')) ?>" alt="" width="44" height="44">
           <div><h3 class="svc-name">Connection check with IPzentra</h3><p class="svc-what">Says where a connection is and whether it is a VPN, proxy, Tor or data centre.</p></div>
           <?= $state($guard['ip_on'], $guard['ip_key'] !== '') ?>
         </div>
@@ -184,7 +184,7 @@ $state = static function (bool $on, bool $hasKey): string {
 
       <div class="svc">
         <div class="svc-head">
-          <img class="svc-logo" src="/assets/svc-bouncebell.svg" alt="" width="44" height="44">
+          <img class="svc-logo" src="<?= e(asset('svc-bouncebell.svg')) ?>" alt="" width="44" height="44">
           <div><h3 class="svc-name">Email check with BounceBell</h3><p class="svc-what">Says whether an email address exists and whether it is a temporary one.</p></div>
           <?= $state($guard['mail_on'], $guard['mail_key'] !== '') ?>
         </div>
@@ -213,7 +213,7 @@ $state = static function (bool $on, bool $hasKey): string {
       <form method="post" action="/settings/phones" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <ul class="pics">
-          <?php foreach ($models as $model): $slug = phone_slug($model); $pic = phone_picture($model); ?>
+          <?php foreach ($models as $model): $slug = phone_slug($model); $pic = phone_picture($model, 160); ?>
             <li>
               <span class="pic-thumb"><?php if ($pic): ?><img src="<?= e($pic) ?>" alt="" loading="lazy"><?php else: ?><?= icon(subject_look($model)['icon']) ?><?php endif; ?></span>
               <label for="pic-<?= e($slug) ?>"><?= e($model) ?></label>
@@ -306,7 +306,7 @@ $state = static function (bool $on, bool $hasKey): string {
   <!-- ================= Invitation ================= -->
   <section data-panel="invite" id="invite">
     <header class="set-head"><span class="set-ico"><?= icon('gift') ?></span><div><h2>Invitation shown to contributors</h2><p>A box on the contributor's page and a line in the accepted-photos email, inviting people to Reward Hours or anywhere else you choose.</p></div></header>
-    <section class="card">
+    <div class="card">
       <form method="post" action="/settings/invite" class="form">
         <?= csrf_field() ?>
         <label class="switch"><input type="checkbox" name="on" value="1"<?= !empty($invite['on']) ? ' checked' : '' ?>><span class="switch-ui"></span><span>Show the invitation</span></label>
@@ -320,7 +320,7 @@ $state = static function (bool $on, bool $hasKey): string {
         </div>
         <div class="row form-end"><button class="btn btn-main" type="submit">Save invitation</button></div>
       </form>
-    </section>
+    </div>
   </section>
 
   <!-- ================= Storage ================= -->
