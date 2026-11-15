@@ -9,6 +9,9 @@ foreach (preg_split('/\R/', (string) ($project['wanted'] ?? '')) ?: [] as $line)
     if (trim($line) !== '') $subjects[] = ['label' => trim($line)] + subject_look($line);
 }
 $closed = $state === 'closed';
+// Every model the project accepts, by name, so people can see at a glance whether theirs counts.
+$extraModels = preg_split('/\R/', (string) $project['extra_models']) ?: [];
+$phones = array_values(array_filter(PW_IPHONES, static fn($m) => str_starts_with($m, 'iPhone') && PhotoCheck::modelAllowed($m, $min, $extraModels)));
 $messages = take_flashes(); // shown beside the form they are about, not at the top of a long page
 ?>
 <section class="hero">
@@ -18,16 +21,19 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
       <h1>Share photos taken on your iPhone&nbsp;<?= $min ?> or newer</h1>
       <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro'])) ?></p><?php endif; ?>
       <p class="hero-lead hero-both">Photos already in your library or fresh captures. Both are welcome.</p>
+      <?php if ($phones): ?>
+      <div class="phones">
+        <p class="phones-label" id="phones-label">iPhones we accept</p>
+        <ul class="phones-list" aria-labelledby="phones-label">
+          <?php foreach ($phones as $ph): ?><li><?= icon('phone') ?><?= e($ph) ?></li><?php endforeach; ?>
+          <li class="phones-more">and any newer iPhone</li>
+        </ul>
+      </div>
+      <?php endif; ?>
+      <a class="btn btn-sun btn-big hero-cta" href="#start"><?= $closed ? 'See your photos' : 'Start uploading' ?></a>
     </div>
 
-    <ul class="hero-facts">
-      <li><?= icon('phone') ?><span>iPhone <?= $min ?> or newer</span></li>
-      <li><?= icon('image') ?><span><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?></span></li>
-      <?php if ($project['closes_at']): ?><li><?= icon('calendar') ?><span>Open until <?= e(nice_date($project['closes_at'], 'j M Y, H:i')) ?> (<?= e(date('T')) ?>)</span></li><?php endif; ?>
-      <li><?= icon('lock') ?><span>No password. We email you a code.</span></li>
-    </ul>
-
-<?php if ($subjects): ?>
+    <?php if ($subjects): ?>
     <div class="vf" id="viewfinder" aria-hidden="true">
       <div class="vf-screen">
         <span class="vf-corner vf-tl"></span><span class="vf-corner vf-tr"></span><span class="vf-corner vf-bl"></span><span class="vf-corner vf-br"></span>
@@ -46,9 +52,20 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
       <div class="vf-shutter"><span></span></div>
     </div>
     <?php endif; ?>
+  </div>
+</section>
 
-    <div class="start-card" id="start">
-      <h2><?= $closed ? 'Sign in to see your photos' : 'Take part' ?></h2>
+<section class="band band-tint start-band" id="start">
+  <div class="wrap start">
+    <div class="start-side">
+      <h2 class="band-title"><?= $closed ? 'Sign in to see your photos' : 'Take part' ?></h2>
+      <ul class="start-facts">
+        <li><?= icon('image') ?><span><?= $perPerson ? 'Up to <strong>' . $perPerson . ' photos</strong> per person' : '<strong>As many photos as you like</strong>' ?><?= $perDay ? ', at most ' . $perDay . ' per day' : '' ?></span></li>
+        <?php if ($project['closes_at']): ?><li><?= icon('calendar') ?><span>Open until <?= e(nice_date($project['closes_at'], 'j M Y, H:i')) ?> (<?= e(date('T')) ?>)</span></li><?php endif; ?>
+        <li><?= icon('lock') ?><span>No password. We email you a code.</span></li>
+      </ul>
+    </div>
+    <div class="start-card">
       <?php foreach ($messages as [$type, $msg]): ?>
         <div class="note note-<?= e($type) ?>" role="<?= $type === 'bad' ? 'alert' : 'status' ?>"><?= e($msg) ?></div>
       <?php endforeach; ?>
