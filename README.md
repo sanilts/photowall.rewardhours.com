@@ -34,9 +34,17 @@ Reward Hours site.
 
 Photos per person and photos per day can each be set to 0, which means no limit.
 
-Everyone who joins gets a contributor ID (RM-C0001), and every kept photo an image ID (RM-I00001). On the upload
-page the contributor chooses a category before choosing photos: the project's "What to photograph" lines plus
-Other. The category can be changed per photo while it waits for review, and by staff on the photo's page.
+Everyone who joins gets a contributor ID (RM-C0001), and every kept photo an image ID (RM-I00001).
+
+The upload page is built for adding many photos at once. The contributor picks any number of photos and each
+is uploaded and checked in turn, with a running total. Every photo has a category: one of the project's "What
+to photograph" lines, or Other. By default the scanner suggests it (`scanner/categorize.py`): a face detector
+and a general image classifier, both running on this server, sort a picture into portrait, landscape, indoor,
+animal, food, still life or macro, which is then matched to the project's own wording. It is a best guess, not
+a certainty: the contributor can change it per photo while it waits for review, staff can change it on the
+photo's page, and the tracker marks categories that were detected and not yet checked by a person. The two
+model files are downloaded by the installer; without them photos are filed under Other. On a phone the page
+works like an app, with tabs along the bottom for Upload, Photos, Reward and Account.
 
 When staff accept photos, the contributor gets an email listing them (image ID, file name, category, date),
 their totals, the reward earned so far and their contributor ID. `bin/notify.php` runs every 10 minutes from

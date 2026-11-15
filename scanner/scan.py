@@ -7,6 +7,7 @@ Reads one photo (HEIC or JPEG), never changes it, and prints one line of JSON:
   brightness             average brightness, 0 (black) to 255 (white)
   dhash                  64-bit picture fingerprint used to find duplicates
   safety                 scores from the local safety models (nudity and sexual content)
+  category               which kind of photo it looks like (see categorize.py)
 It also writes a web preview and a thumbnail (JPEG, metadata removed) when asked.
 """
 import argparse
@@ -156,6 +157,17 @@ def main():
     }
     if not a.no_safety:
         result["safety"] = safety_scan(cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), a.models)
+
+    # Which kind of photo this looks like (a suggestion; skipped quietly when its models are not installed).
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import categorize
+        if all(os.path.isfile(os.path.join(a.models or "", f)) for f in (categorize.CLASSIFIER, categorize.FACES)):
+            result["category"] = categorize.categorize(rgb, a.models)
+        else:
+            result["category"] = {"key": None, "error": "models missing"}
+    except Exception as ex:
+        result["category"] = {"key": None, "error": str(ex)[:200]}
 
     for path, side, quality in ((a.preview, 1600, 82), (a.thumb, 480, 78)):
         if path:

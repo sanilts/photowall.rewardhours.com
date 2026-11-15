@@ -372,7 +372,7 @@ route('POST', '/photos/{id}/category', function (string $id) {
     if (!$photo) fail_page(404, 'We could not find that photo.');
     $category = trim((string) ($_POST['category'] ?? ''));
     if (in_array($category, project_categories(ad_project((string) $photo['project_id'])), true)) {
-        Db::q('UPDATE photos SET category = ? WHERE id = ?', [$category, $photo['id']]);
+        Db::q('UPDATE photos SET category = ?, category_auto = 0 WHERE id = ?', [$category, $photo['id']]);
         audit('photo.category', 'photo ' . $photo['id'] . ': ' . $category);
         flash('Category saved.');
     } else {

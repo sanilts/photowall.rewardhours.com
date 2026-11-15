@@ -33,6 +33,10 @@ function icon(string $name, string $class = ''): string
         'pencil'   => '<path d="M4 20l1-4.5L16.5 4a1.8 1.8 0 0 1 2.6 0l.9.9a1.8 1.8 0 0 1 0 2.6L8.5 19z"/><path d="M14.5 6l3.5 3.5"/>',
         'refresh'  => '<path d="M20 11.5A8 8 0 0 0 5.3 8M4 4.5V8.5h4"/><path d="M4 12.5A8 8 0 0 0 18.7 16M20 19.5v-4h-4"/>',
         'arrow'    => '<path d="M5 12h14M13 6l6 6-6 6"/>',
+        'plus'     => '<path d="M12 5v14M5 12h14"/>',
+        'user'     => '<circle cx="12" cy="8.2" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>',
+        'tiles'    => '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+        'info'     => '<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.5M12 7.6v.2"/>',
     ];
     $body = $paths[$name] ?? $paths['image'];
     return '<svg class="ico' . ($class !== '' ? ' ' . $class : '') . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $body . '</svg>';

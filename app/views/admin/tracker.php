@@ -39,7 +39,7 @@ $chip = ['accepted' => 'approved', 'review' => 'pending', 'rejected' => 'rejecte
     <tr>
       <th scope="row"><?php if ($r['kind'] === 'photo'): ?><a href="/photos/<?= (int) $r['id'] ?>"><?= e($r['image_id']) ?></a><?php else: ?><?= e($r['image_id']) ?><?php endif; ?></th>
       <td class="wrap-any"><?= e($r['orig_name']) ?></td>
-      <td><?= e($r['category_label']) ?></td>
+      <td><?= e($r['category_label']) ?><?php if ((int) $r['category_auto']): ?><br><span class="muted">detected</span><?php endif; ?></td>
       <td><?= e($r['device_model'] !== '' ? $r['device_model'] : 'Not in the file') ?></td>
       <td><?= $r['taken_at'] ? e(nice_date($r['taken_at'], 'j M Y, H:i')) : '<span class="muted">Not in the file</span>' ?></td>
       <td><?= e((string) $r['country']) ?></td>

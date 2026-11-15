@@ -5,9 +5,11 @@ $total = (int) $project['photos_per_person'];
 $reward = reward($project);
 $accepted = count(array_filter($photos, static fn($ph) => $ph['status'] === 'approved'));
 $cats = project_categories($project);
-$labels = ['pending' => 'Received, in review', 'approved' => 'Accepted', 'rejected' => 'Not accepted'];
+$labels = ['pending' => 'In review', 'approved' => 'Accepted', 'rejected' => 'Not accepted'];
 $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0, 'pending' => 0, 'rejected' => 0];
+$infoTab = $reward ? 'Reward' : 'Info';
 ?>
+<div id="app">
 <section class="up-head">
   <div>
     <p class="eyebrow"><?= e($project['name']) ?></p>
@@ -29,7 +31,8 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
 
 <div class="up">
 <div class="up-main">
-<section class="card" id="uploader" data-url="/p/<?= e($slug) ?>/upload" data-csrf="<?= e(csrf_token()) ?>" data-can="<?= (int) $allow['can'] ?>" data-max-mb="<?= (int) cfg('max_upload_mb', 60) ?>">
+<section class="card screen" id="add" data-screen="add">
+  <div id="uploader" data-url="/p/<?= e($slug) ?>/upload" data-csrf="<?= e(csrf_token()) ?>" data-can="<?= (int) $allow['can'] ?>" data-max-mb="<?= (int) cfg('max_upload_mb', 60) ?>" data-cats="<?= e(json_encode($cats, JSON_UNESCAPED_UNICODE)) ?>">
   <h2>Add photos</h2>
   <?php if ((int) $me['blocked']): ?>
     <div class="note note-bad">Your account cannot upload photos to this project. If you think this is a mistake, email <?= e(cfg('privacy_email')) ?>.</div>
@@ -42,23 +45,33 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
   <?php endif; ?>
 
   <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
-    <fieldset class="cats" id="category">
-      <legend><span class="up-step" aria-hidden="true">1</span> What kind of photos are you adding?</legend>
-      <div class="cat-list">
-        <?php foreach ($cats as $c): ?>
-          <label class="cat"><input type="radio" name="category" value="<?= e($c) ?>"><span><?= icon($c === 'Other' ? 'image' : subject_look($c)['icon']) ?><?= e($c) ?></span></label>
-        <?php endforeach; ?>
-      </div>
-      <p class="muted" id="cat-help">Adding more than one kind? Add one kind, then pick the next. You can also change the category of each photo after it uploads.</p>
-    </fieldset>
-
-    <p class="up-label"><span class="up-step" aria-hidden="true">2</span> Choose the photos</p>
     <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
     <label class="drop" for="files">
-      <span class="drop-ico"><?= icon('upload') ?></span>
+      <span class="drop-ico"><?= icon('plus') ?></span>
       <span class="drop-title">Choose photos</span>
-      <span class="muted">Tap here, choose <strong>Photo Library</strong>, then pick photos you took with this iPhone.</span>
+      <span class="drop-sub">Pick as many as you like from <strong>Photo Library</strong>. We check each one and file it under the right category for you.</span>
     </label>
+  </div>
+
+  <div id="results" hidden>
+    <div class="run">
+      <p class="run-text" id="run-text" role="status">Getting ready</p>
+      <button class="btn btn-small" type="button" id="run-stop">Stop</button>
+    </div>
+    <progress class="run-bar" id="run-bar" max="1" value="0"></progress>
+    <p class="run-keep muted" id="run-keep">Keep this page open until every photo is checked.</p>
+    <ul id="queue" class="queue"></ul>
+  </div>
+
+  <div id="picker-more"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
+    <div class="cat-row">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="auto">Detect automatically</option>
+        <?php foreach ($cats as $c): ?><option><?= e($c) ?></option><?php endforeach; ?>
+      </select>
+      <p class="muted">Detection is a best guess: check each photo afterwards and change the category if it is wrong. Adding photos of one kind only? Choose it here first.</p>
+    </div>
 
     <div class="dos">
       <ul>
@@ -71,24 +84,25 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
       </ul>
     </div>
   </div>
-
-  <div id="results" hidden>
-    <h3 class="results-h">Checks on the photos you just added</h3>
-    <ul id="queue" class="queue" aria-live="polite"></ul>
   </div>
 </section>
 
-<section class="card">
+<section class="card screen" id="mine" data-screen="mine">
   <div class="head head-sub">
     <h2>Your photos</h2>
-    <?php if ($photos): ?><p class="mine-sum"><span class="chip chip-approved"><?= (int) $count['approved'] ?> accepted</span> <span class="chip chip-pending"><?= (int) $count['pending'] ?> in review</span> <span class="chip chip-rejected"><?= (int) $count['rejected'] ?> not accepted</span></p><?php endif; ?>
+    <p class="mine-sum" id="filters">
+      <button type="button" class="chip chip-all" data-filter="" aria-pressed="true">All <span id="sum-all"><?= count($photos) ?></span></button>
+      <button type="button" class="chip chip-approved" data-filter="approved" aria-pressed="false"><?= (int) $count['approved'] ?> accepted</button>
+      <button type="button" class="chip chip-pending" data-filter="pending" aria-pressed="false"><span id="sum-review"><?= (int) $count['pending'] ?></span> in review</button>
+      <button type="button" class="chip chip-rejected" data-filter="rejected" aria-pressed="false"><?= (int) $count['rejected'] ?> not accepted</button>
+    </p>
   </div>
   <?php if (!$photos): ?>
     <div class="empty" id="none-yet"><?= icon('image') ?><p><strong>Nothing uploaded yet.</strong><br>Your photos appear here with their status as soon as they pass the checks.</p></div>
   <?php endif; ?>
-  <ul class="grid" id="mine">
+  <ul class="grid" id="mine-list">
     <?php foreach ($photos as $p): ?>
-      <li class="shot">
+      <li class="shot" data-status="<?= e($p['status']) ?>">
         <?php if ($p['status'] === 'rejected'): ?>
           <div class="shot-gone">Photo removed</div>
         <?php else: ?>
@@ -105,6 +119,7 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
             </select>
             <button class="btn btn-small" type="submit">Save</button>
           </form>
+          <?php if ((int) $p['category_auto']): ?><span class="shot-auto">Detected. Change it if it is wrong.</span><?php endif; ?>
         <?php elseif ($p['category'] !== ''): ?>
           <span class="shot-kind"><?= e($p['category']) ?></span>
         <?php endif; ?>
@@ -124,7 +139,7 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
 
 <aside class="up-side">
   <?php if ($reward): $done = $accepted % $reward['every']; $toNext = $reward['every'] - $done; ?>
-  <section class="card earn-card">
+  <section class="card earn-card screen" id="info" data-screen="info">
     <h2><?= icon('coin') ?> Your reward</h2>
     <p class="earn-n"><strong><?= e(reward_earned($reward, $accepted)) ?> earned so far.</strong></p>
     <?php if ($reward['every'] <= 12): ?>
@@ -135,7 +150,7 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
   </section>
   <?php endif; ?>
 
-  <section class="card">
+  <section class="card screen"<?= $reward ? '' : ' id="info"' ?> data-screen="info">
     <h2>Good to know</h2>
     <ul class="facts-list">
       <li><?= icon('shield') ?><span>Each photo is checked as it uploads. If one is turned away you see why straight away, and you can pick another.</span></li>
@@ -144,7 +159,7 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
     </ul>
   </section>
 
-  <section class="card">
+  <section class="card screen" id="account" data-screen="account">
     <h2>Your account</h2>
     <p class="acct">Signed in as<br><strong><?= e($me['email']) ?></strong></p>
     <p class="acct">Contributor ID <strong><?= e(contributor_id($me['id'])) ?></strong></p>
@@ -153,5 +168,13 @@ $count = array_count_values(array_column($photos, 'status')) + ['approved' => 0,
        To withdraw from the project or have your data removed, email <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>.</p>
   </section>
 </aside>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Sections of this page">
+  <a href="#add" data-tab="add"><?= icon('upload') ?><span>Upload</span></a>
+  <a href="#mine" data-tab="mine"><?= icon('tiles') ?><span>Photos</span><b class="tab-n" id="tab-n"<?= $photos ? '' : ' hidden' ?>><?= count($photos) ?></b></a>
+  <a href="#info" data-tab="info"><?= icon($reward ? 'coin' : 'info') ?><span><?= e($infoTab) ?></span></a>
+  <a href="#account" data-tab="account"><?= icon('user') ?><span>Account</span></a>
+</nav>
 </div>
 <script src="/assets/upload.js?v=<?= e((string) @filemtime(PW_ROOT . '/public/assets/upload.js')) ?>" defer></script>

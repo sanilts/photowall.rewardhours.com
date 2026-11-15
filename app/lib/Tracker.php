@@ -11,13 +11,13 @@ final class Tracker
 
     /** Photos that were kept, and uploads that failed a check, as one list. */
     private const ROWS = "(
-        SELECT 'photo' AS kind, ph.id, ph.orig_name, ph.category, ph.device_model, ph.taken_at, ph.respondent_id, ph.created_at,
+        SELECT 'photo' AS kind, ph.id, ph.orig_name, ph.category, ph.category_auto, ph.device_model, ph.taken_at, ph.respondent_id, ph.created_at,
                CASE ph.status WHEN 'approved' THEN 'accepted' WHEN 'pending' THEN 'review' ELSE 'rejected' END AS status,
                CASE WHEN ph.status = 'rejected' THEN ph.reject_reason ELSE '' END AS reason,
                CASE WHEN ph.status = 'rejected' THEN 'Staff' ELSE '' END AS rejected_by
           FROM photos ph WHERE ph.project_id = ? AND ph.status <> 'removed'
         UNION ALL
-        SELECT 'turned', x.id, x.orig_name, x.category, x.device_model, x.taken_at, x.respondent_id, x.created_at,
+        SELECT 'turned', x.id, x.orig_name, x.category, 0, x.device_model, x.taken_at, x.respondent_id, x.created_at,
                'rejected', x.message, 'Automatic check'
           FROM rejections x WHERE x.project_id = ?
     ) t LEFT JOIN respondents r ON r.id = t.respondent_id";
@@ -65,6 +65,7 @@ final class Tracker
         $r['status_label'] = self::STATUS[$r['status']];
         $r['device_model'] = preg_replace('/^Apple\s+/i', '', (string) $r['device_model']); // turned-away uploads store maker and model together
         $r['category_label'] = $r['category'] !== '' ? $r['category'] : 'Not set';
+        $r['category_by'] = $r['category'] === '' ? '' : ((int) $r['category_auto'] ? 'Detected automatically' : 'Chosen by a person');
         return $r;
     }
 
@@ -99,8 +100,8 @@ final class Tracker
             $lines = array_map(static fn($r) => [$r['contributor_id'], $r['country'], $r['accepted'], $r['review'], $r['rejected'], $r['total'], $r['earned']], self::byContributor($p));
         } else {
             $which = 'photos';
-            $head = ['image_id', 'file_name', 'category', 'iphone_model', 'date_taken', 'country', 'contributor_id', 'status', 'reason', 'rejected_by', 'uploaded_at'];
-            $lines = array_map(static fn($r) => [$r['image_id'], $r['orig_name'], $r['category_label'], $r['device_model'], $r['taken_at'], $r['country'],
+            $head = ['image_id', 'file_name', 'category', 'category_by', 'iphone_model', 'date_taken', 'country', 'contributor_id', 'status', 'reason', 'rejected_by', 'uploaded_at'];
+            $lines = array_map(static fn($r) => [$r['image_id'], $r['orig_name'], $r['category_label'], $r['category_by'], $r['device_model'], $r['taken_at'], $r['country'],
                 $r['contributor_id'], $r['status_label'], $r['reason'], $r['rejected_by'], $r['created_at']], self::rows($p, $f));
         }
         while (ob_get_level()) ob_end_clean();

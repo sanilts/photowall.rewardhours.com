@@ -217,7 +217,7 @@ route('POST', '/p/{slug}/email/code', function (string $slug) {
 route('GET', '/p/{slug}/upload', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
-    $photos = Db::all("SELECT id, token, orig_name, status, category, reject_reason, device_model, created_at, reviewed_at FROM photos WHERE respondent_id = ? AND status <> 'removed' ORDER BY id DESC", [$me['id']]);
+    $photos = Db::all("SELECT id, token, orig_name, status, category, category_auto, reject_reason, device_model, created_at, reviewed_at FROM photos WHERE respondent_id = ? AND status <> 'removed' ORDER BY id DESC", [$me['id']]);
     view('respondent/upload', ['title' => $project['name'], 'project' => $project, 'me' => $me, 'allow' => Intake::allowance($project, $me), 'photos' => $photos]);
 });
 
@@ -232,7 +232,7 @@ route('POST', '/p/{slug}/upload', function (string $slug) {
         $res = Intake::handle($project, $me, $_FILES['photo'], trim((string) ($_POST['category'] ?? '')));
     }
     $out = ['ok' => $res['ok'], 'code' => $res['code'], 'message' => $res['message'], 'allow' => Intake::allowance($project, $me)];
-    if ($res['ok']) $out['photo'] = ['token' => $res['photo']['token'], 'thumb' => "/p/$slug/thumb/" . $res['photo']['token'], 'category' => $res['photo']['category'],
+    if ($res['ok']) $out['photo'] = ['token' => $res['photo']['token'], 'thumb' => "/p/$slug/thumb/" . $res['photo']['token'], 'category' => $res['photo']['category'], 'auto' => (bool) $res['photo']['category_auto'],
         'image_id' => image_id($res['photo']['id']), 'name' => $res['photo']['orig_name']];
     json_out($out);
 });
@@ -253,7 +253,7 @@ route('POST', '/p/{slug}/photo/{token}/category', function (string $slug, string
     $category = trim((string) ($_POST['category'] ?? ''));
     $photo = Db::one("SELECT id FROM photos WHERE token = ? AND respondent_id = ? AND status = 'pending'", [$token, $me['id']]);
     $ok = $photo && in_array($category, project_categories($project), true);
-    if ($ok) Db::q('UPDATE photos SET category = ? WHERE id = ?', [$category, $photo['id']]);
+    if ($ok) Db::q('UPDATE photos SET category = ?, category_auto = 0 WHERE id = ?', [$category, $photo['id']]);
     $msg = $ok ? 'Category saved.' : 'The category of this photo can no longer be changed here.';
     if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') json_out(['ok' => (bool) $ok, 'message' => $msg], $ok ? 200 : 409);
     flash($msg, $ok ? 'ok' : 'bad');

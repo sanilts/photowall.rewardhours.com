@@ -69,6 +69,19 @@ fetch_model deploy.prototxt a359e2d7b23abca938bb52580acf578c1b78870263fea814afa2
   && echo "Safety models are in place." \
   || echo "NOTE: could not download safety model 1 (OpenNSFW). The scan still runs with model 2; run pw-deploy again later to retry."
 
+# Models that suggest the category of a photo (a general image classifier and a face detector).
+fetch_cat() { # name, path on GitHub, expected sha256
+  local f="$DATA/models/$1"
+  if [ -f "$f" ] && [ "$(sha256sum "$f" | cut -d' ' -f1)" = "$3" ]; then return 0; fi
+  curl -fsSL --retry 2 -o "$f.part" "https://media.githubusercontent.com/media/$2" \
+    && [ "$(sha256sum "$f.part" | cut -d' ' -f1)" = "$3" ] && mv "$f.part" "$f" && chown "$WEBUSER":"$WEBUSER" "$f" && return 0
+  rm -f "$f.part"; return 1
+}
+fetch_cat efficientnet-lite4-11.onnx onnx/models/main/validated/vision/classification/efficientnet-lite4/model/efficientnet-lite4-11.onnx d111689907c06eea7c82e4833ddef758da6453b9d4cf60b7e99ca05c7cbd9c12 \
+  && fetch_cat face_detection_yunet_2023mar.onnx opencv/opencv_zoo/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx 8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4 \
+  && echo "Category models are in place." \
+  || echo "NOTE: could not download the models that detect a photo's category. Uploads still work; photos are filed under Other until they arrive. Run pw-deploy again later to retry."
+
 say "4/8 Settings and database"
 if [ ! -f "$CONF" ]; then
   mkdir -p /etc/photowall

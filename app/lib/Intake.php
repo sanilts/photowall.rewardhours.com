@@ -40,10 +40,13 @@ final class Intake
         if ($err !== UPLOAD_ERR_OK || !is_uploaded_file((string) $file['tmp_name'])) {
             return self::no('busy', 'We could not receive this file. Please try again.');
         }
-        if (!in_array($category, project_categories($project), true)) {
-            return self::no('category', 'Choose a category for this photo first.');
+        // '' or 'auto': the scanner suggests the category. Otherwise it must be one of the project's own.
+        $auto = $category === '' || $category === 'auto';
+        if ($auto) $category = '';
+        elseif (!in_array($category, project_categories($project), true)) {
+            return self::no('category', 'That category is not part of this project. Please choose another.');
         }
-        if (!throttle('upload:' . $resp['id'], 150, 3600)) {
+        if (!throttle('upload:' . $resp['id'], 1000, 3600)) {
             return self::no('busy', 'Too many uploads in a short time. Please wait a little and try again.');
         }
 
@@ -108,10 +111,11 @@ final class Intake
                 return self::discard($project, $resp, $base, ['safety' => $scan['safety']] + $meta, 'unsafe', 'This photo cannot be accepted because it appears to contain nudity or sexual content.');
             }
 
+            if ($auto) $category = category_for_key($project, $scan['category']['key'] ?? null);
             $ext = ['JPEG' => 'jpg', 'HEIC' => 'heic', 'HEIF' => 'heif'][$facts['file_type']];
             $photo = [
                 'project_id' => (int) $project['id'], 'respondent_id' => (int) $resp['id'], 'token' => $token,
-                'orig_name' => $name, 'category' => $category, 'ext' => $ext, 'mime' => $facts['mime'] ?: 'application/octet-stream',
+                'orig_name' => $name, 'category' => $category, 'category_auto' => $auto ? 1 : 0, 'ext' => $ext, 'mime' => $facts['mime'] ?: 'application/octet-stream',
                 'bytes' => $bytes, 'sha256' => $sha, 'crc32' => hexdec((string) hash_file('crc32b', $tmp)),
                 'width' => (int) $scan['width'], 'height' => (int) $scan['height'],
                 'device_model' => mb_substr($facts['model'], 0, 80), 'lens_model' => mb_substr($facts['lens'], 0, 160),

@@ -62,6 +62,7 @@ $detail = json_decode($photo['safety_detail'], true) ?: [];
       </select>
       <button class="btn btn-small" type="submit">Save category</button>
     </form>
+    <?php if ((int) ($photo['category_auto'] ?? 0)): ?><p class="muted">This category was detected automatically and nobody has checked it yet. Saving it here marks it as checked.</p><?php endif; ?>
     <h2>Respondent</h2>
     <dl class="facts">
       <div><dt>Contributor ID</dt><dd><a href="/projects/<?= (int) $photo['project_id'] ?>/tracker?person=<?= (int) $photo['respondent_id'] ?>"><?= e(contributor_id($photo['respondent_id'])) ?></a></dd></div>

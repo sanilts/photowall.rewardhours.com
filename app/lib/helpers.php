@@ -268,6 +268,23 @@ function project_categories(array $project): array
     return $list;
 }
 
+/**
+ * Turns what the scanner thinks a photo shows (portrait, landscape, indoor, animal, food, still, macro, or
+ * nothing) into one of the project's own categories. The project's lines are matched by meaning, the same
+ * way their icons are chosen, so renamed lines still work. Unsure, or no matching line: Other.
+ */
+function category_for_key(array $project, ?string $key): string
+{
+    $icon = ['portrait' => 'person', 'landscape' => 'mountain', 'indoor' => 'sofa', 'animal' => 'paw', 'food' => 'food',
+        'still' => 'vase', 'macro' => 'flower'][(string) $key] ?? null;
+    if ($icon) {
+        foreach (project_categories($project) as $c) {
+            if ($c !== 'Other' && subject_look($c)['icon'] === $icon) return $c;
+        }
+    }
+    return 'Other';
+}
+
 /* ---- reward paid to people who take part ---- */
 
 /** "$1", "$2.50", "Rs 50": an amount as people read it. */

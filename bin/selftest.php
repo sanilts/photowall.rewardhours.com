@@ -43,6 +43,9 @@ $scan = Scanner::run($probe);
 @unlink($probe);
 $say(!empty($scan['ok']), 'Scanner opens and measures a picture' . (!empty($scan['ok']) ? " ({$scan['ms']} ms)" : ''), (string) ($scan['detail'] ?? ''));
 $engines = $scan['safety']['engines'] ?? [];
+$cat = $scan['category'] ?? [];
+$say(!isset($cat['error']) && array_key_exists('key', $cat), 'Category detection is running' . (isset($cat['key']) ? ' (the test picture looks like: ' . $cat['key'] . ')' : ''),
+    'Photos uploaded without a chosen category would be filed under Other. Run pw-deploy again to fetch the two models. Detail: ' . ($cat['error'] ?? 'no answer'));
 $say(count($engines) === 2, 'Safety models running: ' . ($engines ? implode(', ', $engines) : 'none'), 'Photos would still be held for staff review, but nothing would be blocked automatically.');
 if (Spaces::on()) {
     $problem = Spaces::selfTest();
