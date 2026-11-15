@@ -350,6 +350,21 @@ function country_code(string $name): string
     return (string) ($byName[strtolower(trim($name))] ?? '');
 }
 
+/** A browser's long description in a few words, for example "Chrome on Windows". */
+function agent_label(string $ua): string
+{
+    if ($ua === '') return '';
+    $os = match (true) {
+        str_contains($ua, 'iPhone') => 'iPhone', str_contains($ua, 'iPad') => 'iPad', str_contains($ua, 'Android') => 'Android',
+        str_contains($ua, 'Windows') => 'Windows', str_contains($ua, 'Mac OS X') => 'Mac', str_contains($ua, 'Linux') => 'Linux', default => '',
+    };
+    $browser = match (true) {
+        str_contains($ua, 'Edg') => 'Edge', str_contains($ua, 'OPR/') => 'Opera', str_contains($ua, 'Firefox/') || str_contains($ua, 'FxiOS') => 'Firefox',
+        str_contains($ua, 'Chrome/') || str_contains($ua, 'CriOS') => 'Chrome', str_contains($ua, 'Safari/') => 'Safari', default => '',
+    };
+    return $browser !== '' && $os !== '' ? "$browser on $os" : ($browser . $os !== '' ? $browser . $os : 'Other');
+}
+
 /* ---- reward paid to people who take part ---- */
 
 /** "$1", "$2.50", "Rs 50": an amount as people read it. */

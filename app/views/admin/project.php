@@ -30,6 +30,16 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
 </section>
 <?php endif; ?>
 
+<?php if (!empty($asked)): ?>
+<section class="todo todo-ask">
+  <div>
+    <p class="todo-n"><?= (int) $asked ?> download <?= (int) $asked === 1 ? 'request is' : 'requests are' ?> waiting for an answer</p>
+    <p class="todo-sub">The client asked to download photos of this project.</p>
+  </div>
+  <a class="btn btn-main" href="/clients/requests">Answer</a>
+</section>
+<?php endif; ?>
+
 <section class="todo <?= $pending ? 'todo-go' : 'todo-done' ?>">
   <?php if ($pending): ?>
     <div>
@@ -114,6 +124,8 @@ require PW_ROOT . '/app/views/admin/project_tabs.php';
         <div><dt>Closes</dt><dd><?= e($p['closes_at'] ? nice_date($p['closes_at']) : 'No closing date') ?></dd></div>
         <div><dt>Accepted phones</dt><dd>iPhone <?= (int) $p['min_iphone'] ?> or newer<?= trim($p['extra_models']) !== '' ? ', plus ' . e(implode(', ', array_filter(array_map('trim', preg_split('/\R/', $p['extra_models']))))) : '' ?></dd></div>
         <div><dt>Client</dt><dd><?= e($client['name'] ?? 'Not linked yet') ?></dd></div>
+        <div><dt>Client downloads</dt><dd><?= (int) $p['client_approval'] ? 'Need our approval' : 'Without asking' ?>, <?= (int) $p['client_bulk'] ? 'many at once allowed' : 'one photo at a time' ?></dd></div>
+        <div><dt>Contributor uploads</dt><dd><?= (int) $p['bulk_upload'] ? 'Many photos at once' : 'One photo at a time' ?></dd></div>
       </dl>
     </section>
   </div>

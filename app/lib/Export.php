@@ -23,6 +23,12 @@ final class Export
         return Db::all($sql . ' ORDER BY p.id', $params);
     }
 
+    /** The photos of one download request that are still approved. */
+    public static function requestPhotos(int $requestId): array
+    {
+        return Db::all(self::LIST_SQL . " JOIN download_request_photos d ON d.photo_id = p.id AND d.request_id = ? WHERE p.status = 'approved' ORDER BY p.id", [$requestId]);
+    }
+
     /** One row per photo. Clients get a respondent code and country, never name, email or phone. */
     public static function csv(array $photos, bool $withPerson): string
     {

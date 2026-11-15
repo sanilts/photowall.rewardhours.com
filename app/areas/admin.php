@@ -23,7 +23,8 @@ function ad_nav(string $on): array
     $me = ad_me();
     $nav = [['Projects', '/', $on === 'projects']];
     if ($me && $me['role'] === 'admin') {
-        $nav[] = ['Clients', '/clients', $on === 'clients'];
+        $asked = (int) Db::val("SELECT COUNT(*) FROM download_requests WHERE status = 'pending'");
+        $nav[] = ['Clients' . ($asked ? " ($asked)" : ''), $asked ? '/clients/requests' : '/clients', $on === 'clients'];
         $nav[] = ['Staff', '/staff', $on === 'staff'];
         $nav[] = ['Activity', '/activity', $on === 'activity'];
         $nav[] = ['Settings', '/settings', $on === 'settings'];
@@ -102,6 +103,9 @@ function ad_project_input(?array $old): array
         'min_iphone' => max(11, min(99, (int) post('min_iphone'))),
         'extra_models' => post('extra_models'),
         'strict_original' => post('strict_original') === '1' ? 1 : 0,
+        'client_approval' => post('client_approval') === '1' ? 1 : 0,
+        'client_bulk' => post('client_bulk') === '1' ? 1 : 0,
+        'bulk_upload' => post('bulk_upload') === '1' ? 1 : 0,
         'min_megapixels' => max(0, min(200, (float) post('min_megapixels'))),
         'blur_min' => max(0, min(100, (float) post('blur_min'))),
         'dark_min' => max(0, min(255, (float) post('dark_min'))),
@@ -200,7 +204,8 @@ route('GET', '/projects/new', function () {
         'wanted' => "Portraits and human activities\nOutdoor landscapes\nIndoor environments\nAnimals and pets\nFood and dining\nStill life\nMacro and texture photography",
         'photos_per_person' => 0, 'daily_limit' => 0, 'target_photos' => 0, 'reward_amount' => 1, 'reward_photos' => 5, 'reward_symbol' => '$', 'opens_at' => null, 'closes_at' => null, 'min_iphone' => 16,
         'extra_models' => "iPhone Air\niPhone Duo", 'strict_original' => 1, 'min_megapixels' => 8, 'blur_min' => 25, 'dark_min' => 25,
-        'bright_max' => 240, 'dup_distance' => 4, 'safety_block' => 0.85, 'safety_review' => 0.30, 'terms_version' => 1];
+        'bright_max' => 240, 'dup_distance' => 4, 'safety_block' => 0.85, 'safety_review' => 0.30, 'terms_version' => 1,
+        'client_approval' => 0, 'client_bulk' => 1, 'bulk_upload' => 1];
     view('admin/project_form', ['title' => 'New project', 'nav' => ad_nav('projects'), 'p' => $blank, 'clients' => Db::all('SELECT id, name FROM clients ORDER BY name')]);
 });
 
@@ -243,7 +248,8 @@ route('GET', '/projects/{id}', function (string $id) {
     view('admin/project', ['title' => $p['name'], 'nav' => ad_nav('projects'), 'p' => $p, 'counts' => $counts, 'why' => $why, 'people' => $people, 'client' => $client,
         'state' => Intake::allowance($p, ['id' => 0, 'blocked' => 0])['state'], 'byCategory' => Tracker::byCategory($p), 'rewardTotal' => ad_reward_total($p),
         'turned' => array_sum(array_column($why, 'n')), 'collected' => Intake::collected($p),
-        'lastUpload' => Db::val("SELECT MAX(created_at) FROM photos WHERE project_id = ? AND status <> 'removed'", [$p['id']])]);
+        'lastUpload' => Db::val("SELECT MAX(created_at) FROM photos WHERE project_id = ? AND status <> 'removed'", [$p['id']]),
+        'asked' => (int) Db::val("SELECT COUNT(*) FROM download_requests WHERE project_id = ? AND status = 'pending'", [$p['id']])]);
 });
 
 route('GET', '/projects/{id}/edit', function (string $id) {
@@ -326,7 +332,8 @@ route('GET', '/photos/{id}', function (string $id) {
     if (!$photo) fail_page(404, 'We could not find that photo.');
     $p = ad_project((string) $photo['project_id']);
     $next = Db::val("SELECT id FROM photos WHERE project_id = ? AND status = 'pending' AND id > ? ORDER BY id LIMIT 1", [$p['id'], $photo['id']]);
-    view('admin/photo', ['title' => 'Photo ' . $photo['id'], 'nav' => ad_nav('projects'), 'p' => $p, 'photo' => $photo, 'meta' => json_decode($photo['meta_json'], true) ?: [], 'next' => $next]);
+    view('admin/photo', ['title' => 'Photo ' . $photo['id'], 'nav' => ad_nav('projects'), 'p' => $p, 'photo' => $photo, 'meta' => json_decode($photo['meta_json'], true) ?: [], 'next' => $next,
+        'seen' => ClientLog::photo((int) $photo['id'])]);
 });
 
 route('POST', '/photos/{id}/decide', function (string $id) {
@@ -555,6 +562,74 @@ route('POST', '/client-users/{id}/toggle', function (string $id) {
         flash($u['active'] ? 'Access switched off.' : 'Access switched on.');
     }
     redirect('/clients');
+});
+
+/* ---------- clients: download requests ---------- */
+
+route('GET', '/clients/requests', function () {
+    ad_need(true);
+    $rows = Db::all("SELECT r.*, p.name AS project_name, u.name AS user_name, u.email AS user_email, c.name AS client_name, s.name AS staff_name
+        FROM download_requests r JOIN projects p ON p.id = r.project_id JOIN client_users u ON u.id = r.client_user_id JOIN clients c ON c.id = r.client_id
+        LEFT JOIN staff s ON s.id = r.decided_by
+        ORDER BY r.status = 'pending' DESC, r.id DESC LIMIT 200");
+    foreach ($rows as &$r) {
+        $r['thumbs'] = Db::all('SELECT ph.id, ph.token, ph.status FROM download_request_photos d JOIN photos ph ON ph.id = d.photo_id WHERE d.request_id = ? ORDER BY ph.id LIMIT 10', [$r['id']]);
+    }
+    unset($r);
+    view('admin/client_requests', ['title' => 'Download requests', 'nav' => ad_nav('clients'), 'rows' => $rows, 'days' => ClientLog::VALID_DAYS]);
+});
+
+route('POST', '/clients/requests/{id}/decide', function (string $id) {
+    $me = ad_need(true);
+    $r = Db::one('SELECT r.*, p.name AS project_name, u.email AS user_email, u.name AS user_name FROM download_requests r JOIN projects p ON p.id = r.project_id JOIN client_users u ON u.id = r.client_user_id WHERE r.id = ?', [(int) $id]);
+    $do = post('do');
+    $reply = mb_substr(trim(post('reply')), 0, 500);
+    if (!$r || !in_array($do, ['approve', 'decline'], true) || ($do === 'approve' && $r['status'] !== 'pending') || ($do === 'decline' && $r['status'] === 'declined')) {
+        flash('That request has already been decided.', 'bad');
+        redirect('/clients/requests');
+    }
+    $what = (int) $r['photos'] === 1 ? '1 photo' : $r['photos'] . ' photos';
+    $link = area_url('client', '/requests');
+    if ($do === 'approve') {
+        $until = date('Y-m-d H:i:s', time() + ClientLog::VALID_DAYS * 86400);
+        Db::q("UPDATE download_requests SET status = 'approved', reply = ?, decided_by = ?, decided_at = ?, expires_at = ? WHERE id = ?", [$reply, $me['id'], now(), $until, $r['id']]);
+        audit('download.approve', "$what from {$r['project_name']} for {$r['user_email']} (request {$r['id']})");
+        $sent = Mailer::send($r['user_email'], "Your download is approved: $what from {$r['project_name']}",
+            "Hello {$r['user_name']},\n\nYour request to download $what from \"{$r['project_name']}\" is approved." . ($reply !== '' ? "\n\n$reply" : '')
+            . "\n\nThe download waits for you here until " . nice_date($until) . ":\n$link\n\n" . cfg('company', 'Research and Metric Corporation'));
+        flash("Approved. {$r['user_email']} can download $what for " . ClientLog::VALID_DAYS . ' days' . ($sent ? ' and was told by email.' : '. The email could not be sent, so please tell them yourself.'), $sent ? 'ok' : 'bad');
+    } else {
+        $was = $r['status'];
+        Db::q("UPDATE download_requests SET status = 'declined', reply = ?, decided_by = ?, decided_at = ?, expires_at = NULL WHERE id = ?", [$reply, $me['id'], now(), $r['id']]);
+        audit($was === 'approved' ? 'download.withdraw' : 'download.decline', "$what from {$r['project_name']} for {$r['user_email']} (request {$r['id']})");
+        $sent = Mailer::send($r['user_email'], ($was === 'approved' ? 'Your download is no longer available' : 'Your download request was declined') . ": $what from {$r['project_name']}",
+            "Hello {$r['user_name']},\n\n" . ($was === 'approved' ? "The approved download of $what from \"{$r['project_name']}\" has been withdrawn." : "Your request to download $what from \"{$r['project_name']}\" was declined.")
+            . ($reply !== '' ? "\n\n$reply" : '') . "\n\nYour requests are listed here:\n$link\n\n" . cfg('company', 'Research and Metric Corporation'));
+        flash(($was === 'approved' ? 'The approval is withdrawn.' : 'Declined.') . ($sent ? " {$r['user_email']} was told by email." : ' The email could not be sent, so please tell them yourself.'), $sent ? 'ok' : 'bad');
+    }
+    redirect('/clients/requests');
+});
+
+/* ---------- clients: what they did in the portal ---------- */
+
+function ad_activity_filter(): array
+{
+    return ['user' => (int) ($_GET['user'] ?? 0), 'action' => (string) ($_GET['action'] ?? ''), 'from' => (string) ($_GET['from'] ?? ''), 'to' => (string) ($_GET['to'] ?? '')];
+}
+
+route('GET', '/clients/activity', function () {
+    ad_need(true);
+    $f = ad_activity_filter();
+    $total = ClientLog::count($f);
+    [$offset, $pages, $page] = paging($total, 100, (int) ($_GET['page'] ?? 1));
+    view('admin/client_activity', ['title' => 'Client activity', 'nav' => ad_nav('clients'), 'people' => ClientLog::people(), 'f' => $f,
+        'rows' => ClientLog::rows($f, 100, $offset), 'total' => $total, 'pages' => $pages, 'page' => $page, 'located' => Guard::settings()['ip_key'] !== '']);
+});
+
+route('GET', '/clients/activity.csv', function () {
+    ad_need(true);
+    audit('client.activity.export');
+    ClientLog::sendCsv(ad_activity_filter());
 });
 
 /* ---------- staff ---------- */

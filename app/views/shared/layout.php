@@ -11,21 +11,22 @@ $v = static fn(string $f): string => '/assets/' . $f . '?v=' . (string) @filemti
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="<?= $area === 'respondent' ? 'index,follow' : 'noindex,nofollow' ?>">
-<meta name="theme-color" content="#0a1e3c">
+<meta name="theme-color" content="<?= $area === 'client' ? '#ffffff' : '#0a1e3c' ?>">
 <title><?= e($title) ?> | Photowall</title>
 <?php if (!empty($description)): ?><meta name="description" content="<?= e($description) ?>"><?php endif; ?>
 <link rel="preload" href="/assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= e($v('app.css')) ?>">
-<link rel="icon" href="/assets/icon-48.png" type="image/png">
-<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="icon" href="/assets/<?= $area === 'client' ? 'rm-' : '' ?>icon-48.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/<?= $area === 'client' ? 'rm-' : '' ?>icon-180.png">
 </head>
 <body class="area-<?= e($area) ?><?= $wide ? ' is-wide' : '' ?>">
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <div class="wrap top-in">
     <a class="brand" href="/">
-      <img src="/assets/logo-white.png" alt="Reward Hours" width="94" height="40">
+      <?php if ($area === 'client'): ?><img src="/assets/rm-logo.png" alt="Research and Metric" width="215" height="40">
+      <?php else: ?><img src="/assets/logo-white.png" alt="Reward Hours" width="94" height="40"><?php endif; ?>
       <span class="brand-name">Photowall</span>
       <?php if ($badge): ?><span class="brand-tag"><?= e($badge) ?></span><?php endif; ?>
     </a>
@@ -63,6 +64,8 @@ $v = static fn(string $f): string => '/assets/' . $f . '?v=' . (string) @filemti
     <?php if ($area === 'respondent'): ?>
       <a href="/privacy">Privacy</a>
       <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>
+    <?php elseif ($area === 'client'): ?>
+      <a href="https://researchandmetric.com" target="_blank" rel="noopener">researchandmetric.com</a>
     <?php endif; ?>
   </div>
 </footer>

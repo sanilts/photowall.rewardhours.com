@@ -1,12 +1,24 @@
-<?php /** @var array $p @var array $photo @var array $meta */ ?>
-<p class="crumbs"><a href="/">Your projects</a> / <a href="/projects/<?= (int) $p['id'] ?>"><?= e($p['name']) ?></a> / #<?= (int) $photo['id'] ?></p>
+<?php /** @var array $p @var array $photo @var array $meta @var string $state */ ?>
+<p class="crumbs"><a href="/">Your projects</a> / <a href="/projects/<?= (int) $p['id'] ?>"><?= e($p['name']) ?></a> / <?= e(image_id($photo['id'])) ?></p>
 <div class="head">
-  <h1>Photo #<?= (int) $photo['id'] ?></h1>
-  <a class="btn btn-main" href="/img/<?= e($photo['token']) ?>/original">Download original (<?= e(strtoupper($photo['ext'])) ?>, <?= e(human_bytes((int) $photo['bytes'])) ?>)</a>
+  <h1>Photo <?= e(image_id($photo['id'])) ?></h1>
+  <?php if ($state === 'free' || $state === 'approved'): ?>
+    <a class="btn btn-main" href="/img/<?= e($photo['token']) ?>/original">Download original (<?= e(strtoupper($photo['ext'])) ?>, <?= e(human_bytes((int) $photo['bytes'])) ?>)</a>
+  <?php elseif ($state === 'waiting'): ?>
+    <span class="chip chip-pending">Download request waiting for our answer</span>
+  <?php else: ?>
+    <form method="post" action="/photo/<?= e($photo['token']) ?>/ask" class="row">
+      <?= csrf_field() ?>
+      <label class="visually-hidden" for="note">Note for our team (optional)</label>
+      <input id="note" name="note" maxlength="500" placeholder="Note for our team (optional)">
+      <button class="btn btn-main" type="submit">Ask to download this photo</button>
+    </form>
+  <?php endif; ?>
 </div>
+<?php if ($state === 'ask'): ?><p class="muted">Downloads from this project need our approval. We email you when it is decided.</p><?php endif; ?>
 <div class="cols cols-wide">
   <section class="card">
-    <div class="viewer"><img src="/img/<?= e($photo['token']) ?>/preview" alt="Photo <?= (int) $photo['id'] ?>"></div>
+    <div class="viewer"><img src="/img/<?= e($photo['token']) ?>/preview" alt="Photo <?= e(image_id($photo['id'])) ?>"></div>
     <p class="muted">This is a smaller preview for your browser. The download is the untouched original file.</p>
   </section>
   <section class="card">

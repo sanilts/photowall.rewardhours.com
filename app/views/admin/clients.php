@@ -1,6 +1,13 @@
 <?php /** @var array $clients @var array $users */ ?>
-<div class="head"><h1>Clients</h1></div>
-<p class="muted">A client signs in at <strong><?= e(cfg('hosts.client')) ?></strong> with their email and a code we send them. They only see approved photos of the projects linked to their company.</p>
+<?php $ctab = 'people'; require PW_ROOT . '/app/views/admin/client_tabs.php'; ?>
+<section class="card">
+  <h2>Link for clients</h2>
+  <div class="copy">
+    <input id="client-link" value="<?= e(area_url('client', '/login')) ?>" readonly aria-label="Sign-in link for clients">
+    <button class="btn btn-main" type="button" data-copy="client-link">Copy</button>
+  </div>
+  <p class="muted">A client signs in here with their email and a code we send them. They only see approved photos of the projects linked to their company. Everything they do is listed under Activity.</p>
+</section>
 
 <section class="card">
   <h2>Add a client company</h2>

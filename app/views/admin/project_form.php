@@ -107,6 +107,14 @@ $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : 
   </fieldset>
 
   <fieldset class="card">
+    <legend>Client downloads and bulk upload</legend>
+    <label class="check"><input type="checkbox" name="client_approval" value="1"<?= (int) ($p['client_approval'] ?? 0) ? ' checked' : '' ?>><span>Clients must ask before they download. Each request waits for an administrator to approve or decline it under Clients, Download requests.</span></label>
+    <label class="check"><input type="checkbox" name="client_bulk" value="1"<?= (int) ($p['client_bulk'] ?? 1) ? ' checked' : '' ?>><span>Bulk download: clients can take many photos at once as a ZIP. When off, they download one photo at a time.</span></label>
+    <label class="check"><input type="checkbox" name="bulk_upload" value="1"<?= (int) ($p['bulk_upload'] ?? 1) ? ' checked' : '' ?>><span>Bulk upload: contributors can choose many photos at once. When off, they add one photo at a time.</span></label>
+    <p class="muted hint">Clients only ever see accepted photos. What they view and download is listed under Clients, Activity.</p>
+  </fieldset>
+
+  <fieldset class="card">
     <legend>Quality and safety checks</legend>
     <div class="grid2">
       <div>

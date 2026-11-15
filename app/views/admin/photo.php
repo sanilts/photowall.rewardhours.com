@@ -52,7 +52,8 @@ $detail = json_decode($photo['safety_detail'], true) ?: [];
         <?php foreach ($detail['parts'] ?? [] as $part): ?><br><span class="muted"><?= e(ucfirst(strtolower(str_replace('_', ' ', $part['label'])))) ?> <?= e($part['score']) ?></span><?php endforeach; ?></dd></div>
     </dl>
     <h2>Filed as</h2>
-    <dl class="facts"><div><dt>Image ID</dt><dd><?= e(image_id($photo['id'])) ?></dd></div></dl>
+    <dl class="facts"><div><dt>Image ID</dt><dd><?= e(image_id($photo['id'])) ?></dd></div>
+      <div><dt>Client</dt><dd><?= $photo['status'] !== 'approved' ? 'Not visible to the client' : 'Viewed ' . (int) $seen['views'] . ((int) $seen['views'] === 1 ? ' time' : ' times') . ', downloaded ' . (int) $seen['downloads'] . ((int) $seen['downloads'] === 1 ? ' time' : ' times') . ($seen['last_download'] ? ' (last on ' . e(nice_date($seen['last_download'])) . ')' : '') ?></dd></div></dl>
     <form method="post" action="/photos/<?= (int) $photo['id'] ?>/category" class="row">
       <?= csrf_field() ?>
       <label class="visually-hidden" for="photo-category">Category</label>

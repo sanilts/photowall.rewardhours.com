@@ -89,6 +89,23 @@ photos" makes one picture per kind in turn (skipping those that already have a d
 accepts every draft together. The model name (default `gemini-3.1-flash-image`) can be changed there if Google
 renames it. The code is in `app/lib/Gemini.php`.
 
+## Client portal: logo, activity, download approval
+
+The client portal (`hosts.client`) shows the Research and Metric logo (`public/assets/rm-logo.png`) on a white
+header. Clients only ever see accepted photos.
+
+- **Activity.** Every sign-in (time, IP address, country when an IPzentra key is saved, browser), gallery page,
+  photo viewed, download and request is written to `client_events`, with one line per photo in
+  `client_photo_log`. Staff read it in the console under Clients, Activity, and can download it as CSV.
+- **Download approval** (project Settings, off by default). When on, clients ask instead of downloading.
+  Administrators get an email and answer under Clients, Download requests. An approved download works for
+  7 days for the person who asked (`ClientLog::VALID_DAYS`), and can be withdrawn.
+- **Bulk download** and **bulk upload** (project Settings, on by default). Off means clients take one photo at
+  a time, and contributors add one photo at a time.
+
+The code is in `app/lib/ClientLog.php`, `app/areas/client.php` and the `/clients/...` routes of
+`app/areas/admin.php`.
+
 ## Checks at sign-in and the invitation
 
 Console, Settings, "Checks at sign-in". Both checks are off until a key is saved and the box is ticked.

@@ -44,15 +44,17 @@ $infoTab = $reward ? 'Reward' : 'Info';
     <div class="note note-warn">You have reached today's limit. Please come back tomorrow to add more.</div>
   <?php endif; ?>
 
-  <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
-    <input class="visually-hidden" id="files" type="file" accept="image/*" multiple>
+  <?php $many = (int) ($project['bulk_upload'] ?? 1) === 1; ?>
+  <div id="picker"<?= $allow['can'] > 0 ? '' : ' hidden' ?> data-many="<?= $many ? 1 : 0 ?>">
+    <input class="visually-hidden" id="files" type="file" accept="image/*"<?= $many ? ' multiple' : '' ?>>
     <label class="drop" for="files" id="drop">
       <span class="drop-ico"><?= icon('upload') ?></span>
-      <span class="drop-title">Upload your photos</span>
-      <span class="drop-drag">Drag photos here, or</span>
-      <span class="drop-btn">Choose photos</span>
-      <span class="drop-sub">JPEG or HEIC, up to <?= (int) cfg('max_upload_mb', 60) ?> MB each. You can choose many at once.</span>
+      <span class="drop-title"><?= $many ? 'Upload your photos' : 'Upload a photo' ?></span>
+      <span class="drop-drag"><?= $many ? 'Drag photos here, or' : 'Drag a photo here, or' ?></span>
+      <span class="drop-btn"><?= $many ? 'Choose photos' : 'Choose a photo' ?></span>
+      <span class="drop-sub">JPEG or HEIC, up to <?= (int) cfg('max_upload_mb', 60) ?> MB each. <?= $many ? 'You can choose many at once.' : 'Add one photo at a time.' ?></span>
     </label>
+    <p class="note note-bad" id="one-note" role="alert" hidden>Please add one photo at a time. Only the first photo was taken.</p>
   </div>
 
   <div id="results" hidden>

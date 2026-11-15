@@ -234,8 +234,16 @@
     xhr.send(data);
   }
 
+  var picker = document.getElementById('picker');
+  var many = !picker || picker.dataset.many !== '0'; // the project can switch off adding many photos at once
+  var oneNote = document.getElementById('one-note');
+
   function addFiles(files) {
     if (!files || !files.length) return;
+    if (!many) {
+      if (oneNote) oneNote.hidden = files.length < 2;
+      files = [files[0]];
+    }
     var chosen = category ? category.value : 'auto'; // no box on the page: the server files each photo itself
     Array.prototype.forEach.call(files, function (file) {
       waiting.push({ file: file, row: addRow(file), category: chosen });

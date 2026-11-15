@@ -71,6 +71,30 @@ img { max-width: 100%; height: auto; }
 .signout { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .top-link { margin-left: auto; }
 .who { color: rgba(255, 254, 240, .75); font-size: .92rem; }
+/* client portal: white header with the Research and Metric logo in its own colours */
+.area-client .top { background: #fff; color: var(--navy); border-bottom: 1px solid var(--line); }
+.area-client .top :focus-visible { outline-color: var(--navy); }
+.area-client .brand { color: var(--navy); }
+.area-client .brand img { width: 215px; height: 40px; }
+.area-client .brand-name { border-left-color: var(--line); }
+.area-client .brand-tag { background: #e9f2d6; color: #3c5c00; }
+.area-client .nav a { color: var(--soft); }
+.area-client .nav a:hover { color: var(--navy); background: rgba(10, 30, 60, .06); }
+.area-client .nav a[aria-current] { color: var(--navy); border-bottom-color: #669900; }
+.area-client .who { color: var(--soft); }
+.area-client .btn-onnavy { border-color: #c4cfe2; color: var(--navy); }
+.area-client .btn-onnavy:hover { background: rgba(10, 30, 60, .06); }
+@media (max-width: 640px) {
+  .area-client .brand img { width: 172px; height: 32px; }
+  .area-client .brand-name { display: none; }
+}
+.reqs { list-style: none; padding: 0; margin: 0; }
+.req-head { display: flex; gap: 10px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.req-head h2 { margin: 0; font-size: 1.2rem; }
+.req-thumbs { list-style: none; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0; margin: 12px 0; }
+.req-thumbs img { display: block; width: 64px; height: 64px; object-fit: cover; border-radius: 8px; }
+.req-more { color: var(--soft); font-size: .92rem; }
+.req form.row { align-items: center; }
 .foot { background: var(--navy-deep); color: rgba(255, 254, 240, .72); font-size: .92rem; padding: 22px 0 30px; }
 .foot-in { display: flex; gap: 8px 26px; flex-wrap: wrap; }
 .foot a { color: rgba(255, 254, 240, .9); }
@@ -459,6 +483,11 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
 .todo-done { background: var(--ok-bg); border: 1px solid #a6dcc0; color: #05402a; }
 .todo-n { margin: 0; font: 700 1.4rem/1.25 var(--display); }
 .todo-sub { margin: 4px 0 0; opacity: .85; }
+.todo-ask { background: #fff8e0; border: 1px solid #efd07a; color: var(--navy); }
+.filters > div { display: flex; flex-direction: column; gap: 4px; }
+.filters > div select, .filters > div input { flex: none; width: auto; min-width: 150px; max-width: 260px; }
+.filters > div label { font-size: .86rem; }
+.row.filters { align-items: flex-end; }
 .todo .btn-ghost:hover { background: rgba(255, 254, 240, .1); }
 .stats .stat { border-top: 4px solid #c9d3e3; }
 .stats .stat.st-ok { border-top-color: #1f9d68; }
