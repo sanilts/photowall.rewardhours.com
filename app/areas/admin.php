@@ -937,9 +937,19 @@ route('POST', '/settings/mail/test', function () {
 
 route('GET', '/activity', function () {
     ad_need(true);
-    $total = (int) Db::val('SELECT COUNT(*) FROM audit_log');
+    $groups = ['signin' => 'Sign-ins', 'photos' => 'Photo review', 'downloads' => 'Downloads', 'settings' => 'Settings', 'people' => 'People and access'];
+    $kind = isset($groups[$_GET['kind'] ?? '']) ? (string) $_GET['kind'] : '';
+    $where = '1 = 1';
+    $args = [];
+    if ($kind !== '') {
+        $codes = array_keys(array_filter(activity_words(), static fn(array $w): bool => $w[1] === $kind));
+        $where = 'action IN (' . rtrim(str_repeat('?,', count($codes)), ',') . ')';
+        $args = $codes;
+    }
+    $total = (int) Db::val("SELECT COUNT(*) FROM audit_log WHERE $where", $args);
     [$offset, $pages, $page] = paging($total, 100, (int) ($_GET['page'] ?? 1));
-    view('admin/activity', ['title' => 'Activity', 'nav' => ad_nav('activity'), 'rows' => Db::all("SELECT * FROM audit_log ORDER BY id DESC LIMIT 100 OFFSET $offset"), 'pages' => $pages, 'page' => $page]);
+    view('admin/activity', ['title' => 'Activity', 'nav' => ad_nav('activity'), 'rows' => Db::all("SELECT * FROM audit_log WHERE $where ORDER BY id DESC LIMIT 100 OFFSET $offset", $args),
+        'pages' => $pages, 'page' => $page, 'groups' => $groups, 'kind' => $kind, 'total' => $total]);
 });
 
 dispatch();

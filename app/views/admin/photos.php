@@ -46,8 +46,8 @@ $flagOnly = ($_GET['flag'] ?? '') === '1';
         <?php endif; ?>
         <div class="shot-info">
           <?php if ($status !== 'rejected'): ?>
-            <label class="check"><input type="checkbox" name="ids[]" value="<?= (int) $ph['id'] ?>" data-group="photo"><span>#<?= (int) $ph['id'] ?></span></label>
-          <?php else: ?><span>#<?= (int) $ph['id'] ?></span><?php endif; ?>
+            <label class="check"><input type="checkbox" name="ids[]" value="<?= (int) $ph['id'] ?>" data-group="photo"><span><?= e(image_id($ph['id'])) ?></span></label>
+          <?php else: ?><span><?= e(image_id($ph['id'])) ?></span><?php endif; ?>
           <span><?= e($ph['device_model']) ?></span>
           <span class="muted"><?= e($ph['email']) ?></span>
           <?php if ($status === 'rejected'): ?><span class="shot-why"><?= e($ph['reject_reason']) ?></span>

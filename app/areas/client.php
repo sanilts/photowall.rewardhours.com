@@ -76,9 +76,9 @@ function cl_ask(array $me, array $p, ?array $ids, string $note): ?int
     Db::q('UPDATE download_requests SET photos = ?, bytes = ? WHERE id = ?', [$sum['n'], $sum['bytes'], $rid]);
     $n = (int) $sum['n'];
     ClientLog::add($me, 'request', (int) $p['id'], $n, "request $rid");
-    audit('download.request', "$n photos from {$p['name']} (request $rid)");
-    $link = area_url('admin', '/clients/requests');
     $what = $n === 1 ? '1 photo' : "$n photos";
+    audit('download.request', "$what from {$p['name']} (request $rid)");
+    $link = area_url('admin', '/clients/requests');
     $text = "{$me['name']} ({$me['email']}) of {$me['client_name']} asks to download $what from \"{$p['name']}\"."
         . (trim($note) !== '' ? "\n\nTheir note: " . mb_substr(trim($note), 0, 500) : '') . "\n\nApprove or decline it here:\n$link\n";
     foreach (Db::all("SELECT email FROM staff WHERE active = 1 AND role = 'admin'") as $s) {
@@ -317,7 +317,7 @@ route('POST', '/requests/{id}/download', function (string $id) {
         redirect('/requests');
     }
     Db::q('UPDATE download_requests SET downloads = downloads + 1, last_download_at = ? WHERE id = ?', [now(), $r['id']]);
-    audit(count($photos) === 1 ? 'photo.download' : 'zip.download', count($photos) . " photos from {$p['name']} (request {$r['id']})");
+    audit(count($photos) === 1 ? 'photo.download' : 'zip.download', (count($photos) === 1 ? '1 photo' : count($photos) . ' photos') . " from {$p['name']} (request {$r['id']})");
     ClientLog::add($me, count($photos) === 1 ? 'download' : 'zip', (int) $p['id'], count($photos), "request {$r['id']}", array_column($photos, 'id'), 'download');
     if (count($photos) === 1) {
         session_write_close();

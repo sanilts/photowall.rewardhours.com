@@ -365,6 +365,41 @@ function agent_label(string $ua): string
     return $browser !== '' && $os !== '' ? "$browser on $os" : ($browser . $os !== '' ? $browser . $os : 'Other');
 }
 
+/**
+ * The stored codes of the activity list in plain words, each with the group it belongs to.
+ * @return array<string, array{0:string, 1:string}> code => [words, group]
+ */
+function activity_words(): array
+{
+    return [
+        'staff.login' => ['Staff signed in', 'signin'], 'client.login' => ['Client signed in', 'signin'], 'signin.refused' => ['Sign-in refused', 'signin'],
+        'photo.approve' => ['Accepted photos', 'photos'], 'photo.reject' => ['Rejected photos', 'photos'], 'photo.pending' => ['Put photos back for review', 'photos'],
+        'photo.category' => ['Changed a photo category', 'photos'],
+        'photo.download' => ['Downloaded a photo', 'downloads'], 'zip.download' => ['Downloaded photos (ZIP)', 'downloads'], 'metadata.export' => ['Downloaded the photo information sheet', 'downloads'],
+        'tracker.export' => ['Downloaded the tracker', 'downloads'], 'respondents.export' => ['Downloaded the contributor list', 'downloads'], 'client.activity.export' => ['Downloaded client activity', 'downloads'],
+        'download.request' => ['Client asked to download', 'downloads'], 'download.approve' => ['Approved a download request', 'downloads'],
+        'download.decline' => ['Declined a download request', 'downloads'], 'download.withdraw' => ['Withdrew a download approval', 'downloads'],
+        'project.create' => ['Created a project', 'settings'], 'project.update' => ['Changed project settings', 'settings'],
+        'settings.mail' => ['Changed email settings', 'settings'], 'settings.guard' => ['Changed sign-in checks', 'settings'], 'settings.invite' => ['Changed the invitation', 'settings'],
+        'settings.gemini' => ['Changed Gemini settings', 'settings'], 'settings.phones' => ['Changed example photos', 'settings'],
+        'settings.phones.make' => ['Created an example photo', 'settings'], 'settings.phones.use' => ['Put example photos live', 'settings'],
+        'staff.create' => ['Added a staff account', 'people'], 'staff.password' => ['Changed a staff password', 'people'], 'staff.disable' => ['Switched a staff account off', 'people'],
+        'staff.enable' => ['Switched a staff account on', 'people'], 'client.create' => ['Added a client company', 'people'], 'client.user.add' => ['Gave a client person access', 'people'],
+        'client.user.disable' => ['Switched client access off', 'people'], 'client.user.enable' => ['Switched client access on', 'people'],
+        'respondent.block' => ['Blocked a contributor', 'people'], 'respondent.unblock' => ['Unblocked a contributor', 'people'],
+    ];
+}
+
+/**
+ * A saved API key as it may be shown on screen: its first four and last three characters with **** between.
+ * A key too short for that to hide most of it shows as **** only.
+ */
+function mask_key(string $key): string
+{
+    if ($key === '') return '';
+    return strlen($key) >= 12 ? substr($key, 0, 4) . '****' . substr($key, -3) : '****';
+}
+
 /* ---- reward paid to people who take part ---- */
 
 /** "$1", "$2.50", "Rs 50": an amount as people read it. */

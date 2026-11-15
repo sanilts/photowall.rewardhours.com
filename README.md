@@ -106,6 +106,13 @@ header. Clients only ever see accepted photos.
 The code is in `app/lib/ClientLog.php`, `app/areas/client.php` and the `/clients/...` routes of
 `app/areas/admin.php`.
 
+## Console settings page
+
+Settings is one page in five parts (Email, Sign-in checks, Example photos, Invitation, Storage), switched by
+the list on the left; the part after `#` in the address chooses one. A saved API key is shown only as its
+first four and last three characters (`mask_key()`); the SMTP password is never shown. The activity list
+shows each stored code in plain words (`activity_words()` in `app/lib/helpers.php`).
+
 ## Checks at sign-in and the invitation
 
 Console, Settings, "Checks at sign-in". Both checks are off until a key is saved and the box is ticked.

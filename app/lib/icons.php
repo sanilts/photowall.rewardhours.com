@@ -37,6 +37,10 @@ function icon(string $name, string $class = ''): string
         'user'     => '<circle cx="12" cy="8.2" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>',
         'tiles'    => '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
         'info'     => '<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.5M12 7.6v.2"/>',
+        'key'      => '<circle cx="8" cy="15.5" r="4"/><path d="M11 12.6 19.6 4M16.2 7.4l2.6 2.6M13.6 10l2 2"/>',
+        'cloud'    => '<path d="M7.2 18.5a4.4 4.4 0 0 1-.7-8.75 5.9 5.9 0 0 1 11.4-.3 4.5 4.5 0 0 1-.4 9.05z"/>',
+        'spark'    => '<path d="m11 3.5 1.9 5.2 5.2 1.9-5.2 1.9L11 17.7l-1.9-5.2-5.2-1.9 5.2-1.9z"/><path d="m18.3 15.2.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8z"/>',
+        'gift'     => '<rect x="4" y="9.5" width="16" height="10.5" rx="1.6"/><path d="M3 9.5h18M12 9.5V20"/><path d="M12 9.5C10.6 6 6.6 5.4 6.6 7.7s3 1.8 5.4 1.8zM12 9.5c1.4-3.5 5.4-4.1 5.4-1.8S14.4 9.5 12 9.5z"/>',
     ];
     $body = $paths[$name] ?? $paths['image'];
     return '<svg class="ico' . ($class !== '' ? ' ' . $class : '') . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $body . '</svg>';

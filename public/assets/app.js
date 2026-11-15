@@ -115,6 +115,55 @@
     tell();
   }
 
+  // Tabs: a [data-tabs] box holds links a[data-tab] and parts [data-panel]. One part shows at a time.
+  // The address after # chooses the part, also when it names something inside a part (so links and
+  // the page a form returns to still land in the right place). Without JavaScript every part shows.
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tabs]'), function (box) {
+    var links = box.querySelectorAll('a[data-tab]');
+    var panels = box.querySelectorAll('[data-panel]');
+    if (!links.length || !panels.length) return;
+    function open(name) {
+      Array.prototype.forEach.call(panels, function (p) { p.hidden = p.dataset.panel !== name; });
+      Array.prototype.forEach.call(links, function (a) {
+        if (a.dataset.tab === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      });
+    }
+    function fromAddress() {
+      var el = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+      var panel = el && el.closest('[data-panel]');
+      if (!panel || !box.contains(panel)) return null;
+      return { name: panel.dataset.panel, inner: el !== panel ? el : null };
+    }
+    function show() {
+      var to = fromAddress();
+      open(to ? to.name : links[0].dataset.tab);
+      // a message from the form just sent sits at the top of the page: keep it in view
+      if (document.querySelector('.flashes') || !to || !to.inner) window.scrollTo(0, 0); else to.inner.scrollIntoView();
+    }
+    box.classList.add('tabs-on');
+    show();
+    Array.prototype.forEach.call(links, function (a) {
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        open(a.dataset.tab);
+        if (history.replaceState) history.replaceState(null, '', '#' + a.dataset.tab);
+      });
+    });
+    window.addEventListener('hashchange', show);
+    // the browser moves to the #part once the page has loaded; put the view back where it belongs
+    window.addEventListener('load', function () { if (location.hash) show(); });
+  });
+
+  // Email settings: only the details of the chosen way of sending are shown.
+  var driver = document.querySelector('[data-choice="driver"]');
+  if (driver) {
+    var forDriver = function () {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-for-driver]'), function (el) { el.hidden = el.dataset.forDriver !== driver.value; });
+    };
+    driver.addEventListener('change', forDriver);
+    forDriver();
+  }
+
   // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
   var secure = document.getElementById('smtp_secure');
   var port = document.getElementById('smtp_port');

@@ -33,19 +33,18 @@
 
 <section class="card">
   <h2>Add a staff account</h2>
-  <form method="post" action="/staff" class="stack narrow-form">
+  <form method="post" action="/staff" class="form">
     <?= csrf_field() ?>
-    <label for="sname">Name</label>
-    <input id="sname" name="name" required maxlength="120">
-    <label for="semail">Email</label>
-    <input id="semail" name="email" type="email" required maxlength="190">
-    <label for="spass">Password</label>
-    <input id="spass" name="password" type="password" minlength="10" required autocomplete="new-password">
-    <label for="srole">Role</label>
-    <select id="srole" name="role">
-      <option value="reviewer">Reviewer: can review photos and download</option>
-      <option value="admin">Administrator: can also change projects, clients and staff</option>
-    </select>
-    <button class="btn btn-main" type="submit">Add staff account</button>
+    <div class="grid2">
+      <div><label for="sname">Name</label><input id="sname" name="name" required maxlength="120"></div>
+      <div><label for="semail">Email</label><input id="semail" name="email" type="email" required maxlength="190"></div>
+      <div><label for="spass">Password <span class="muted">(at least 10 characters)</span></label><input id="spass" name="password" type="password" minlength="10" required autocomplete="new-password"></div>
+      <div><label for="srole">Role</label>
+        <select id="srole" name="role">
+          <option value="reviewer">Reviewer: can review photos and download</option>
+          <option value="admin">Administrator: can also change projects, clients and staff</option>
+        </select></div>
+    </div>
+    <div class="row form-end"><button class="btn btn-main" type="submit">Add staff account</button></div>
   </form>
 </section>
