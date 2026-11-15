@@ -1,5 +1,5 @@
 <?php /** @var array $p @var array $rows @var array $codes @var string $code @var int $total @var int $pages @var int $page */ ?>
-<p class="crumbs"><a href="/">Projects</a> / <a href="/projects/<?= (int) $p['id'] ?>"><?= e($p['name']) ?></a> / Turned away</p>
+<?php $tab = 'turned'; require PW_ROOT . '/app/views/admin/project_tabs.php'; ?>
 <div class="head">
   <h1>Uploads turned away automatically <span class="muted">(<?= (int) $total ?>)</span></h1>
   <div class="tabs">

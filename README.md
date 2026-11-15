@@ -52,7 +52,12 @@ cron and sends one email per contributor, once staff have stopped approving that
 minutes, so a review session gives one email and not one per photo. The contributor's upload page shows the same
 details for every photo. The code is in `app/lib/Notify.php`.
 
-The console has a Tracker for each project (linked from the project page): one line for every photo that reached
+Every page of a project in the console has the same tabs: Overview, Review photos, Tracker, Contributors, Turned
+away and Settings. The overview leads with what needs doing (photos waiting for review), then the numbers, photos
+by category, why uploads were turned away, the link to share and the downloads. Contributors can be searched by
+name, email or contributor ID, filtered and ordered.
+
+The console has a Tracker for each project (one of its tabs): one line for every photo that reached
 the project, with image ID, file name, category, iPhone model, date taken, country, contributor ID and status
 (Accepted, In review, or Rejected with the reason and whether staff or an automatic check rejected it). Uploads
 that failed a check are listed with an RM-X ID, because the file itself is not kept. Below it are totals by

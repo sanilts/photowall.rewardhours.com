@@ -4,7 +4,8 @@ $new = (int) $p['id'] === 0;
 $action = $new ? '/projects/new' : '/projects/' . (int) $p['id'] . '/edit';
 $dt = static fn(?string $v): string => $v ? date('Y-m-d\TH:i', strtotime($v)) : '';
 ?>
-<p class="crumbs"><a href="/">Projects</a> / <?= $new ? 'New project' : '<a href="/projects/' . (int) $p['id'] . '">' . e($p['name']) . '</a> / Settings' ?></p>
+<?php if ($new): ?><p class="crumbs"><a href="/">Projects</a> / New project</p>
+<?php else: $tab = 'settings'; require PW_ROOT . '/app/views/admin/project_tabs.php'; endif; ?>
 <h1><?= $new ? 'New project' : 'Project settings' ?></h1>
 
 <form method="post" action="<?= e($action) ?>" class="form">

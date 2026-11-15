@@ -49,7 +49,7 @@ $infoTab = $reward ? 'Reward' : 'Info';
     <label class="drop" for="files">
       <span class="drop-ico"><?= icon('plus') ?></span>
       <span class="drop-title">Choose photos</span>
-      <span class="drop-sub">Pick as many as you like from <strong>Photo Library</strong>. We check each one and file it under the right category for you.</span>
+      <span class="drop-sub">Pick as many as you like from <strong>Photo Library</strong>. Each one is checked as it uploads.</span>
     </label>
   </div>
 
@@ -64,15 +64,6 @@ $infoTab = $reward ? 'Reward' : 'Info';
   </div>
 
   <div id="picker-more"<?= $allow['can'] > 0 ? '' : ' hidden' ?>>
-    <div class="cat-row">
-      <label for="category">Category</label>
-      <select id="category" name="category">
-        <option value="auto">Detect automatically</option>
-        <?php foreach ($cats as $c): ?><option><?= e($c) ?></option><?php endforeach; ?>
-      </select>
-      <p class="muted">Detection is a best guess: check each photo afterwards and change the category if it is wrong. Adding photos of one kind only? Choose it here first.</p>
-    </div>
-
     <div class="dos">
       <ul>
         <li class="do"><?= icon('check') ?><span>Taken with the iPhone <strong>Camera</strong> app on an iPhone <?= (int) $project['min_iphone'] ?> or newer</span></li>
@@ -119,7 +110,6 @@ $infoTab = $reward ? 'Reward' : 'Info';
             </select>
             <button class="btn btn-small" type="submit">Save</button>
           </form>
-          <?php if ((int) $p['category_auto']): ?><span class="shot-auto">Detected. Change it if it is wrong.</span><?php endif; ?>
         <?php elseif ($p['category'] !== ''): ?>
           <span class="shot-kind"><?= e($p['category']) ?></span>
         <?php endif; ?>

@@ -218,16 +218,31 @@ route('POST', '/projects/new', function () {
     redirect("/projects/$id");
 });
 
+/** What every contributor of a project has earned together, as text ("$12"), or '' when the project pays nothing. */
+function ad_reward_total(array $p): string
+{
+    $rw = reward($p);
+    if (!$rw) return '';
+    $groups = 0;
+    foreach (Db::all("SELECT COUNT(*) AS n FROM photos WHERE project_id = ? AND status = 'approved' GROUP BY respondent_id", [$p['id']]) as $row) {
+        $groups += intdiv((int) $row['n'], $rw['every']);
+    }
+    return money($rw['symbol'], $groups * $rw['value']);
+}
+
 route('GET', '/projects/{id}', function (string $id) {
     ad_need();
     $p = ad_project($id);
-    $counts = Db::one("SELECT SUM(status = 'pending') AS pending, SUM(status = 'approved') AS approved, SUM(status = 'rejected') AS rejected,
-        SUM(status = 'pending' AND safety = 'review') AS flagged, COALESCE(SUM(IF(status = 'approved', bytes, 0)), 0) AS approved_bytes
+    $counts = Db::one("SELECT COALESCE(SUM(status = 'pending'), 0) AS pending, COALESCE(SUM(status = 'approved'), 0) AS approved, COALESCE(SUM(status = 'rejected'), 0) AS rejected,
+        COALESCE(SUM(status = 'pending' AND safety = 'review'), 0) AS flagged, COALESCE(SUM(IF(status = 'approved', bytes, 0)), 0) AS approved_bytes
         FROM photos WHERE project_id = ?", [$p['id']]);
     $why = Db::all('SELECT code, COUNT(*) AS n FROM rejections WHERE project_id = ? GROUP BY code ORDER BY n DESC', [$p['id']]);
     $people = (int) Db::val('SELECT COUNT(*) FROM respondents WHERE project_id = ?', [$p['id']]);
     $client = $p['client_id'] ? Db::one('SELECT * FROM clients WHERE id = ?', [$p['client_id']]) : null;
-    view('admin/project', ['title' => $p['name'], 'nav' => ad_nav('projects'), 'p' => $p, 'counts' => $counts, 'why' => $why, 'people' => $people, 'client' => $client, 'state' => Intake::allowance($p, ['id' => 0, 'blocked' => 0])['state']]);
+    view('admin/project', ['title' => $p['name'], 'nav' => ad_nav('projects'), 'p' => $p, 'counts' => $counts, 'why' => $why, 'people' => $people, 'client' => $client,
+        'state' => Intake::allowance($p, ['id' => 0, 'blocked' => 0])['state'], 'byCategory' => Tracker::byCategory($p), 'rewardTotal' => ad_reward_total($p),
+        'turned' => array_sum(array_column($why, 'n')),
+        'lastUpload' => Db::val("SELECT MAX(created_at) FROM photos WHERE project_id = ? AND status <> 'removed'", [$p['id']])]);
 });
 
 route('GET', '/projects/{id}/edit', function (string $id) {
@@ -387,12 +402,24 @@ route('GET', '/projects/{id}/respondents', function (string $id) {
     ad_need();
     $p = ad_project($id);
     $q = trim((string) ($_GET['q'] ?? ''));
+    $show = in_array($_GET['show'] ?? '', ['review', 'accepted', 'blocked'], true) ? (string) $_GET['show'] : '';
+    $orders = ['new' => 'r.id DESC', 'accepted' => 'n_approved DESC, r.id DESC', 'review' => 'n_pending DESC, r.id DESC', 'name' => "r.full_name = '', r.full_name, r.id",
+        'reward' => 'n_approved DESC, r.id DESC'];
+    $sort = isset($orders[$_GET['sort'] ?? '']) ? (string) $_GET['sort'] : 'new';
     $where = 'r.project_id = ?';
     $params = [$p['id']];
     if ($q !== '') {
-        $where .= ' AND (r.email LIKE ? OR r.full_name LIKE ?)';
+        $where .= ' AND (r.email LIKE ? OR r.full_name LIKE ?';
         array_push($params, "%$q%", "%$q%");
+        if (preg_match('/^(?:RM-?C)?0*(\d+)$/i', $q, $m)) { // a contributor ID, with or without its prefix
+            $where .= ' OR r.id = ?';
+            $params[] = (int) $m[1];
+        }
+        $where .= ')';
     }
+    if ($show === 'review') $where .= " AND EXISTS (SELECT 1 FROM photos WHERE respondent_id = r.id AND status = 'pending')";
+    if ($show === 'accepted') $where .= " AND EXISTS (SELECT 1 FROM photos WHERE respondent_id = r.id AND status = 'approved')";
+    if ($show === 'blocked') $where .= ' AND r.blocked = 1';
     $total = (int) Db::val("SELECT COUNT(*) FROM respondents r WHERE $where", $params);
     [$offset, $pages, $page] = paging($total, 50, (int) ($_GET['page'] ?? 1));
     $rows = Db::all("SELECT r.*,
@@ -400,8 +427,15 @@ route('GET', '/projects/{id}/respondents', function (string $id) {
         (SELECT COUNT(*) FROM photos WHERE respondent_id = r.id AND status = 'approved') AS n_approved,
         (SELECT COUNT(*) FROM photos WHERE respondent_id = r.id AND status = 'rejected') AS n_rejected,
         (SELECT COUNT(*) FROM rejections WHERE respondent_id = r.id) AS n_discarded
-        FROM respondents r WHERE $where ORDER BY r.id DESC LIMIT 50 OFFSET $offset", $params);
-    view('admin/respondents', ['title' => 'Respondents', 'nav' => ad_nav('projects'), 'p' => $p, 'rows' => $rows, 'q' => $q, 'total' => $total, 'pages' => $pages, 'page' => $page]);
+        FROM respondents r WHERE $where ORDER BY {$orders[$sort]} LIMIT 50 OFFSET $offset", $params);
+    $sum = [
+        'people' => (int) Db::val('SELECT COUNT(*) FROM respondents WHERE project_id = ?', [$p['id']]),
+        'with_accepted' => (int) Db::val("SELECT COUNT(DISTINCT respondent_id) FROM photos WHERE project_id = ? AND status = 'approved'", [$p['id']]),
+        'with_review' => (int) Db::val("SELECT COUNT(DISTINCT respondent_id) FROM photos WHERE project_id = ? AND status = 'pending'", [$p['id']]),
+        'reward' => ad_reward_total($p),
+    ];
+    view('admin/respondents', ['title' => 'Contributors', 'nav' => ad_nav('projects'), 'p' => $p, 'rows' => $rows, 'q' => $q, 'sort' => $sort, 'show' => $show,
+        'total' => $total, 'pages' => $pages, 'page' => $page, 'sum' => $sum]);
 });
 
 route('GET', '/projects/{id}/respondents.csv', function (string $id) {

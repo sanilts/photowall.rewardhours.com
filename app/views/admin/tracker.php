@@ -4,7 +4,7 @@ $base = '/projects/' . (int) $p['id'] . '/tracker';
 $qs = static fn(array $over) => '?' . http_build_query(array_filter($over + $f, static fn($v) => $v !== '' && $v !== 0));
 $chip = ['accepted' => 'approved', 'review' => 'pending', 'rejected' => 'rejected'];
 ?>
-<p class="crumbs"><a href="/">Projects</a> / <a href="/projects/<?= (int) $p['id'] ?>"><?= e($p['name']) ?></a> / Tracker</p>
+<?php $tab = 'tracker'; require PW_ROOT . '/app/views/admin/project_tabs.php'; ?>
 <div class="head">
   <h1>Tracker <span class="muted">(<?= (int) $total ?> photos)</span></h1>
   <a class="btn" href="<?= e($base . '.csv' . $qs([])) ?>"><?= icon('doc') ?> Download as CSV</a>

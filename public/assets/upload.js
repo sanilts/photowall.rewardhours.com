@@ -60,8 +60,6 @@
       .then(function (j) {
         sel.classList.toggle('saved', !!j.ok);
         sel.classList.toggle('need', !j.ok);
-        var note = form.parentNode.querySelector('.shot-auto');
-        if (j.ok && note) note.remove(); // it is no longer a guess
       })
       .catch(function () { form.submit(); });
   });
@@ -177,7 +175,6 @@
     });
     form.appendChild(csrf); form.appendChild(sel);
     li.appendChild(form);
-    if (photo.auto) li.appendChild(el('span', 'shot-auto', 'Detected. Change it if it is wrong.'));
     list.insertBefore(li, list.firstChild);
   }
 
@@ -213,7 +210,7 @@
       if (!res) {
         finish(job, false, 'Something went wrong. Please try this photo again.');
       } else if (res.ok && res.photo) {
-        finish(job, true, 'Accepted for review. Filed under ' + res.photo.category + (res.photo.auto ? ' (detected).' : '.'));
+        finish(job, true, 'Accepted for review. Filed under ' + res.photo.category + '.');
         addThumb(res.photo);
       } else {
         finish(job, false, res.message);
@@ -231,7 +228,7 @@
   }
 
   input.addEventListener('change', function () {
-    var chosen = category ? category.value : 'auto';
+    var chosen = category ? category.value : 'auto'; // no box on the page: the server files each photo itself
     Array.prototype.forEach.call(input.files, function (file) {
       waiting.push({ file: file, row: addRow(file), category: chosen });
       run.total++;

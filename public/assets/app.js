@@ -90,6 +90,22 @@
     });
   }
 
+  // "Copy" buttons (data-copy="id of the field"): put the field's text on the clipboard and say so.
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-copy]');
+    if (!btn) return;
+    var field = document.getElementById(btn.dataset.copy);
+    if (!field) return;
+    field.select();
+    var done = function () {
+      var was = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(function () { btn.textContent = was; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(field.value).then(done, function () {});
+    else if (document.execCommand && document.execCommand('copy')) done();
+  });
+
   // Email settings: picking a security type fills in its usual port (unless a custom port was typed).
   var secure = document.getElementById('smtp_secure');
   var port = document.getElementById('smtp_port');

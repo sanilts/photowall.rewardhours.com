@@ -4,7 +4,7 @@ $base = '/projects/' . (int) $p['id'] . '/photos';
 $tabs = ['pending' => 'To review', 'approved' => 'Approved', 'rejected' => 'Rejected'];
 $flagOnly = ($_GET['flag'] ?? '') === '1';
 ?>
-<p class="crumbs"><a href="/">Projects</a> / <a href="/projects/<?= (int) $p['id'] ?>"><?= e($p['name']) ?></a> / Photos</p>
+<?php $tab = 'review'; require PW_ROOT . '/app/views/admin/project_tabs.php'; ?>
 <div class="head">
   <h1>Photos <span class="muted">(<?= (int) $total ?>)</span></h1>
   <div class="tabs" role="tablist">

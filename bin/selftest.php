@@ -54,8 +54,29 @@ if (Spaces::on()) {
     echo "  NOTE  Original photos are stored on this server (" . cfg('storage') . "/originals). To use a Spaces bucket: pw-spaces setup\n";
 }
 $say(Mailer::isSetUp(), 'Email sending is set up (' . (Settings::mail()['driver'] ?? 'log') . ')', 'Sign-in codes are only written to ' . cfg('storage') . '/logs/mail.log. Add your email details in the console under Settings.');
-$limit = (int) ini_get('upload_max_filesize');
-echo "  NOTE  PHP on the command line allows uploads of " . ini_get('upload_max_filesize') . "; the web server setting is what counts (needs " . cfg('max_upload_mb', 60) . "M or more).\n";
+// The upload limit that counts is the web server's, not the command line's: read it from the site's own settings.
+$need = (int) cfg('max_upload_mb', 60);
+$webLimit = null;
+foreach (['/etc/apache2/sites-enabled/photowall.conf', '/etc/apache2/sites-available/photowall.conf'] as $siteFile) {
+    if (is_readable($siteFile) && preg_match_all('/^\s*php_admin_value\s+(upload_max_filesize|post_max_size)\s+(\d+)M/mi', (string) file_get_contents($siteFile), $m)) {
+        $webLimit = min(array_map('intval', $m[2]));
+        break;
+    }
+}
+if ($webLimit === null) {
+    foreach (glob('/etc/php/*/fpm/pool.d/photowall.conf') ?: [] as $poolFile) {
+        if (preg_match_all('/^\s*php_admin_value\[(upload_max_filesize|post_max_size)\]\s*=\s*(\d+)M/mi', (string) file_get_contents($poolFile), $m)) {
+            $webLimit = min(array_map('intval', $m[2]));
+            break;
+        }
+    }
+}
+if ($webLimit !== null) {
+    $say($webLimit >= $need, "The web server accepts photos up to {$webLimit} MB (the project limit is {$need} MB)",
+        "The web server only accepts uploads up to {$webLimit} MB, but photos may be up to {$need} MB. Run pw-deploy to rewrite the site settings.");
+} else {
+    echo "  NOTE  Could not read the web server's upload limit from its settings file. It must allow {$need} MB or more per photo.\n";
+}
 
 if (isset($argv[1])) {
     $file = $argv[1];
