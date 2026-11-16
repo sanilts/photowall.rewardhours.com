@@ -78,9 +78,9 @@ final class Guard
         $hint = (string) ($r['did_you_mean'] ?? '');
         $message = '';
         if ($status === 'invalid') {
-            $message = 'This email address does not seem to exist. Please check it for typing mistakes.' . ($hint !== '' ? " Did you mean $hint?" : '');
+            $message = t('This email address does not seem to exist. Please check it for typing mistakes.') . ($hint !== '' ? ' ' . t('Did you mean {hint}?', ['hint' => $hint]) : '');
         } elseif ($throwaway) {
-            $message = 'Please use your own permanent email address, not a temporary one. We need it to tell you about your photos and your reward.';
+            $message = t('Please use your own permanent email address, not a temporary one. We need it to tell you about your photos and your reward.');
         }
         return ['status' => $status, 'disposable' => $throwaway, 'blocked' => $message !== '', 'message' => $message];
     }

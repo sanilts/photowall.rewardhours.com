@@ -1059,3 +1059,72 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .area-respondent .cta-bar .btn { width: 100%; }
 }
 @media (max-width: 899px) and (prefers-reduced-motion: reduce) { .area-respondent .cta-bar, .area-respondent .cta-bar.is-away { transition: none; } }
+
+/* ---- language picker (contributor site) ---- */
+.lang { position: relative; margin-left: auto; flex: none; }
+.lang + .signout, .lang + .top-link { margin-left: 0; }
+.lang summary { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 6px 12px; border: 1px solid rgba(255, 254, 240, .35); border-radius: var(--r-control); color: var(--cream); font-size: .93rem; font-weight: 600; cursor: pointer; list-style: none; white-space: nowrap; }
+.lang summary::-webkit-details-marker { display: none; }
+.lang summary:hover, .lang[open] summary { background: rgba(255, 254, 240, .1); }
+.lang summary .ico { width: 19px; height: 19px; }
+.lang-code { display: none; }
+.lang-list { position: absolute; z-index: 40; top: calc(100% + 8px); inset-inline-end: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; width: min(440px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 110px)); overflow: auto; margin: 0; padding: 8px; list-style: none; border-radius: 18px; background: #fff; box-shadow: 0 2px 6px rgba(6, 20, 39, .08), 0 24px 60px -12px rgba(6, 20, 39, .38); }
+.lang-list a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px 12px; border-radius: 12px; color: var(--ink); font-weight: 500; text-decoration: none; }
+.lang-list a:hover { background: #f1f4fa; }
+.lang-list a[aria-current] { background: #eaf0ff; color: #0b3fae; font-weight: 700; }
+.lang-flag { flex: none; width: 1.5em; font-size: 1.25rem; line-height: 1; text-align: center; }
+.lang-list small { margin-inline-start: auto; font-size: .78rem; font-weight: 600; color: var(--soft); }
+.top .lang-list :focus-visible { outline-color: #4b86ff; }
+@media (max-width: 899px) {
+  .area-respondent .top .lang { position: static; }
+  .area-respondent .top .lang summary { min-height: 44px; padding: 0 2px; border: 0; background: transparent; color: var(--tint); font: 400 17px/1 var(--text); gap: 5px; }
+  .area-respondent .top .lang-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; } /* still read out, not shown */
+  .area-respondent .top .lang-code { display: inline; }
+  .area-respondent .top .lang-list { top: calc(100% + 6px); left: 8px; right: 8px; width: auto; max-height: calc(100vh - 120px); max-height: calc(100dvh - 120px); border-radius: 14px; }
+  .area-respondent .top .lang-list a { min-height: 44px; padding: 8px 10px; gap: 9px; color: #000; font: 400 16px/1.2 var(--text); }
+  .area-respondent .top .lang-list a[aria-current] { color: var(--tint); font-weight: 600; background: var(--fill); }
+  .area-respondent .top .lang + .signout, .area-respondent .top .lang + .top-link { margin-left: 6px; }
+}
+
+/* ---- languages the two site typefaces cannot write: the device's own typeface, with room for tall letters ---- */
+body.plain-type { --display: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif; --text: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif; }
+.plain-type h1, .plain-type h2, .plain-type h3, .plain-type .brand-name, .plain-type .band-title, .plain-type .step-t, .plain-type .slider-name, .plain-type .drop-title { letter-spacing: 0 !important; }
+.plain-type h1, .plain-type .hero h1, .plain-type .band-title { line-height: 1.28 !important; }
+
+/* long words in some languages: the row of filters can be swiped sideways instead of widening the page */
+@media (max-width: 899px) {
+  .area-respondent .mine-sum { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .area-respondent .mine-sum::-webkit-scrollbar { display: none; }
+  .area-respondent .mine-sum .chip { flex: 1 0 auto; padding-left: 9px; padding-right: 9px; }
+  .area-respondent .head-sub, .area-respondent .up-main, .area-respondent .screen { min-width: 0; }
+  .area-respondent .up-l { overflow-wrap: anywhere; }
+  .area-respondent .tabbar a { min-width: 0; }
+  .area-respondent .tabbar a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ---- right-to-left (Arabic) ---- */
+[dir=rtl] .skip { left: auto; right: -999px; }
+[dir=rtl] .skip:focus { left: auto; right: 8px; }
+[dir=rtl] .slider-window { direction: ltr; } /* the slides move by position, so their order stays as built */
+[dir=rtl] .phone { direction: ltr; }
+[dir=rtl] .signout, [dir=rtl] .top-link, [dir=rtl] .lang { margin-left: 0; margin-right: auto; }
+[dir=rtl] .lang + .signout, [dir=rtl] .lang + .top-link { margin-right: 0; }
+[dir=rtl] .brand-name { padding-left: 0; padding-right: 14px; border-left: 0; border-right: 1px solid rgba(255, 254, 240, .28); }
+[dir=rtl] .slider-prev .ico { transform: none; }
+[dir=rtl] .slider-btn:not(.slider-prev) .ico, [dir=rtl] .btn .ico[viewBox] { transform: none; }
+[dir=rtl] .slider-btn:not(.slider-prev) .ico { transform: scaleX(-1); }
+[dir=rtl] .plain-steps, [dir=rtl] .prose ul, [dir=rtl] .prose ol { padding-left: 0; padding-right: 1.4rem; }
+[dir=rtl] .tab-n { left: auto; right: calc(50% + 8px); }
+@media (max-width: 899px) {
+  [dir=rtl] .area-respondent .top .brand-name, [dir=rtl].area-respondent .top .brand-name { padding: 0; border: 0; }
+  [dir=rtl] .area-respondent .sheet, [dir=rtl] .area-respondent .faq, [dir=rtl] .area-respondent .tiles { padding-left: 0; padding-right: 16px; }
+  [dir=rtl] .area-respondent .frame h3 { padding: 12px 0 12px 16px; }
+  [dir=rtl] .area-respondent .faq summary { padding: 11px 0 11px 14px; }
+  [dir=rtl] .area-respondent .faq summary .ico { transform: rotate(90deg); }
+  [dir=rtl] .area-respondent .faq details[open] summary .ico { transform: none; }
+  [dir=rtl] .area-respondent .faq details p, [dir=rtl] .area-respondent .plain-steps { padding-right: 0; padding-left: 16px; }
+  [dir=rtl] .area-respondent .faq .plain-steps { padding-right: 1.4rem; }
+  [dir=rtl] .area-respondent .faq .rules { padding: 0 0 14px 16px; }
+  [dir=rtl] .area-respondent .tiles .card { padding: 12px 0 12px 16px; }
+  [dir=rtl] .area-respondent .top .lang + .signout, [dir=rtl] .area-respondent .top .lang + .top-link { margin-left: 0; margin-right: 6px; }
+}

@@ -14,8 +14,14 @@ $public = $share || ($area === 'client' && $path === '/login' && http_response_c
 // the small stylesheet made at deploy time is used when it is there and up to date
 $css = is_file(PW_ROOT . '/public/assets/app.min.css') && filemtime(PW_ROOT . '/public/assets/app.min.css') >= filemtime(PW_ROOT . '/public/assets/app.css') ? 'app.min.css' : 'app.css';
 $description = (string) ($description ?? '');
+// Languages whose letters the site's two typefaces do not have are set in the device's own typeface.
+$plainType = in_array(Lang::code(), ['pl', 'tr', 'vi', 'ru', 'ar', 'hi', 'ja', 'ko', 'zh-CN', 'zh-TW', 'th'], true);
+// The language picker keeps the reader on the same page.
+$langQuery = $_GET;
+unset($langQuery['lang']);
+$langHref = static fn(string $code): string => $path . '?' . http_build_query($langQuery + ['lang' => $code]);
 ?><!doctype html>
-<html lang="en">
+<html lang="<?= e(Lang::code()) ?>" dir="<?= Lang::dir() ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -53,8 +59,8 @@ $description = (string) ($description ?? '');
 <link rel="icon" href="<?= e($v(($area === 'client' ? 'rm-' : '') . 'icon-48.png')) ?>" type="image/png">
 <link rel="apple-touch-icon" href="<?= e($v(($area === 'client' ? 'rm-' : '') . 'icon-180.png')) ?>">
 </head>
-<body class="area-<?= e($area) ?><?= $wide ? ' is-wide' : '' ?>">
-<a class="skip" href="#main">Skip to content</a>
+<body class="area-<?= e($area) ?><?= $wide ? ' is-wide' : '' ?><?= $plainType ? ' plain-type' : '' ?>">
+<a class="skip" href="#main"><?= te('Skip to content') ?></a>
 <header class="top">
   <div class="wrap top-in">
     <a class="brand" href="/">
@@ -71,11 +77,21 @@ $description = (string) ($description ?? '');
       <?php endforeach; ?>
     </nav>
     <?php endif; ?>
+    <?php if ($area === 'respondent'): ?>
+    <details class="lang" id="lang">
+      <summary><?= icon('globe') ?><span class="visually-hidden"><?= te('Language') ?>: </span><span class="lang-name"><?= e(Lang::ALL[Lang::code()][0]) ?></span> <span class="lang-code"><?= e(strtoupper(substr(Lang::code(), 0, 2))) ?></span></summary>
+      <ul class="lang-list">
+        <?php foreach (Lang::ALL as $code => [$own, $flag]): ?>
+          <li><a href="<?= e($langHref($code)) ?>" lang="<?= e($code) ?>" hreflang="<?= e($code) ?>" rel="nofollow"<?= $code === Lang::code() ? ' aria-current="true"' : '' ?>><span class="lang-flag" aria-hidden="true"><?= $flag ?></span><span dir="auto"><?= e($own) ?></span><?php if ($code === 'en'): ?><small>Global</small><?php endif; ?></a></li>
+        <?php endforeach; ?>
+      </ul>
+    </details>
+    <?php endif; ?>
     <?php if ($who): ?>
     <form class="signout" method="post" action="/logout">
       <?= csrf_field() ?>
       <span class="who" title="<?= e($who['label']) ?>"><?= e($who['label']) ?></span>
-      <button class="btn btn-onnavy" type="submit">Sign out</button>
+      <button class="btn btn-onnavy" type="submit"><?= te('Sign out') ?></button>
     </form>
     <?php elseif (!empty($headerLink)): ?>
       <a class="btn btn-onnavy top-link" href="<?= e($headerLink[1]) ?>"><?= e($headerLink[0]) ?></a>
@@ -96,7 +112,7 @@ $description = (string) ($description ?? '');
   <div class="wrap foot-in">
     <span>&copy; <?= date('Y') ?> <?= e(cfg('company', 'Research and Metric Corporation')) ?></span>
     <?php if ($area === 'respondent'): ?>
-      <a href="/privacy">Privacy</a>
+      <a href="/privacy"><?= te('Privacy') ?></a>
       <a href="mailto:<?= e(cfg('privacy_email')) ?>"><?= e(cfg('privacy_email')) ?></a>
     <?php elseif ($area === 'client'): ?>
       <a href="https://researchandmetric.com" target="_blank" rel="noopener">researchandmetric.com</a>
@@ -107,8 +123,8 @@ $description = (string) ($description ?? '');
   <form method="dialog">
     <p id="confirm-text"></p>
     <div class="row-end">
-      <button class="btn btn-quiet" value="no">Cancel</button>
-      <button class="btn btn-danger" value="yes" id="confirm-yes">Yes</button>
+      <button class="btn btn-quiet" value="no"><?= te('Cancel') ?></button>
+      <button class="btn btn-danger" value="yes" id="confirm-yes"><?= te('Yes') ?></button>
     </div>
   </form>
 </dialog>

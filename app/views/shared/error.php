@@ -1,5 +1,5 @@
 <section class="card narrow center">
-  <p class="eyebrow">Error <?= e($code) ?></p>
+  <p class="eyebrow"><?= te('Error') ?> <?= e($code) ?></p>
   <h1><?= e($message) ?></h1>
-  <p><a class="btn" href="/">Back to the start</a></p>
+  <p><a class="btn" href="/"><?= te('Back to the start') ?></a></p>
 </section>

@@ -199,6 +199,13 @@
   }
 
   // Photos flagged by the safety scan stay blurred until a member of staff chooses to look.
+  // The language list closes when the reader taps elsewhere or presses Escape.
+  var lang = document.getElementById('lang');
+  if (lang) {
+    document.addEventListener('click', function (ev) { if (lang.open && !lang.contains(ev.target)) lang.open = false; });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && lang.open) { lang.open = false; lang.querySelector('summary').focus(); } });
+  }
+
   // The button bar along the bottom of a project page (phones) steps aside while the sign-in form is on screen.
   var cta = document.querySelector('[data-cta]');
   var form = document.querySelector('.start-card');

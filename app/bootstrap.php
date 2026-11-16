@@ -11,7 +11,7 @@ if (!is_file($pwConfig)) {
 }
 $GLOBALS['PW_CFG'] = require $pwConfig;
 
-foreach (['helpers', 'icons', 'Db', 'Settings', 'Mailer', 'Otp', 'PhotoCheck', 'Scanner', 'Spaces', 'Storage', 'Gemini', 'Guard', 'ClientLog', 'Share', 'Visits', 'Intake', 'Tracker', 'Notify', 'ZipStream', 'Export'] as $pwLib) {
+foreach (['helpers', 'icons', 'Lang', 'Db', 'Settings', 'Mailer', 'Otp', 'PhotoCheck', 'Scanner', 'Spaces', 'Storage', 'Gemini', 'Guard', 'ClientLog', 'Share', 'Visits', 'Intake', 'Tracker', 'Notify', 'ZipStream', 'Export'] as $pwLib) {
     require PW_ROOT . '/app/lib/' . $pwLib . '.php';
 }
 date_default_timezone_set((string) cfg('timezone', 'Asia/Kolkata'));

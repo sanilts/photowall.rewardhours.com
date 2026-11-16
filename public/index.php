@@ -13,6 +13,7 @@ if ($pwArea === null) {
 }
 send_security_headers();
 start_session($pwArea);
+Lang::start($pwArea); // the contributor site speaks the reader's language
 
 set_exception_handler(static function (Throwable $ex): void {
     error_log('Photowall error: ' . $ex->getMessage() . ' in ' . $ex->getFile() . ':' . $ex->getLine());

@@ -6,14 +6,20 @@ declare(strict_types=1);
 function rp_project(string $slug): array
 {
     $p = Db::one("SELECT * FROM projects WHERE slug = ? AND status <> 'draft'", [$slug]);
-    if (!$p) fail_page(404, 'We could not find that project. Please check the link you were given.');
+    if (!$p) fail_page(404, t('We could not find that project. Please check the link you were given.'));
     return $p;
 }
 
 function rp_me(array $project): ?array
 {
     $id = $_SESSION['rid'][$project['id']] ?? null;
-    return $id ? Db::one('SELECT * FROM respondents WHERE id = ?', [$id]) : null;
+    $me = $id ? Db::one('SELECT * FROM respondents WHERE id = ?', [$id]) : null;
+    // remember the language they read the site in, so emails about their photos come in it too
+    if ($me && array_key_exists('lang', $me) && $me['lang'] !== Lang::code()) {
+        Db::q('UPDATE respondents SET lang = ? WHERE id = ?', [Lang::code(), $me['id']]);
+        $me['lang'] = Lang::code();
+    }
+    return $me;
 }
 
 function rp_need(array $project): array
@@ -42,7 +48,7 @@ route('GET', '/', function () {
         }
         redirect('/p/' . $open[0]['slug'] . ($tags ? '?' . http_build_query($tags) : ''));
     }
-    view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true,
+    view('respondent/home', ['title' => t('Share your photos'), 'projects' => $open, 'bare' => true,
         'description' => 'Photowall by Reward Hours. Take part in a photo project: share original photos taken on your iPhone and upload them straight from your phone.']);
 });
 
@@ -77,7 +83,7 @@ route('GET', '/sitemap.xml', function () {
 });
 
 route('GET', '/privacy', function () {
-    view('respondent/privacy', ['title' => 'Privacy', 'description' => 'How Photowall by Reward Hours handles the photos and details of people who take part: what is collected, why, who sees it, and how to have it removed.']);
+    view('respondent/privacy', ['title' => t('Privacy'), 'description' => 'How Photowall by Reward Hours handles the photos and details of people who take part: what is collected, why, who sees it, and how to have it removed.']);
 });
 
 route('GET', '/p/{slug}', function (string $slug) {
@@ -85,7 +91,7 @@ route('GET', '/p/{slug}', function (string $slug) {
     if (rp_me($project)) redirect("/p/$slug/upload");
     view('respondent/landing', [
         'title' => $project['name'], 'project' => $project, 'state' => rp_window($project), 'email' => $_SESSION['pending']['email'] ?? '',
-        'bare' => true, 'scripts' => ['phones.js'], 'headerLink' => ['Sign in', '#start'],
+        'bare' => true, 'scripts' => ['phones.js'], 'headerLink' => [t('Sign in'), '#start'],
         'description' => 'Share photos taken on your iPhone ' . (int) $project['min_iphone'] . ' or newer. ' . mb_strimwidth((string) $project['intro'], 0, 140, '...'),
     ]);
 });
@@ -94,11 +100,11 @@ route('POST', '/p/{slug}/start', function (string $slug) {
     $project = rp_project($slug);
     $email = clean_email(post('email'));
     if (!$email) {
-        flash('Please enter a valid email address.', 'bad');
+        flash(t('Please enter a valid email address.'), 'bad');
         redirect("/p/$slug#start");
     }
     if (post('agree') !== '1') {
-        flash('Please read the terms and tick the box to agree before you continue.', 'bad');
+        flash(t('Please read the terms and tick the box to agree before you continue.'), 'bad');
         $_SESSION['pending'] = ['email' => $email];
         redirect("/p/$slug#start");
     }
@@ -108,7 +114,7 @@ route('POST', '/p/{slug}/start', function (string $slug) {
     if ($conn && $conn['blocked']) {
         audit('signin.refused', "$email: connection is {$conn['why']} ({$conn['country_code']})");
         $_SESSION['pending'] = ['email' => $email];
-        flash('We could not sign you in, because your connection is going through a VPN, proxy or similar service. Please switch it off and try again. On an iPhone, also switch off iCloud Private Relay (Settings, your name, iCloud, Private Relay).', 'bad');
+        flash(t('We could not sign you in, because your connection is going through a VPN, proxy or similar service. Please switch it off and try again. On an iPhone, also switch off iCloud Private Relay (Settings, your name, iCloud, Private Relay).'), 'bad');
         redirect("/p/$slug#start");
     }
     $known = Db::one('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $email]);
@@ -122,7 +128,7 @@ route('POST', '/p/{slug}/start', function (string $slug) {
         }
     }
     if (!$known && rp_window($project) !== 'open') {
-        flash('This project is not accepting new participants right now.', 'bad');
+        flash(t('This project is not accepting new participants right now.'), 'bad');
         redirect("/p/$slug#start");
     }
     $problem = Otp::issue('respondent', $email, (int) $project['id'], $project['name']);
@@ -138,7 +144,7 @@ route('GET', '/p/{slug}/code', function (string $slug) {
     $project = rp_project($slug);
     $pending = $_SESSION['pending'] ?? null;
     if (!$pending || ($pending['slug'] ?? '') !== $slug) redirect("/p/$slug");
-    view('shared/code', ['title' => 'Enter your code', 'email' => $pending['email'], 'action' => "/p/$slug/code", 'resend' => "/p/$slug/resend", 'back' => "/p/$slug#start"]);
+    view('shared/code', ['title' => t('Enter your code'), 'email' => $pending['email'], 'action' => "/p/$slug/code", 'resend' => "/p/$slug/resend", 'back' => "/p/$slug#start"]);
 });
 
 route('POST', '/p/{slug}/resend', function (string $slug) {
@@ -146,7 +152,7 @@ route('POST', '/p/{slug}/resend', function (string $slug) {
     $pending = $_SESSION['pending'] ?? null;
     if (!$pending || ($pending['slug'] ?? '') !== $slug) redirect("/p/$slug");
     $problem = Otp::issue('respondent', $pending['email'], (int) $project['id'], $project['name']);
-    flash($problem ?: 'We sent the code again.', $problem ? 'bad' : 'ok');
+    flash($problem ?: t('We sent the code again.'), $problem ? 'bad' : 'ok');
     redirect("/p/$slug/code");
 });
 
@@ -156,7 +162,7 @@ route('POST', '/p/{slug}/code', function (string $slug) {
     if (!$pending || ($pending['slug'] ?? '') !== $slug || empty($pending['agreed'])) redirect("/p/$slug");
     $email = $pending['email'];
     if (!throttle('otp:try:' . client_ip(), 40, 3600) || !Otp::verify('respondent', $email, (int) $project['id'], post('code'))) {
-        flash('That code is not right or has expired. Please try again or ask for a new code.', 'bad');
+        flash(t('That code is not right or has expired. Please try again or ask for a new code.'), 'bad');
         redirect("/p/$slug/code");
     }
     $me = Db::one('SELECT * FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $email]);
@@ -184,7 +190,7 @@ route('POST', '/p/{slug}/code', function (string $slug) {
 route('GET', '/p/{slug}/details', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
-    view('respondent/details', ['title' => 'Your details', 'project' => $project, 'me' => $me, 'models' => PW_IPHONES,
+    view('respondent/details', ['title' => t('Your details'), 'project' => $project, 'me' => $me, 'models' => PW_IPHONES,
         'here' => countries()[(string) ($me['ip_country'] ?? '')] ?? '']);
 });
 
@@ -196,14 +202,14 @@ route('POST', '/p/{slug}/details', function (string $slug) {
     $phone = mb_substr(preg_replace('/[^\d+ ()\-]/', '', post('phone')), 0, 40);
     $model = in_array(post('iphone_model'), PW_IPHONES, true) ? post('iphone_model') : '';
     if (mb_strlen($name) < 2 || mb_strlen($country) < 2 || $model === '') {
-        flash('Please fill in your name, country and iPhone model.', 'bad');
+        flash(t('Please fill in your name, country and iPhone model.'), 'bad');
         redirect("/p/$slug/details");
     }
     Db::q('UPDATE respondents SET full_name = ?, country = ?, phone = ?, iphone_model = ? WHERE id = ?', [$name, $country, $phone, $model, $me['id']]);
     // A different country from where the connection is: say so once, but accept it. People travel and move.
     $here = countries()[(string) ($me['ip_country'] ?? '')] ?? '';
     if ($here !== '' && country_code($country) !== '' && country_code($country) !== $me['ip_country']) {
-        flash("Your details are saved. You chose $country, and your connection appears to be in $here. If $country is where you live, nothing more is needed. To change it, open Account and choose \"Edit your details\".");
+        flash(t('Your details are saved. You chose {country}, and your connection appears to be in {here}. If {country} is where you live, nothing more is needed. To change it, open Account and choose "Edit your details".', ['country' => Lang::country($country), 'here' => Lang::country($here)]));
     }
     redirect("/p/$slug/upload");
 });
@@ -213,7 +219,7 @@ route('POST', '/p/{slug}/details', function (string $slug) {
 route('GET', '/p/{slug}/email', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_need($project);
-    view('respondent/email', ['title' => 'Change your email', 'project' => $project, 'me' => $me]);
+    view('respondent/email', ['title' => t('Change your email'), 'project' => $project, 'me' => $me]);
 });
 
 route('POST', '/p/{slug}/email', function (string $slug) {
@@ -221,11 +227,11 @@ route('POST', '/p/{slug}/email', function (string $slug) {
     $me = rp_need($project);
     $new = clean_email(post('email'));
     if (!$new) {
-        flash('Please enter a valid email address.', 'bad');
+        flash(t('Please enter a valid email address.'), 'bad');
     } elseif ($new === $me['email']) {
-        flash('That is already your email address.', 'bad');
+        flash(t('That is already your email address.'), 'bad');
     } elseif (Db::val('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $new])) {
-        flash('That email address is already taking part in this project. Sign out and sign in with it instead.', 'bad');
+        flash(t('That email address is already taking part in this project. Sign out and sign in with it instead.'), 'bad');
     } elseif ($problem = Otp::issue('respondent', $new, (int) $project['id'], 'changing your email for ' . $project['name'])) {
         flash($problem, 'bad');
     } else {
@@ -240,7 +246,7 @@ route('GET', '/p/{slug}/email/code', function (string $slug) {
     rp_need($project);
     $new = $_SESSION['new_email'][$project['id']] ?? null;
     if (!$new) redirect("/p/$slug/email");
-    view('shared/code', ['title' => 'Confirm your new email', 'heading' => 'Confirm your new email', 'email' => $new, 'action' => "/p/$slug/email/code", 'resend' => "/p/$slug/email/resend", 'back' => "/p/$slug/email"]);
+    view('shared/code', ['title' => t('Confirm your new email'), 'heading' => 'Confirm your new email', 'email' => $new, 'action' => "/p/$slug/email/code", 'resend' => "/p/$slug/email/resend", 'back' => "/p/$slug/email"]);
 });
 
 route('POST', '/p/{slug}/email/resend', function (string $slug) {
@@ -249,7 +255,7 @@ route('POST', '/p/{slug}/email/resend', function (string $slug) {
     $new = $_SESSION['new_email'][$project['id']] ?? null;
     if (!$new) redirect("/p/$slug/email");
     $problem = Otp::issue('respondent', $new, (int) $project['id'], 'changing your email for ' . $project['name']);
-    flash($problem ?: 'We sent the code again.', $problem ? 'bad' : 'ok');
+    flash($problem ?: t('We sent the code again.'), $problem ? 'bad' : 'ok');
     redirect("/p/$slug/email/code");
 });
 
@@ -259,17 +265,17 @@ route('POST', '/p/{slug}/email/code', function (string $slug) {
     $new = $_SESSION['new_email'][$project['id']] ?? null;
     if (!$new) redirect("/p/$slug/email");
     if (!throttle('otp:try:' . client_ip(), 40, 3600) || !Otp::verify('respondent', $new, (int) $project['id'], post('code'))) {
-        flash('That code is not right or has expired. Please try again or send the code again.', 'bad');
+        flash(t('That code is not right or has expired. Please try again or ask for a new code.'), 'bad');
         redirect("/p/$slug/email/code");
     }
     if (Db::val('SELECT id FROM respondents WHERE project_id = ? AND email = ?', [$project['id'], $new])) {
-        flash('That email address is already taking part in this project.', 'bad');
+        flash(t('That email address is already taking part in this project. Sign out and sign in with it instead.'), 'bad');
         redirect("/p/$slug/email");
     }
     Db::q('UPDATE respondents SET email = ? WHERE id = ?', [$new, $me['id']]);
     unset($_SESSION['new_email'][$project['id']]);
     $_SESSION['who']['label'] = $new;
-    flash('Your email is now ' . $new . '. Use it the next time you sign in.');
+    flash(t('Your email is now {email}. Use it the next time you sign in.', ['email' => $new]));
     redirect("/p/$slug/upload");
 });
 
@@ -284,14 +290,16 @@ route('GET', '/p/{slug}/upload', function (string $slug) {
 route('POST', '/p/{slug}/upload', function (string $slug) {
     $project = rp_project($slug);
     $me = rp_me($project);
-    if (!$me) json_out(['ok' => false, 'code' => 'signin', 'message' => 'Your session ended. Please reload the page and sign in again.'], 401);
+    if (!$me) json_out(['ok' => false, 'code' => 'signin', 'message' => t('Your session ended. Please reload the page and sign in again.')], 401);
     session_write_close();
     if (empty($_FILES['photo'])) {
         $res = ['ok' => false, 'code' => 'too_big', 'message' => 'This file is too large. The limit is ' . cfg('max_upload_mb', 60) . ' MB per photo.'];
     } else {
         $res = Intake::handle($project, $me, $_FILES['photo'], trim((string) ($_POST['category'] ?? '')));
     }
-    $out = ['ok' => $res['ok'], 'code' => $res['code'], 'message' => $res['message'], 'allow' => Intake::allowance($project, $me)];
+    // reasons are kept in English for the console; the contributor reads them in their own language
+    $said = $res['code'] === 'busy' ? t('We could not check this photo right now. Please try again in a minute.') : Lang::reason((string) $res['message']);
+    $out = ['ok' => $res['ok'], 'code' => $res['code'], 'message' => $said, 'allow' => Intake::allowance($project, $me)];
     if ($res['ok']) $out['photo'] = ['token' => $res['photo']['token'], 'thumb' => "/p/$slug/thumb/" . $res['photo']['token'], 'category' => $res['photo']['category'], 'auto' => (bool) $res['photo']['category_auto'],
         'image_id' => image_id($res['photo']['id']), 'name' => $res['photo']['orig_name']];
     json_out($out);
@@ -301,7 +309,7 @@ route('GET', '/p/{slug}/thumb/{token}', function (string $slug, string $token) {
     $project = rp_project($slug);
     $me = rp_me($project);
     $photo = $me ? Db::one("SELECT * FROM photos WHERE token = ? AND respondent_id = ? AND status <> 'removed'", [$token, $me['id']]) : null;
-    if (!$photo) fail_page(404, 'We could not find that photo.');
+    if (!$photo) fail_page(404, t('We could not find that photo.'));
     session_write_close();
     Storage::send(Storage::thumb($photo), 'image/jpeg');
 });
@@ -314,7 +322,7 @@ route('POST', '/p/{slug}/photo/{token}/category', function (string $slug, string
     $photo = Db::one("SELECT id FROM photos WHERE token = ? AND respondent_id = ? AND status = 'pending'", [$token, $me['id']]);
     $ok = $photo && in_array($category, project_categories($project), true);
     if ($ok) Db::q('UPDATE photos SET category = ?, category_auto = 0 WHERE id = ?', [$category, $photo['id']]);
-    $msg = $ok ? 'Category saved.' : 'The category of this photo can no longer be changed here.';
+    $msg = $ok ? t('Category saved.') : t('The category of this photo can no longer be changed here.');
     if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') json_out(['ok' => (bool) $ok, 'message' => $msg], $ok ? 200 : 409);
     flash($msg, $ok ? 'ok' : 'bad');
     redirect("/p/$slug/upload");
@@ -327,9 +335,9 @@ route('POST', '/p/{slug}/photo/{token}/delete', function (string $slug, string $
     if ($photo) {
         Storage::removeFiles($photo);
         Db::q("UPDATE photos SET status = 'removed', reviewed_at = ? WHERE id = ?", [now(), $photo['id']]);
-        flash('The photo was deleted.');
+        flash(t('The photo was deleted.'));
     } else {
-        flash('This photo can no longer be deleted here. To withdraw it, email ' . cfg('privacy_email') . '.', 'bad');
+        flash(t('This photo can no longer be deleted here. To withdraw it, email {email}.', ['email' => cfg('privacy_email')]), 'bad');
     }
     redirect("/p/$slug/upload");
 });

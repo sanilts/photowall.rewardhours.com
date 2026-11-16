@@ -114,6 +114,32 @@ in; nothing is deleted) or deleted (the company, its people, their download requ
 projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
 removed. Database change 011 adds `clients.active`.
 
+## Languages
+
+The contributor site (public pages, sign-in, details, upload screens and the emails contributors get) is in
+English plus 19 languages: Spanish, Portuguese (Brazil), French, German, Italian, Dutch, Polish, Swedish,
+Turkish, Russian, Arabic, Hindi, Japanese, Korean, Chinese (Simplified and Traditional), Indonesian,
+Vietnamese and Thai. The console and the client portal are English only.
+
+- The English sentence is written in the code as `t('...')` or `te('...')` (`app/lib/Lang.php`). Each other
+  language is one file in `app/lang/` that maps the English sentence to its translation. A sentence with no
+  translation is shown in English, so a missing line never breaks a page.
+- The language is chosen in this order: a link with `?lang=es`, then the reader's saved choice (cookie
+  `pw_lang`, one year), then the browser's own language, then English. The picker is in the header.
+  A shared link can carry both, for example `/?lang=es&utm_source=facebook`.
+- Arabic runs right to left. Languages the two site typefaces cannot write use the device's own typeface.
+- The language a contributor reads the site in is saved (`respondents.lang`, database change 015), so the
+  email about accepted photos is written in it.
+- Reasons a photo was not accepted are saved in English for the console and translated when shown to the
+  contributor (`Lang::reason`).
+- Not translated: what staff type in the console (project name, introduction, terms, reasons typed by hand).
+  The terms box says they are written in English.
+- `php bin/words.php` lists every sentence. `php bin/words.php check` reports sentences a language file is
+  missing and translations whose `{places}` or tags differ. To change a wording, edit the right-hand side in
+  the language file. If you change an English sentence in the code, change the left-hand side in every file too.
+- Country names and dates are written in the reader's language when the server has the PHP `intl` extension
+  (`apt install php8.3-intl`); without it they stay in English.
+
 ## Phone layout of the contributor site
 
 Below 900 pixels wide every contributor page, the home page and project pages included, is laid out like an

@@ -45,54 +45,69 @@ final class Notify
     /** Subject, plain text and HTML of the email for one contributor. */
     public static function message(array $project, array $who, array $photos): array
     {
+        // written in the language the contributor read the site in
+        $was = Lang::code();
+        Lang::use((string) ($who['lang'] ?? '') !== '' ? (string) $who['lang'] : 'en');
+        try {
+            return self::write($project, $who, $photos);
+        } finally {
+            Lang::use($was);
+        }
+    }
+
+    private static function write(array $project, array $who, array $photos): array
+    {
         $n = count($photos);
         $accepted = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status = 'approved'", [$who['id']]);
         $waiting = (int) Db::val("SELECT COUNT(*) FROM photos WHERE respondent_id = ? AND status = 'pending'", [$who['id']]);
         $reward = reward($project);
         $link = area_url('respondent', '/p/' . $project['slug']);
         $cid = contributor_id($who['id']);
-        $hello = 'Hello' . (trim((string) $who['full_name']) !== '' ? ' ' . trim((string) $who['full_name']) : '') . ',';
-        $lead = $n === 1 ? 'A photo you uploaded to "' . $project['name'] . '" has been accepted.' : "$n photos you uploaded to \"" . $project['name'] . '" have been accepted.';
-        $totals = "Accepted so far: $accepted. Still in review: $waiting.";
+        $hello = trim((string) $who['full_name']) !== '' ? t('Hello {name},', ['name' => trim((string) $who['full_name'])]) : t('Hello,');
+        $lead = $n === 1 ? t('A photo you uploaded to "{project}" has been accepted.', ['project' => $project['name']]) : t('{n} photos you uploaded to "{project}" have been accepted.', ['n' => $n, 'project' => $project['name']]);
+        $totals = t('Accepted so far: {accepted}. Still in review: {waiting}.', ['accepted' => $accepted, 'waiting' => $waiting]);
         $pay = '';
         if ($reward) {
             $toNext = $reward['every'] - $accepted % $reward['every'];
-            $pay = 'Reward earned so far: ' . reward_earned($reward, $accepted) . " (we pay {$reward['amount']} for every {$reward['every']} accepted photos). "
-                . "$toNext more accepted " . ($toNext === 1 ? 'photo' : 'photos') . " for the next {$reward['amount']}.";
+            $pay = t('Reward earned so far: {amount}.', ['amount' => reward_earned($reward, $accepted)]) . ' '
+                . t('We pay {amount} for every {n} accepted photos.', ['amount' => $reward['amount'], 'n' => $reward['every']]) . ' '
+                . ($toNext === 1 ? t('1 more accepted photo for the next {amount}.', ['amount' => $reward['amount']]) : t('{n} more accepted photos for the next {amount}.', ['n' => $toNext, 'amount' => $reward['amount']]));
         }
-        $subject = ($n === 1 ? 'Your photo was accepted' : "$n of your photos were accepted") . ' (' . $project['name'] . ')';
+        $subject = ($n === 1 ? t('Your photo was accepted') : t('{n} of your photos were accepted', ['n' => $n])) . ' (' . $project['name'] . ')';
 
         $text = "$hello\n\n$lead\n\n";
         foreach ($photos as $ph) {
-            $text .= image_id($ph['id']) . '  ' . $ph['orig_name'] . '  |  ' . ($ph['category'] !== '' ? $ph['category'] : 'No category')
-                . '  |  accepted ' . nice_date($ph['reviewed_at'], 'j M Y') . "\n";
+            $text .= image_id($ph['id']) . '  ' . $ph['orig_name'] . '  |  ' . ($ph['category'] !== '' ? t($ph['category']) : t('No category'))
+                . '  |  ' . Lang::date($ph['reviewed_at']) . "\n";
         }
         $inv = (Settings::get('invite') ?? []) + ['on' => true, 'title' => 'Join Reward Hours', 'link' => 'https://rewardhours.com'];
+        $inv['title'] = t((string) $inv['title']);
         $invText = !empty($inv['on']) && preg_match('~^https://~', (string) $inv['link']) ? $inv['title'] . ': ' . $inv['link'] : '';
-        $text .= "\n$totals\n" . ($pay !== '' ? "$pay\n" : '') . "\nYour contributor ID: $cid\nSee all your photos or add more: $link\n" . ($invText !== '' ? "\n$invText\n" : '') . "\n" . cfg('company', 'Photowall');
+        $text .= "\n$totals\n" . ($pay !== '' ? "$pay\n" : '') . "\n" . t('Your contributor ID: {id}', ['id' => $cid]) . "\n" . t('See your photos or add more') . ": $link\n" . ($invText !== '' ? "\n$invText\n" : '') . "\n" . cfg('company', 'Photowall');
 
-        $cell = 'padding:8px 10px;border-bottom:1px solid #d8dfeb;font-size:14px;text-align:left;vertical-align:top';
+        $side = Lang::dir() === 'rtl' ? 'right' : 'left';
+        $cell = 'padding:8px 10px;border-bottom:1px solid #d8dfeb;font-size:14px;text-align:' . $side . ';vertical-align:top';
         $rows = '';
         foreach ($photos as $ph) {
             $rows .= '<tr><td style="' . $cell . ';white-space:nowrap;font-weight:bold">' . e(image_id($ph['id'])) . '</td>'
                 . '<td style="' . $cell . ';word-break:break-all">' . e($ph['orig_name']) . '</td>'
-                . '<td style="' . $cell . '">' . e($ph['category'] !== '' ? $ph['category'] : 'No category') . '</td>'
-                . '<td style="' . $cell . ';white-space:nowrap">' . e(nice_date($ph['reviewed_at'], 'j M Y')) . '</td></tr>';
+                . '<td style="' . $cell . '">' . e($ph['category'] !== '' ? t($ph['category']) : t('No category')) . '</td>'
+                . '<td style="' . $cell . ';white-space:nowrap">' . e(Lang::date($ph['reviewed_at'])) . '</td></tr>';
         }
-        $head = 'padding:8px 10px;font-size:12px;text-align:left;color:#52607a;border-bottom:1px solid #d8dfeb';
-        $html = '<div style="margin:0;padding:24px;background:#f2f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a1e3c">'
+        $head = 'padding:8px 10px;font-size:12px;text-align:' . $side . ';color:#52607a;border-bottom:1px solid #d8dfeb';
+        $html = '<div' . (Lang::dir() === 'rtl' ? ' dir="rtl"' : '') . ' style="margin:0;padding:24px;background:#f2f5fa;font-family:Arial,Helvetica,sans-serif;color:#0a1e3c">'
             . '<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden">'
             . '<div style="background:#0a1e3c;color:#fffef0;padding:18px 28px;font-size:18px;font-weight:bold">Photowall</div>'
             . '<div style="padding:28px">'
             . '<p style="margin:0 0 10px;font-size:16px">' . e($hello) . '</p>'
             . '<p style="margin:0 0 18px;font-size:16px;line-height:1.5"><strong>' . e($lead) . '</strong></p>'
             . '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0 0 18px">'
-            . '<tr><th style="' . $head . '">Image ID</th><th style="' . $head . '">File name</th><th style="' . $head . '">Category</th><th style="' . $head . '">Accepted</th></tr>'
+            . '<tr><th style="' . $head . '">' . te('Image ID') . '</th><th style="' . $head . '">' . te('File name') . '</th><th style="' . $head . '">' . te('Category') . '</th><th style="' . $head . '">' . te('Accepted') . '</th></tr>'
             . $rows . '</table>'
             . '<p style="margin:0 0 8px;font-size:15px;line-height:1.5">' . e($totals) . '</p>'
             . ($pay !== '' ? '<p style="margin:0 0 8px;font-size:15px;line-height:1.5;background:#fff6d6;border-radius:8px;padding:10px 12px">' . e($pay) . '</p>' : '')
-            . '<p style="margin:14px 0 18px;font-size:15px;line-height:1.5">Your contributor ID: <strong>' . e($cid) . '</strong></p>'
-            . '<p style="margin:0"><a href="' . e($link) . '" style="display:inline-block;background:#ffd60a;color:#0a1e3c;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:10px">See your photos or add more</a></p>'
+            . '<p style="margin:14px 0 18px;font-size:15px;line-height:1.5">' . t('Your contributor ID: {id}', ['id' => '<strong>' . e($cid) . '</strong>']) . '</p>'
+            . '<p style="margin:0"><a href="' . e($link) . '" style="display:inline-block;background:#ffd60a;color:#0a1e3c;text-decoration:none;font-weight:bold;padding:12px 20px;border-radius:10px">' . te('See your photos or add more') . '</a></p>'
             . ($invText !== '' ? '<p style="margin:22px 0 0;padding-top:16px;border-top:1px solid #d8dfeb;font-size:14px;line-height:1.5">' . e($inv['title']) . ': <a href="' . e($inv['link']) . '" style="color:#0a1e3c;font-weight:bold">' . e(preg_replace('~^https://~', '', (string) $inv['link'])) . '</a></p>' : '')
             . '</div></div>'
             . '<p style="max-width:600px;margin:14px auto 0;font-size:12px;color:#5a6780;text-align:center">' . e(cfg('company', 'Photowall')) . '</p></div>';

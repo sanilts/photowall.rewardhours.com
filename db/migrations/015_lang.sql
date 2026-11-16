@@ -1,0 +1,1 @@
+ALTER TABLE respondents ADD COLUMN lang VARCHAR(8) NOT NULL DEFAULT '' AFTER ip_country

@@ -80,20 +80,28 @@
   var maxBytes = (parseInt(box.dataset.maxMb, 10) || 60) * 1048576;
   var cats = [];
   try { cats = JSON.parse(box.dataset.cats || '[]'); } catch (e) { cats = []; }
+  // Words in the reader's language come from the page; the English ones here are used if they are missing.
+  var words = {};
+  var catNames = {};
+  try { words = JSON.parse(box.dataset.words || '{}'); } catch (e) { words = {}; }
+  try { catNames = JSON.parse(box.dataset.catNames || '{}'); } catch (e) { catNames = {}; }
+  function say(key, english, vars) {
+    var text = words[key] || english;
+    Object.keys(vars || {}).forEach(function (k) { text = text.split('{' + k + '}').join(vars[k]); });
+    return text;
+  }
   var busy = false;
   var waiting = [];
   var run = { total: 0, done: 0, ok: 0, bad: 0 };
-
-  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
   function report() {
     var left = run.total - run.done;
     runBar.max = Math.max(1, run.total);
     runBar.value = run.done;
     if (left > 0) {
-      runText.textContent = 'Checking photo ' + (run.done + 1) + ' of ' + run.total + '. ' + run.ok + ' accepted, ' + run.bad + ' not accepted so far.';
+      runText.textContent = say('checking', 'Checking photo {i} of {n}. Accepted: {ok}. Not accepted: {bad}.', { i: run.done + 1, n: run.total, ok: run.ok, bad: run.bad });
     } else {
-      runText.textContent = plural(run.total, 'photo') + ' checked: ' + run.ok + ' accepted, ' + run.bad + ' not accepted.';
+      runText.textContent = say('done', 'Photos checked: {n}. Accepted: {ok}. Not accepted: {bad}.', { n: run.total, ok: run.ok, bad: run.bad });
     }
     runStop.hidden = left <= 0;
     runKeep.hidden = left <= 0;
@@ -105,7 +113,7 @@
     var body = el('div', 'q-body');
     var bar = el('progress', 'q-bar');
     bar.max = 100; bar.value = 0;
-    var msg = el('span', 'q-msg', 'Waiting');
+    var msg = el('span', 'q-msg', say('waiting', 'Waiting'));
     body.appendChild(el('span', 'q-name', file.name)); body.appendChild(msg);
     li.appendChild(el('span', 'q-mark')); li.appendChild(body); li.appendChild(bar);
     queue.appendChild(li);
@@ -152,9 +160,9 @@
     var li = el('li', 'shot');
     li.dataset.status = 'pending';
     var img = el('img');
-    img.src = photo.thumb; img.alt = 'Your uploaded photo'; img.width = 240; img.height = 240;
+    img.src = photo.thumb; img.alt = say('alt', 'Your uploaded photo'); img.width = 240; img.height = 240;
     li.appendChild(img);
-    li.appendChild(el('span', 'chip chip-pending', 'In review'));
+    li.appendChild(el('span', 'chip chip-pending', say('review', 'In review')));
     var id = el('span', 'shot-id');
     id.appendChild(el('strong', '', photo.image_id));
     id.appendChild(document.createElement('br'));
@@ -167,9 +175,10 @@
     csrf.type = 'hidden'; csrf.name = '_csrf'; csrf.value = box.dataset.csrf;
     var sel = el('select');
     sel.name = 'category';
-    sel.setAttribute('aria-label', 'Category of this photo');
+    sel.setAttribute('aria-label', say('cat', 'Category of this photo'));
     cats.forEach(function (c) {
-      var o = el('option', '', c);
+      var o = el('option', '', catNames[c] || c);
+      o.value = c;
       o.selected = c === photo.category;
       sel.appendChild(o);
     });
@@ -183,15 +192,15 @@
     var job = waiting.shift();
     if (!job) return;
     if (can <= 0) {
-      finish(job, false, 'Not uploaded: you have reached your limit for now.');
+      finish(job, false, say('limit', 'Not uploaded: you have reached your limit for now.'));
       return next();
     }
     if (job.file.size > maxBytes) {
-      finish(job, false, 'This file is too large (limit ' + box.dataset.maxMb + ' MB).');
+      finish(job, false, say('big', 'This file is too large. The limit is {mb} MB per photo.', { mb: box.dataset.maxMb }));
       return next();
     }
     busy = true;
-    job.row.msg.textContent = 'Uploading';
+    job.row.msg.textContent = say('uploading', 'Uploading');
     var xhr = new XMLHttpRequest();
     var data = new FormData();
     data.append('category', job.category);
@@ -202,15 +211,15 @@
     xhr.upload.onprogress = function (ev) {
       if (!ev.lengthComputable) return;
       job.row.bar.value = Math.round(ev.loaded / ev.total * 100);
-      if (ev.loaded === ev.total) job.row.msg.textContent = 'Checking the photo';
+      if (ev.loaded === ev.total) job.row.msg.textContent = say('looking', 'Checking the photo');
     };
     xhr.onload = function () {
       var res = null;
       try { res = JSON.parse(xhr.responseText); } catch (e) { res = null; }
       if (!res) {
-        finish(job, false, 'Something went wrong. Please try this photo again.');
+        finish(job, false, say('wrong', 'Something went wrong. Please try this photo again.'));
       } else if (res.ok && res.photo) {
-        finish(job, true, 'Accepted for review. Filed under ' + res.photo.category + '.');
+        finish(job, true, say('filed', 'Accepted for review. Filed under {category}.', { category: catNames[res.photo.category] || res.photo.category }));
         addThumb(res.photo);
       } else {
         finish(job, false, res.message);
@@ -227,7 +236,7 @@
       next();
     };
     xhr.onerror = function () {
-      finish(job, false, 'The connection dropped. Please try this photo again.');
+      finish(job, false, say('dropped', 'The connection dropped. Please try this photo again.'));
       busy = false;
       next();
     };
