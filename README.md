@@ -106,6 +106,16 @@ header. Clients only ever see accepted photos.
 The code is in `app/lib/ClientLog.php`, `app/areas/client.php` and the `/clients/...` routes of
 `app/areas/admin.php`.
 
+## Client portal: already downloaded, and Help
+
+- A photo the signed-in person has downloaded (alone or in a ZIP) is marked "Downloaded" in the project's
+  list and on its own page. It is worked out from `client_photo_log`, per person, not per company.
+- The list at the top of a project has "All photos", "Not downloaded by me" and "Downloaded by me" (`?got=new|done`).
+- "Leave out photos I have already downloaded" (`skip_done`) applies to both ZIP buttons and to download requests.
+- The Help button in the bottom right corner of every client portal page, the sign-in page included, explains
+  signing in, projects, viewing, downloading, approval, the Downloaded mark and what is recorded
+  (`app/views/client/help.php`). It opens without a script.
+
 ## Clients in the console
 
 `/clients` lists the client companies; `/clients/{id}` is one client's page with its people, linked projects,

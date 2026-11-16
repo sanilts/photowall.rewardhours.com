@@ -78,7 +78,7 @@ $langHref = static fn(string $code): string => $path . '?' . http_build_query($l
     </nav>
     <?php endif; ?>
     <?php if ($area === 'respondent'): ?>
-    <details class="lang" id="lang">
+    <details class="lang" id="lang" data-pop>
       <?php $flag = static fn(string $code): string => '<svg class="lang-flag" viewBox="0 0 28 20" aria-hidden="true" focusable="false"><use href="' . e($v('flags.svg')) . '#f-' . e($code) . '"></use></svg>'; // drawn flags: flag emoji do not exist on Windows ?>
       <summary><?= $flag(Lang::code()) ?><span class="visually-hidden"><?= te('Language') ?>: </span><span class="lang-name"><?= e(Lang::ALL[Lang::code()]) ?></span> <span class="lang-code"><?= e(strtoupper(substr(Lang::code(), 0, 2))) ?></span><?= icon('chevron') ?></summary>
       <div class="lang-panel">
@@ -123,6 +123,7 @@ $langHref = static fn(string $code): string => $path . '?' . http_build_query($l
     <?php endif; ?>
   </div>
 </footer>
+<?php if ($area === 'client') require PW_ROOT . '/app/views/client/help.php'; ?>
 <dialog id="confirm" class="dialog">
   <form method="dialog">
     <p id="confirm-text"></p>

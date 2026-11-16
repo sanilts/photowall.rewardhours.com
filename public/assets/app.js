@@ -199,11 +199,14 @@
   }
 
   // Photos flagged by the safety scan stay blurred until a member of staff chooses to look.
-  // The language list closes when the reader taps elsewhere or presses Escape.
-  var lang = document.getElementById('lang');
-  if (lang) {
-    document.addEventListener('click', function (ev) { if (lang.open && !lang.contains(ev.target)) lang.open = false; });
-    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && lang.open) { lang.open = false; lang.querySelector('summary').focus(); } });
+  // Pop-up lists (language, help) close when the reader taps elsewhere or presses Escape.
+  var pops = Array.prototype.slice.call(document.querySelectorAll('details[data-pop]'));
+  if (pops.length) {
+    document.addEventListener('click', function (ev) { pops.forEach(function (d) { if (d.open && !d.contains(ev.target)) d.open = false; }); });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') return;
+      pops.forEach(function (d) { if (d.open) { d.open = false; d.querySelector('summary').focus(); } });
+    });
   }
 
   // The button bar along the bottom of a project page (phones) steps aside while the sign-in form is on screen.

@@ -16,6 +16,7 @@
   <?php endif; ?>
 </div>
 <?php if ($state === 'ask'): ?><p class="muted">Downloads from this project need our approval. We email you when it is decided.</p><?php endif; ?>
+<?php if (!empty($doneAt)): ?><p><span class="chip chip-approved"><?= icon('check') ?> You downloaded this photo on <?= e(nice_date($doneAt)) ?></span></p><?php endif; ?>
 <div class="cols cols-wide">
   <div class="card">
     <div class="viewer"><img src="/img/<?= e($photo['token']) ?>/preview" alt="Photo <?= e(image_id($photo['id'])) ?>"></div>

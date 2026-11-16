@@ -23,6 +23,12 @@ function cl_project(array $me, string $id): array
     return $p;
 }
 
+/**
+ * True for a photo (ph) this person has already downloaded, alone or in a ZIP. Takes one value: the person's id.
+ * It is counted per person, so a colleague's downloads do not mark the photo for someone else.
+ */
+const CL_DONE = "EXISTS (SELECT 1 FROM client_photo_log l WHERE l.client_user_id = ? AND l.kind = 'download' AND l.photo_id = ph.id)";
+
 /** Header links. "Download requests" appears once it is of use: a project asks for approval, or the person has asked before. */
 function cl_nav(array $me, string $on): array
 {
@@ -216,12 +222,29 @@ route('GET', '/projects/{id}', function (string $id) {
         $where .= ' AND ph.device_model = ?';
         $params[] = $model;
     }
+    // "new": leave out what this person has already downloaded. "done": only those.
+    $got = in_array($_GET['got'] ?? '', ['new', 'done'], true) ? (string) $_GET['got'] : '';
+    if ($got !== '') {
+        $where .= ($got === 'new' ? ' AND NOT ' : ' AND ') . CL_DONE;
+        $params[] = $me['id'];
+    }
     $total = (int) Db::val("SELECT COUNT(*) FROM photos ph WHERE $where", $params);
     [$offset, $pages, $page] = paging($total, 60, (int) ($_GET['page'] ?? 1));
     $photos = Db::all("SELECT ph.id, ph.token, ph.respondent_id, ph.device_model, ph.width, ph.height, ph.bytes, ph.taken_at FROM photos ph WHERE $where ORDER BY ph.id LIMIT 60 OFFSET $offset", $params);
     $models = Db::all("SELECT device_model, COUNT(*) AS n FROM photos WHERE project_id = ? AND status = 'approved' GROUP BY device_model ORDER BY device_model", [$p['id']]);
-    ClientLog::add($me, 'gallery', (int) $p['id'], count($photos), "page $page of " . max(1, $pages) . ($model !== '' ? ", $model" : ''));
-    view('client/gallery', ['title' => $p['name'], 'nav' => cl_nav($me, 'projects'), 'p' => $p, 'photos' => $photos, 'models' => $models, 'model' => $model, 'total' => $total, 'pages' => $pages, 'page' => $page]);
+    $all = (int) Db::val("SELECT COUNT(*) FROM photos WHERE project_id = ? AND status = 'approved'", [$p['id']]);
+    $nDone = (int) Db::val("SELECT COUNT(*) FROM photos ph WHERE ph.project_id = ? AND ph.status = 'approved' AND " . CL_DONE, [$p['id'], $me['id']]);
+    // when each photo on this page was last downloaded by this person
+    $done = [];
+    if ($photos && $nDone) {
+        $ids = array_column($photos, 'id');
+        foreach (Db::all("SELECT photo_id, MAX(created_at) AS at FROM client_photo_log WHERE client_user_id = ? AND kind = 'download' AND photo_id IN (" . rtrim(str_repeat('?,', count($ids)), ',') . ') GROUP BY photo_id', [$me['id'], ...$ids]) as $d) {
+            $done[(int) $d['photo_id']] = $d['at'];
+        }
+    }
+    ClientLog::add($me, 'gallery', (int) $p['id'], count($photos), "page $page of " . max(1, $pages) . ($model !== '' ? ", $model" : '') . ($got === 'new' ? ', not downloaded' : ($got === 'done' ? ', downloaded' : '')));
+    view('client/gallery', ['title' => $p['name'], 'nav' => cl_nav($me, 'projects'), 'p' => $p, 'photos' => $photos, 'models' => $models, 'model' => $model, 'total' => $total, 'pages' => $pages, 'page' => $page,
+        'got' => $got, 'all' => $all, 'nDone' => $nDone, 'done' => $done]);
 });
 
 route('GET', '/photo/{token}', function (string $token) {
@@ -230,7 +253,8 @@ route('GET', '/photo/{token}', function (string $token) {
     $p = cl_project($me, (string) $photo['project_id']);
     ClientLog::add($me, 'view', (int) $p['id'], 1, image_id($photo['id']), [(int) $photo['id']], 'view');
     $state = !$p['client_approval'] ? 'free' : (cl_cover($me, (int) $photo['id']) ? 'approved' : (cl_waiting($me, (int) $photo['id']) ? 'waiting' : 'ask'));
-    view('client/photo', ['title' => 'Photo ' . image_id($photo['id']), 'nav' => cl_nav($me, 'projects'), 'p' => $p, 'photo' => $photo, 'meta' => json_decode($photo['meta_json'], true) ?: [], 'state' => $state]);
+    $doneAt = Db::val("SELECT MAX(created_at) FROM client_photo_log WHERE client_user_id = ? AND kind = 'download' AND photo_id = ?", [$me['id'], $photo['id']]);
+    view('client/photo', ['title' => 'Photo ' . image_id($photo['id']), 'nav' => cl_nav($me, 'projects'), 'p' => $p, 'photo' => $photo, 'meta' => json_decode($photo['meta_json'], true) ?: [], 'state' => $state, 'doneAt' => $doneAt ?: null]);
 });
 
 route('POST', '/photo/{token}/ask', function (string $token) {
@@ -288,6 +312,15 @@ route('POST', '/projects/{id}/zip', function (string $id) {
     if ($ids !== null && !$ids) {
         flash('Select at least one photo, or choose all photos.', 'bad');
         redirect('/projects/' . $p['id']);
+    }
+    // "Leave out photos I have already downloaded": keep only the ones this person has not had yet.
+    if (post('skip_done') === '1') {
+        $fresh = array_map('intval', array_column(Db::all("SELECT ph.id FROM photos ph WHERE ph.project_id = ? AND ph.status = 'approved' AND NOT " . CL_DONE, [$p['id'], $me['id']]), 'id'));
+        $ids = $ids === null ? $fresh : array_values(array_intersect(array_map('intval', $ids), $fresh));
+        if (!$ids) {
+            flash('You have already downloaded all of these photos. To get them again, untick "Leave out photos I have already downloaded".', 'bad');
+            redirect('/projects/' . $p['id']);
+        }
     }
     if ($p['client_approval']) {
         // Downloads need our approval: this becomes a request, and the files follow once a member of staff agrees.

@@ -1,4 +1,5 @@
-<?php /** @var array $p @var array $photos @var array $models @var string $model @var int $total @var int $pages @var int $page */ ?>
+<?php /** @var array $p @var array $photos @var array $models @var string $model @var int $total @var int $pages @var int $page
+          @var string $got @var int $all @var int $nDone @var array $done */ ?>
 <p class="crumbs"><a href="/">Your projects</a> / <?= e($p['name']) ?></p>
 <div class="head">
   <h1><?= e($p['name']) ?> <span class="muted">(<?= (int) $total ?> photos)</span></h1>
@@ -10,11 +11,22 @@
         <option value="<?= e($m['device_model']) ?>"<?= $model === $m['device_model'] ? ' selected' : '' ?>><?= e($m['device_model']) ?> (<?= (int) $m['n'] ?>)</option>
       <?php endforeach; ?>
     </select>
+    <label class="visually-hidden" for="got">Downloaded or not</label>
+    <select id="got" name="got">
+      <option value="">All photos (<?= (int) $all ?>)</option>
+      <option value="new"<?= $got === 'new' ? ' selected' : '' ?>>Not downloaded by me (<?= (int) ($all - $nDone) ?>)</option>
+      <option value="done"<?= $got === 'done' ? ' selected' : '' ?>>Downloaded by me (<?= (int) $nDone ?>)</option>
+    </select>
     <button class="btn" type="submit">Show</button>
   </form>
 </div>
 
-<?php if (!$photos): ?>
+<?php if (!$photos && ($got !== '' || $model !== '') && $all > 0): ?>
+  <section class="card center">
+    <h2><?= $got === 'new' ? 'You have downloaded every photo here' : ($got === 'done' ? 'You have not downloaded any of these photos yet' : 'No photos match') ?></h2>
+    <p><a class="btn" href="/projects/<?= (int) $p['id'] ?>">Show all photos</a></p>
+  </section>
+<?php elseif (!$photos): ?>
   <section class="card center">
     <h2>No approved photos yet</h2>
     <p>Photos appear here after our team has checked and approved them.</p>
@@ -28,9 +40,12 @@
     <label class="check"><input type="checkbox" data-check-all="photo"><span>Select all on this page</span></label>
     <span><strong data-count>0</strong> selected</span>
     <button class="btn" type="submit" name="which" value="selected"><?= $ask ? 'Ask to download selected' : 'Download selected (ZIP)' ?></button>
-    <button class="btn btn-main" type="submit" name="which" value="all"><?= $ask ? 'Ask to download all ' . (int) $total . ' photos' : 'Download all approved photos (ZIP)' ?></button>
+    <button class="btn btn-main" type="submit" name="which" value="all"><?= $ask ? 'Ask to download all ' . (int) $all . ' photos' : 'Download all approved photos (ZIP)' ?></button>
     <?php endif; ?>
     <a class="btn" href="/projects/<?= (int) $p['id'] ?>/metadata.csv">Photo information (CSV)</a>
+    <?php if ($bulk): ?>
+    <label class="check bulk-skip" title="Applies to both buttons"><input type="checkbox" name="skip_done" value="1"<?= $got === 'new' ? ' checked' : '' ?>><span>Leave out photos I have already downloaded<?= $nDone ? ' (' . (int) $nDone . ')' : '' ?></span></label>
+    <?php endif; ?>
   </div>
   <?php if ($ask && $bulk): ?>
   <label for="note">Note for our team <span class="muted">(optional)</span></label>
@@ -47,6 +62,7 @@
     <?php foreach ($photos as $ph): ?>
       <li class="shot">
         <a href="/photo/<?= e($ph['token']) ?>"><img src="/img/<?= e($ph['token']) ?>/thumb" alt="Photo <?= e(image_id($ph['id'])) ?>" loading="lazy" width="240" height="240"></a>
+        <?php if (isset($done[(int) $ph['id']])): ?><span class="shot-done" title="You downloaded this on <?= e(nice_date($done[(int) $ph['id']])) ?>"><?= icon('check') ?> Downloaded</span><?php endif; ?>
         <div class="shot-info">
           <?php if ($bulk): ?><label class="check"><input type="checkbox" name="ids[]" value="<?= (int) $ph['id'] ?>" data-group="photo"><span><?= e(image_id($ph['id'])) ?></span></label>
           <?php else: ?><strong><?= e(image_id($ph['id'])) ?></strong><?php endif; ?>

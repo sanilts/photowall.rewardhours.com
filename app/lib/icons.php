@@ -36,6 +36,7 @@ function icon(string $name, string $class = ''): string
         'plus'     => '<path d="M12 5v14M5 12h14"/>',
         'user'     => '<circle cx="12" cy="8.2" r="3.8"/><path d="M4.5 20.5c.6-4 3.6-6.3 7.5-6.3s6.9 2.3 7.5 6.3"/>',
         'tiles'    => '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+        'help'     => '<circle cx="12" cy="12" r="8.6"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.7 2.2c-.8.5-1.3 1-1.3 2v.3M12 16.9v.2"/>',
         'info'     => '<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.5M12 7.6v.2"/>',
         'key'      => '<circle cx="8" cy="15.5" r="4"/><path d="M11 12.6 19.6 4M16.2 7.4l2.6 2.6M13.6 10l2 2"/>',
         'cloud'    => '<path d="M7.2 18.5a4.4 4.4 0 0 1-.7-8.75 5.9 5.9 0 0 1 11.4-.3 4.5 4.5 0 0 1-.4 9.05z"/>',
