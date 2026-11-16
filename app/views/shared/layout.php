@@ -67,7 +67,7 @@ $description = (string) ($description ?? '');
     <?php if ($who): ?>
     <form class="signout" method="post" action="/logout">
       <?= csrf_field() ?>
-      <span class="who"><?= e($who['label']) ?></span>
+      <span class="who" title="<?= e($who['label']) ?>"><?= e($who['label']) ?></span>
       <button class="btn btn-onnavy" type="submit">Sign out</button>
     </form>
     <?php elseif (!empty($headerLink)): ?>

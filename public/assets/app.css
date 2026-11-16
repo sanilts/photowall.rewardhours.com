@@ -61,18 +61,20 @@ img { max-width: 100%; height: auto; }
 
 /* ---------- header and footer ---------- */
 .top { background: var(--navy); color: var(--cream); }
-.top-in { display: flex; align-items: center; gap: 22px; min-height: 68px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
-.brand { display: inline-flex; align-items: center; gap: 14px; color: var(--cream); text-decoration: none; }
+/* one row on wide screens: the menu keeps its width and a long email address is shortened with dots instead of dropping to a second row */
+.top-in { display: flex; align-items: center; gap: 16px; min-height: 68px; flex-wrap: nowrap; padding-top: 10px; padding-bottom: 10px; }
+.brand { display: inline-flex; flex: none; align-items: center; gap: 14px; color: var(--cream); text-decoration: none; }
 .brand img { display: block; width: 94px; height: 40px; }
 .brand-name { font: 650 1.2rem/1 var(--display); letter-spacing: -0.01em; padding-left: 14px; border-left: 1px solid rgba(255, 254, 240, .28); }
 .brand-tag { font-size: .78rem; font-weight: 600; color: var(--navy); background: var(--sun); border-radius: 999px; padding: 3px 10px; }
-.nav { display: flex; gap: 4px; flex: 1; }
-.nav a { padding: 8px 12px; border-radius: 8px; color: rgba(255, 254, 240, .82); text-decoration: none; font-weight: 600; border-bottom: 2px solid transparent; }
+.nav { display: flex; gap: 2px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.nav a { padding: 8px 9px; white-space: nowrap; border-radius: 8px; color: rgba(255, 254, 240, .82); text-decoration: none; font-weight: 600; border-bottom: 2px solid transparent; }
 .nav a:hover { color: var(--cream); background: rgba(255, 254, 240, .08); }
 .nav a[aria-current] { color: var(--cream); border-bottom-color: var(--sun); border-radius: 8px 8px 0 0; }
-.signout { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.signout { display: flex; flex: 0 1000 auto; min-width: 0; align-items: center; gap: 12px; margin-left: auto; }
+.signout .btn { flex: none; white-space: nowrap; }
 .top-link { margin-left: auto; }
-.who { color: rgba(255, 254, 240, .75); font-size: .92rem; }
+.who { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255, 254, 240, .75); font-size: .88rem; }
 /* client portal: white header with the Research and Metric logo in its own colours */
 .area-client .top { background: #fff; color: var(--navy); border-bottom: 1px solid var(--line); }
 .area-client .top :focus-visible { outline-color: var(--navy); }
@@ -750,10 +752,24 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
   .slide { padding-bottom: 22px; }
   .start { grid-template-columns: minmax(0, 1fr); gap: 22px; }
 }
+/* narrower than the menu needs: the address goes first, then the menu takes a row of its own that can be swiped sideways */
+@media (max-width: 1120px) {
+  .who { display: none; }
+}
+.nav::-webkit-scrollbar { display: none; }
+/* the console has the longest menu, so it moves to its own row sooner than the client portal's short one */
+@media (max-width: 1000px) {
+  .area-admin .top-in { flex-wrap: wrap; }
+  .area-admin .nav { order: 3; flex: 1 1 100%; }
+}
+@media (max-width: 900px) {
+  .area-client .top-in { flex-wrap: wrap; }
+  .area-client .nav { order: 3; flex: 1 1 100%; }
+}
 @media (max-width: 780px) {
   .cols, .cols-wide, .grid2, .rules { grid-template-columns: 1fr; }
-  .nav { order: 3; flex-basis: 100%; overflow-x: auto; }
-  .who { display: none; }
+  .top-in { flex-wrap: wrap; }
+  .nav { order: 3; flex: 1 1 100%; }
   .bulk { position: static; }
   .facts div { grid-template-columns: 112px minmax(0, 1fr); }
 }
@@ -925,3 +941,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 
 /* very narrow screens: one frame per row so nothing is wider than the window */
 @media (max-width: 359px) { .sheet { grid-template-columns: minmax(0, 1fr); } }
+
+/* phones: the logo, the name and Sign out share one row; the small area label gives way */
+@media (max-width: 480px) {
+  .top-in { gap: 10px 12px; }
+  .brand { gap: 10px; }
+  .brand-tag { display: none; }
+  .signout .btn { min-height: 38px; padding: 6px 12px; font-size: .92rem; }
+}
