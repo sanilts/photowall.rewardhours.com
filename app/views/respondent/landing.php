@@ -21,6 +21,7 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
 <section class="hero">
   <div class="wrap hero-in">
     <div class="hero-copy">
+      <img class="hero-logo" src="<?= e(asset('logo-white.png')) ?>" alt="Reward Hours" width="94" height="40" loading="lazy">
       <p class="hero-project"><?= e($project['name']) ?></p>
       <h1>Share photos taken on your iPhone&nbsp;<?= $min ?> or newer</h1>
       <?php if (trim((string) $project['intro']) !== ''): ?><p class="hero-lead"><?= nl2br(e($project['intro']), false) ?></p><?php endif; ?>
@@ -183,3 +184,6 @@ $messages = take_flashes(); // shown beside the form they are about, not at the 
     </div>
   </div>
 </section>
+
+<?php // on a phone the main button stays within reach along the bottom, and steps aside while the form is on screen ?>
+<div class="cta-bar" data-cta><a class="btn btn-main" href="#start"><?= $closed ? 'See your photos' : 'Start uploading' ?></a></div>

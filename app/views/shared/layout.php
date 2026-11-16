@@ -18,9 +18,15 @@ $description = (string) ($description ?? '');
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="<?= $public ? 'index,follow' : 'noindex,nofollow' ?>">
+<?php if ($area === 'respondent'): // on a phone the contributor site has a light bar along the top, like an app ?>
+<meta name="theme-color" media="(max-width: 899px)" content="#f9f9f9">
+<meta name="theme-color" media="(min-width: 900px)" content="#0a1e3c">
+<meta name="apple-mobile-web-app-title" content="Photowall">
+<?php else: ?>
 <meta name="theme-color" content="<?= $area === 'client' ? '#ffffff' : '#0a1e3c' ?>">
+<?php endif; ?>
 <title><?= e($title) ?> | Photowall</title>
 <?php if ($description !== ''): ?><meta name="description" content="<?= e($description) ?>">
 <?php endif; ?>
@@ -53,7 +59,8 @@ $description = (string) ($description ?? '');
   <div class="wrap top-in">
     <a class="brand" href="/">
       <?php if ($area === 'client'): ?><img src="<?= e($v('rm-logo.png')) ?>" alt="Research and Metric" width="215" height="40">
-      <?php else: ?><img src="<?= e($v('logo-white.png')) ?>" alt="Reward Hours" width="94" height="40"><?php endif; ?>
+      <?php else: ?><img class="brand-logo" src="<?= e($v('logo-white.png')) ?>" alt="Reward Hours" width="94" height="40"><?php endif; ?>
+      <?php if ($area === 'respondent'): // the app icon stands in for the logo on a phone ?><img class="brand-app" src="<?= e($v('icon-180.png')) ?>" alt="" width="28" height="28" loading="lazy"><?php endif; ?>
       <span class="brand-name">Photowall</span>
       <?php if ($badge): ?><span class="brand-tag"><?= e($badge) ?></span><?php endif; ?>
     </a>

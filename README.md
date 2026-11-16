@@ -114,6 +114,14 @@ in; nothing is deleted) or deleted (the company, its people, their download requ
 projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
 removed. Database change 011 adds `clients.active`.
 
+## Phone layout of the contributor site
+
+Below 900 pixels wide every contributor page, the home page and project pages included, is laid out like an
+iPhone app: a light bar along the top with the app icon, rounded groups of rows on a grey ground, the system
+font, and a line of small print instead of the web footer. A project page keeps its main button along the
+bottom (`.cta-bar`); it steps aside while the sign-in form is on screen (`app.js`). The styles are the two
+blocks at the end of `public/assets/app.css`. Wider screens are unchanged.
+
 ## Visits
 
 Pages of the contributor site and the client portal are counted on our own server, without cookies and without

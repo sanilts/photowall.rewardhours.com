@@ -199,6 +199,15 @@
   }
 
   // Photos flagged by the safety scan stay blurred until a member of staff chooses to look.
+  // The button bar along the bottom of a project page (phones) steps aside while the sign-in form is on screen.
+  var cta = document.querySelector('[data-cta]');
+  var form = document.querySelector('.start-card');
+  if (cta && form && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (seen) {
+      cta.classList.toggle('is-away', seen[0].isIntersecting);
+    }, { rootMargin: '0px 0px -120px 0px' }).observe(form);
+  }
+
   document.addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-reveal]');
     if (!btn) return;

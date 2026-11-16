@@ -594,6 +594,9 @@ progress { width: 100%; height: 10px; accent-color: var(--navy); }
 .mine-sum .chip-all { background: #e9eef6; color: var(--ink); }
 .mine-sum .chip[aria-pressed=true] { border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
 .tabbar { display: none; }
+/* shown only on phones, on the contributor site */
+.brand .brand-app, .hero-logo, .tile-ico, .cta-bar { display: none; }
+.tile-text { display: contents; }
 /* the upload box: the familiar dashed area with an icon, a line of text and a button */
 .drop { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; margin: 0; padding: 30px 20px 26px; border: 2px dashed #8ea6d6; border-radius: var(--r-card); background: #f4f7fd; color: var(--ink); font-weight: 400; cursor: pointer; }
 .drop:hover, .drop.over { border-color: var(--navy); background: #e8effc; }
@@ -829,10 +832,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 /* ---- contributor pages on a phone: the look and feel of a native iPhone app ----
    The blue, grey and red are a shade darker than the phone's own, so all text meets the 4.5 to 1 contrast rule.
    System font, grouped rounded cards on a grey ground, filled buttons, a translucent tab bar,
-   a segmented control for filters and hairline list separators. Only on small screens, and not on the
-   public project page (which is a full-width web page). */
+   a segmented control for filters and hairline list separators. Only on small screens. */
 @media (max-width: 899px) {
-  body.area-respondent:not(.is-wide) {
+  body.area-respondent {
     --tint: #005fcc; --ground: #f2f2f7; --sep: rgba(60, 60, 67, .2); --second: rgba(60, 60, 67, .8); --fill: rgba(118, 118, 128, .12);
     --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
@@ -840,33 +842,30 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
     background: var(--ground); color: #000; font-family: var(--text); font-size: 17px; line-height: 1.4; letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
   }
-  .area-respondent:not(.is-wide) h1, .area-respondent:not(.is-wide) h2, .area-respondent:not(.is-wide) h3 { font-family: var(--display); letter-spacing: -0.022em; }
-  .area-respondent:not(.is-wide) .top-in { min-height: 52px; padding-top: 6px; padding-bottom: 6px; }
-  .area-respondent:not(.is-wide) .main { padding-left: 16px; padding-right: 16px; }
-  .area-respondent:not(.is-wide) a { color: var(--tint); }
-  .area-respondent:not(.is-wide) .top a, .area-respondent:not(.is-wide) .top .btn { color: var(--cream); }
+  .area-respondent h1, .area-respondent h2, .area-respondent h3 { font-family: var(--display); letter-spacing: -0.022em; }
+  .area-respondent .main { padding-left: 16px; padding-right: 16px; }
+  .area-respondent a { color: var(--tint); }
 
   /* large title */
-  .area-respondent:not(.is-wide) .up-head h1, .area-respondent:not(.is-wide) .card.narrow h1 { font-size: 2.05rem; font-weight: 700; line-height: 1.1; }
-  .area-respondent:not(.is-wide) .eyebrow { font-size: .8rem; font-weight: 400; color: var(--second); }
+  .area-respondent .up-head h1, .area-respondent .card.narrow h1 { font-size: 2.05rem; font-weight: 700; line-height: 1.1; }
+  .area-respondent .eyebrow { font-size: .8rem; font-weight: 400; color: var(--second); }
 
   /* grouped cards */
-  .area-respondent:not(.is-wide) .card { border: 0; border-radius: 12px; box-shadow: none; padding: 16px; margin-bottom: 18px; background: #fff; }
-  .area-respondent:not(.is-wide) .card > h2, .area-respondent:not(.is-wide) #uploader > h2 { font-size: 1.3rem; font-weight: 700; }
-  .area-respondent:not(.is-wide) .note { border: 0; border-radius: 12px; }
+  .area-respondent .card { border: 0; border-radius: 12px; box-shadow: none; padding: 16px; margin-bottom: 18px; background: #fff; }
+  .area-respondent .card > h2, .area-respondent #uploader > h2 { font-size: 1.3rem; font-weight: 700; }
+  .area-respondent .note { border: 0; border-radius: 12px; }
 
   /* buttons and fields */
-  .area-respondent:not(.is-wide) .btn { min-height: 50px; border: 0; border-radius: 12px; background: var(--fill); color: var(--tint); font: 600 1rem/1.2 var(--text); }
-  .area-respondent:not(.is-wide) .btn-main, .area-respondent:not(.is-wide) .drop-btn { background: var(--tint); color: #fff; }
-  .area-respondent:not(.is-wide) .btn-small { min-height: 34px; padding: 6px 14px; border-radius: 17px; font-size: .88rem; }
-  .area-respondent:not(.is-wide) .btn-link, .area-respondent:not(.is-wide) .btn-quiet { background: transparent; }
-  .area-respondent:not(.is-wide) .shot .btn-link { min-height: 30px; padding: 2px 0; color: #c4001a; font-weight: 400; }
-  .area-respondent:not(.is-wide) .top .btn { min-height: 34px; background: rgba(255, 255, 255, .16); border-radius: 17px; }
-  .area-respondent:not(.is-wide) input, .area-respondent:not(.is-wide) select, .area-respondent:not(.is-wide) textarea { min-height: 44px; border: 0; border-radius: 10px; background: var(--fill); font-size: 1rem; }
-  .area-respondent:not(.is-wide) input[type=checkbox] { min-height: 0; accent-color: var(--tint); }
-  .area-respondent:not(.is-wide) label { font-weight: 400; color: var(--second); font-size: .88rem; }
-  .area-respondent:not(.is-wide) .check { color: #000; font-size: 1rem; }
-  .area-respondent:not(.is-wide) progress { accent-color: var(--tint); }
+  .area-respondent .btn { min-height: 50px; border: 0; border-radius: 12px; background: var(--fill); color: var(--tint); font: 600 1rem/1.2 var(--text); }
+  .area-respondent .btn-main, .area-respondent .drop-btn { background: var(--tint); color: #fff; }
+  .area-respondent .btn-small { min-height: 34px; padding: 6px 14px; border-radius: 17px; font-size: .88rem; }
+  .area-respondent .btn-link, .area-respondent .btn-quiet { background: transparent; }
+  .area-respondent .shot .btn-link { min-height: 30px; padding: 2px 0; color: #c4001a; font-weight: 400; }
+  .area-respondent input, .area-respondent select, .area-respondent textarea { min-height: 44px; border: 0; border-radius: 10px; background: var(--fill); font-size: 1rem; }
+  .area-respondent input[type=checkbox] { min-height: 0; accent-color: var(--tint); }
+  .area-respondent label { font-weight: 400; color: var(--second); font-size: .88rem; }
+  .area-respondent .check { color: #000; font-size: 1rem; }
+  .area-respondent progress { accent-color: var(--tint); }
 
   /* the four counters, as small widgets */
   .area-respondent .up-stats li { border: 0; border-radius: 12px; padding: 10px 6px 9px; background: #fff; }
@@ -930,10 +929,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   body.area-respondent:has(.tabbar) .main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
   /* details the general rules above would get wrong */
-  .area-respondent:not(.is-wide) label.drop { color: #000; font-size: 1rem; }
-  .area-respondent:not(.is-wide) .foot a { color: rgba(255, 254, 240, .9); }
+  .area-respondent label.drop { color: #000; font-size: 1rem; }
   .area-respondent .empty { padding: 16px; font-size: .94rem; }
-  .area-respondent:not(.is-wide) .hint { font-size: .82rem; }
+  .area-respondent .hint { font-size: .82rem; }
   .area-respondent .up { gap: 0; }
   .area-respondent .invite h2 { font-size: 1.3rem; }
   .area-respondent .invite .btn { width: 100%; }
@@ -949,3 +947,115 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .brand-tag { display: none; }
   .signout .btn { min-height: 38px; padding: 6px 12px; font-size: .92rem; }
 }
+
+/* ---- contributor site on a phone, the app frame: every page, the home page and project pages included ----
+   A light bar along the top with the app icon, lists in rounded groups on a grey ground, the main button
+   kept within reach along the bottom, and a quiet line of small print instead of a web footer. */
+@media (max-width: 899px) {
+  html:has(body.area-respondent) { scroll-padding-top: 64px; }
+  body.area-respondent { overscroll-behavior-y: none; }
+  .area-respondent .btn, .area-respondent .tabbar a { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .area-respondent .btn:active, .area-respondent .tabbar a:active, .area-respondent .faq summary:active { opacity: .55; }
+
+  /* bar along the top */
+  .area-respondent .top { position: sticky; top: 0; z-index: 30; padding-top: env(safe-area-inset-top); border-bottom: .5px solid var(--sep); background: rgba(249, 249, 249, .94); color: #000; -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+  .area-respondent .top-in { min-height: 44px; flex-wrap: nowrap; gap: 12px; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
+  .area-respondent .top .brand { gap: 9px; color: #000; }
+  .area-respondent .top .brand-logo { display: none; }
+  .area-respondent .top .brand-app { display: block; width: 28px; height: 28px; border-radius: 7px; }
+  .area-respondent .top .brand-name { padding: 0; border: 0; font: 600 17px/1 var(--display); letter-spacing: -0.02em; }
+  .area-respondent .top .btn { min-height: 44px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; color: var(--tint); font: 400 17px/1 var(--text); }
+  .area-respondent .top :focus-visible { outline-color: var(--tint); }
+
+  /* small print at the foot of the page */
+  .area-respondent .foot { padding: 22px 16px calc(26px + env(safe-area-inset-bottom)); background: transparent; color: var(--second); font-size: 13px; text-align: center; }
+  .area-respondent .foot-in { justify-content: center; gap: 4px 18px; padding: 0; }
+  .area-respondent .foot-in > span { flex-basis: 100%; }
+  .area-respondent .foot a { color: var(--tint); text-decoration: none; }
+  body.area-respondent:has(.cta-bar) .foot { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+
+  /* pages that run edge to edge on a computer: the home page and a project's page */
+  .area-respondent .main-wide .wrap { padding-left: 16px; padding-right: 16px; }
+  .area-respondent .hero { margin: 12px 16px 0; border-radius: 22px; }
+  .area-respondent .hero .hero-in { display: block; padding: 22px 20px 22px; }
+  .area-respondent .hero-logo { display: block; width: 80px; height: 34px; margin-bottom: 20px; }
+  .area-respondent .hero-project { margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+  .area-respondent .hero h1 { margin-bottom: 10px; font: 700 30px/1.08 var(--display); letter-spacing: -0.025em; }
+  .area-respondent .hero-lead { margin-bottom: 6px; font-size: 16px; line-height: 1.4; }
+  .area-respondent .hero-reward { display: flex; margin-top: 14px; padding: 12px 14px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .1); font-size: 15px; line-height: 1.4; }
+  .area-respondent .hero-cta { width: 100%; margin-top: 16px; border-radius: 14px; background: var(--sun); color: var(--navy); }
+  .area-respondent .main-wide:has(.cta-bar) .hero-cta { display: none; }
+  .area-respondent .slider { margin-top: 22px; }
+  .area-respondent .slider-name { font: 600 17px/1.25 var(--text); }
+  .area-respondent .slider-count { font-size: 13px; }
+
+  .area-respondent .band { padding: 28px 0 0; background: transparent; }
+  .area-respondent .band-title { margin: 0 4px 4px; font: 700 22px/1.2 var(--display); letter-spacing: -0.02em; }
+  .area-respondent .start-lead, .area-respondent .band-lead { margin: 0 4px 12px; font-size: 15px; color: var(--second); }
+  .area-respondent .band-note { padding-top: 16px; }
+
+  /* the three steps, as one group */
+  .area-respondent .start { display: block; }
+  .area-respondent .steps { margin: 0 0 18px; padding: 0 16px; border-radius: 12px; background: #fff; }
+  .area-respondent .step { grid-template-columns: 30px minmax(0, 1fr); gap: 12px; padding: 12px 0; }
+  .area-respondent .step + .step { border-top: .5px solid var(--sep); }
+  .area-respondent .step::before { display: none; }
+  .area-respondent .step-n { width: 30px; height: 30px; border: 0; background: var(--fill); color: #3c3c43; font: 600 15px/1 var(--text); box-shadow: none; }
+  .area-respondent .step-now .step-n { background: var(--tint); color: #fff; box-shadow: none; }
+  .area-respondent .step-t { margin: 5px 0 2px; font: 600 16px/1.3 var(--text); letter-spacing: -0.01em; }
+  .area-respondent .step-d { font-size: 14px; line-height: 1.4; color: var(--second); }
+  .area-respondent .step-d strong { color: #000; }
+  .area-respondent .start-until { margin: 0 4px 18px; padding: 0; border: 0; font-size: 14px; color: var(--second); }
+
+  /* the sign-in form */
+  .area-respondent .start-card { padding: 16px; border: 0; border-radius: 12px; box-shadow: none; }
+  .area-respondent .start-h { margin-bottom: 12px; font: 700 20px/1.2 var(--display); }
+  .area-respondent .terms-label { margin-bottom: 6px; font-size: 13px; font-weight: 400; color: var(--second); }
+  .area-respondent .terms { max-height: 150px; border: 0; border-radius: 10px; background: var(--ground); font-size: 14px; line-height: 1.45; }
+  .area-respondent .start-safe { font-size: 13px; color: var(--second); }
+
+  /* kinds of photo, as a list with a coloured square for each */
+  .area-respondent .sheet { display: block; margin: 8px 0 0; padding: 0 0 0 16px; border-radius: 12px; background: #fff; }
+  .area-respondent .frame { display: flex; align-items: center; gap: 12px; padding: 0; border-radius: 0; background: transparent; box-shadow: none; transform: none; }
+  .area-respondent .frame-art { flex: none; width: 30px; height: 30px; aspect-ratio: auto; border-radius: 7px; }
+  .area-respondent .frame-art .ico { width: 19px; height: 19px; stroke-width: 1.7; }
+  .area-respondent .frame h3 { flex: 1; margin: 0; padding: 12px 16px 12px 0; font: 400 17px/1.3 var(--text); letter-spacing: -0.01em; }
+  .area-respondent .frame + .frame h3 { border-top: .5px solid var(--sep); }
+
+  /* questions, as rows that open */
+  .area-respondent .details-title { margin-top: 28px; }
+  .area-respondent .details .faq, .area-respondent .faq { margin-top: 8px; padding-left: 16px; border: 0; border-radius: 12px; background: #fff; }
+  .area-respondent .faq details { border: 0; }
+  .area-respondent .faq details + details { border-top: .5px solid var(--sep); }
+  .area-respondent .faq summary { min-height: 44px; padding: 11px 14px 11px 0; font: 400 17px/1.3 var(--text); letter-spacing: -0.01em; }
+  .area-respondent .faq summary .ico { flex: none; width: 16px; height: 16px; stroke-width: 2.4; color: #8e8e93; transform: rotate(-90deg); }
+  .area-respondent .faq details[open] summary .ico { transform: none; }
+  .area-respondent .faq details p, .area-respondent .plain-steps { padding-right: 16px; padding-bottom: 14px; font-size: 15px; line-height: 1.45; color: #3c3c43; }
+  .area-respondent .faq .rules { gap: 10px; padding: 0 16px 14px 0; }
+  .area-respondent .rule { padding: 14px 14px 4px; border-radius: 10px; }
+  .area-respondent .rule h3 { margin-bottom: 8px; font-size: 16px; }
+  .area-respondent .rule h3 .ico { width: 24px; height: 24px; padding: 4px; }
+  .area-respondent .rule li { padding: 9px 0; font-size: 15px; line-height: 1.4; }
+
+  /* open projects on the home page, as rows with a small button */
+  .area-respondent .tiles { display: block; margin-top: 8px; padding-left: 16px; border-radius: 12px; background: #fff; }
+  .area-respondent .tiles .card { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; margin: 0; padding: 12px 16px 12px 0; border-radius: 0; background: transparent; }
+  .area-respondent .tiles .card + .card { border-top: .5px solid var(--sep); }
+  .area-respondent .tile-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; background: var(--navy); color: var(--cream); }
+  .area-respondent .tile-ico .ico { width: 24px; height: 24px; }
+  .area-respondent .tile-text { display: block; min-width: 0; }
+  .area-respondent .tile-text h3 { margin: 0; font: 600 17px/1.25 var(--text); letter-spacing: -0.01em; }
+  .area-respondent .tile-text p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: 2px 0 0; font-size: 14px; line-height: 1.35; color: var(--second); }
+  .area-respondent .tiles .btn { position: static; min-height: 32px; padding: 5px 15px; border-radius: 16px; background: var(--fill); color: var(--tint); font: 700 14px/1 var(--text); }
+  .area-respondent .tiles .btn::after { content: ""; position: absolute; inset: 0; }
+
+  /* long text pages */
+  .area-respondent .prose ul, .area-respondent .prose ol { padding-left: 1.25em; }
+  .area-respondent .prose h2 { font-size: 1.25rem; }
+
+  /* the main button, kept along the bottom of a project's page */
+  .area-respondent .cta-bar { display: block; position: fixed; z-index: 25; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: .5px solid var(--sep); background: rgba(249, 249, 249, .94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); transition: transform .28s cubic-bezier(.2, .7, .2, 1), visibility 0s; }
+  .area-respondent .cta-bar.is-away { transform: translateY(110%); visibility: hidden; transition: transform .28s cubic-bezier(.2, .7, .2, 1), visibility 0s .28s; }
+  .area-respondent .cta-bar .btn { width: 100%; }
+}
+@media (max-width: 899px) and (prefers-reduced-motion: reduce) { .area-respondent .cta-bar, .area-respondent .cta-bar.is-away { transition: none; } }
