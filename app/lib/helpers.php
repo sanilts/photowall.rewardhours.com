@@ -71,7 +71,10 @@ function send_security_headers(): void
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: same-origin');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    // A download button is a form. When the original sits in the bucket, the answer forwards the browser to a
+    // short-lived private link there, and browsers refuse that unless the bucket is named as a place forms may lead to.
+    $bucket = class_exists('Spaces') ? Spaces::origin() : '';
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" . ($bucket !== '' ? ' ' . $bucket : ''));
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
     if (cfg('https', true)) header('Strict-Transport-Security: max-age=31536000');
 }

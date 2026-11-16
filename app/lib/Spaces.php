@@ -138,6 +138,14 @@ final class Spaces
 
     /* ---------- request signing ---------- */
 
+    /** The bucket's own address (scheme and host), or '' when photos are kept on this server. */
+    public static function origin(): string
+    {
+        if (!self::on()) return '';
+        [$scheme, $host] = self::target('');
+        return $host !== '' && preg_match('/^[a-z0-9.:-]+$/i', $host) ? $scheme . '://' . $host : '';
+    }
+
     /** @return array{0:string,1:string,2:string} scheme, host, path */
     private static function target(string $key): array
     {
