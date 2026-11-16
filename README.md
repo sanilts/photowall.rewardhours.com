@@ -114,6 +114,16 @@ in; nothing is deleted) or deleted (the company, its people, their download requ
 projects and photos stay, without a client). Each person can be renamed, given a new email, switched off or
 removed. Database change 011 adds `clients.active`.
 
+## Visits
+
+Pages of the contributor site and the client portal are counted on our own server, without cookies and without
+any outside service (`app/lib/Visits.php`, table `visits`, console page `/visits`). One line is written per page
+shown. A visitor is one browser on one day: a code made from the date, the connection address and the browser,
+which changes daily and cannot be turned back. Robots and link previews are left out; the console is not counted.
+The connection address is kept only until the 10-minute cron (`bin/notify.php`) has looked up its country with
+the IPzentra key, and never longer than an hour. Lines are kept 400 days. A link shared with
+`?utm_source=name` shows up under that name. Database change 014 adds the table.
+
 ## Sharing picture, search engines and page speed
 
 - **Link previews.** Public pages (home, a project's page, privacy) carry Open Graph and Twitter tags and a

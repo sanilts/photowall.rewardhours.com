@@ -115,6 +115,30 @@
     tell();
   }
 
+  // Charts: each bar's height comes from data-h (a percentage), and pointing at a day shows its numbers.
+  Array.prototype.forEach.call(document.querySelectorAll('.chart-bars'), function (bars) {
+    var tip = null;
+    Array.prototype.forEach.call(bars.children, function (li) {
+      var bar = li.querySelector('.chart-bar');
+      var h = parseFloat(li.dataset.h || '0');
+      if (bar) bar.style.height = (h > 0 ? Math.max(h, 1) : 0) + '%'; // a day with visitors always shows at least a sliver
+      function show(x, y) {
+        if (!tip) { tip = document.createElement('div'); tip.className = 'chart-tip'; tip.setAttribute('role', 'status'); document.body.appendChild(tip); }
+        tip.textContent = li.dataset.tip || '';
+        tip.hidden = false;
+        var w = tip.offsetWidth;
+        tip.style.left = Math.max(8, Math.min(x - w / 2, window.innerWidth - w - 8)) + 'px';
+        tip.style.top = Math.max(8, y - tip.offsetHeight - 14) + 'px';
+        li.classList.add('is-on');
+      }
+      function hide() { if (tip) tip.hidden = true; li.classList.remove('is-on'); }
+      li.addEventListener('pointermove', function (ev) { show(ev.clientX, ev.clientY); });
+      li.addEventListener('pointerleave', hide);
+      li.addEventListener('pointerdown', function (ev) { show(ev.clientX, ev.clientY); });
+    });
+    window.addEventListener('scroll', function () { if (tip) tip.hidden = true; }, { passive: true });
+  });
+
   // Tabs: a [data-tabs] box holds links a[data-tab] and parts [data-panel]. One part shows at a time.
   // The address after # chooses the part, also when it names something inside a part (so links and
   // the page a form returns to still land in the right place). Without JavaScript every part shows.

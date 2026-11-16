@@ -126,6 +126,7 @@ function json_out(array $data, int $code = 200): never
 function view(string $name, array $vars = []): never
 {
     $vars += ['title' => 'Photowall', 'nav' => []];
+    Visits::record((string) area()); // counts pages of the contributor site and client portal; the console is not counted
     extract($vars, EXTR_SKIP);
     ob_start();
     require PW_ROOT . '/app/views/' . $name . '.php';
@@ -376,7 +377,7 @@ function activity_words(): array
         'photo.approve' => ['Accepted photos', 'photos'], 'photo.reject' => ['Rejected photos', 'photos'], 'photo.pending' => ['Put photos back for review', 'photos'],
         'photo.category' => ['Changed a photo category', 'photos'],
         'photo.download' => ['Downloaded a photo', 'downloads'], 'zip.download' => ['Downloaded photos (ZIP)', 'downloads'], 'metadata.export' => ['Downloaded the photo information sheet', 'downloads'],
-        'tracker.export' => ['Downloaded the tracker', 'downloads'], 'respondents.export' => ['Downloaded the contributor list', 'downloads'], 'client.activity.export' => ['Downloaded client activity', 'downloads'],
+        'tracker.export' => ['Downloaded the tracker', 'downloads'], 'visits.export' => ['Downloaded the visit numbers', 'downloads'], 'respondents.export' => ['Downloaded the contributor list', 'downloads'], 'client.activity.export' => ['Downloaded client activity', 'downloads'],
         'download.request' => ['Client asked to download', 'downloads'], 'download.approve' => ['Approved a download request', 'downloads'],
         'download.decline' => ['Declined a download request', 'downloads'], 'download.withdraw' => ['Withdrew a download approval', 'downloads'],
         'project.create' => ['Created a project', 'settings'], 'project.update' => ['Changed project settings', 'settings'],

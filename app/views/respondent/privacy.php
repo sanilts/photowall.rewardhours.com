@@ -10,6 +10,7 @@
     <li>The photos you upload, kept exactly as your iPhone made them.</li>
     <li>The information stored inside each photo file by your iPhone, such as the phone model, camera settings, the date and time, and the place the photo was taken if location was switched on for your camera.</li>
     <li>Technical records such as your IP address and the time of your uploads, to keep the service secure.</li>
+    <li>Counts of visits to this site: which page was opened, the kind of device and browser, the country, and the site that linked here. We count them on our own server without cookies. Visitors are told apart for one day only, by a code that cannot be traced back to a person, and the IP address is not kept with the count.</li>
   </ul>
 
   <h2>How photos are checked</h2>

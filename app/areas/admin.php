@@ -25,6 +25,7 @@ function ad_nav(string $on): array
     if ($me && $me['role'] === 'admin') {
         $asked = (int) Db::val("SELECT COUNT(*) FROM download_requests WHERE status = 'pending'");
         $nav[] = ['Clients' . ($asked ? " ($asked)" : ''), $asked ? '/clients/requests' : '/clients', $on === 'clients'];
+        $nav[] = ['Visits', '/visits', $on === 'visits'];
         $nav[] = ['Staff', '/staff', $on === 'staff'];
         $nav[] = ['Activity', '/activity', $on === 'activity'];
         $nav[] = ['Settings', '/settings', $on === 'settings'];
@@ -788,6 +789,34 @@ route('GET', '/clients/{id}', function (string $id) {
         FROM projects p WHERE p.client_id = ? ORDER BY p.id DESC", [$c['id']]);
     view('admin/client', ['title' => $c['name'], 'nav' => ad_nav('clients'), 'c' => $c, 'people' => $people, 'projects' => $projects,
         'sum' => ClientLog::company((int) $c['id']), 'recent' => ClientLog::rows(['client' => (int) $c['id']], 8, 0)]);
+});
+
+/* ---------- visits to the contributor site and the client portal ---------- */
+
+function ad_visit_filter(): array
+{
+    $days = (int) ($_GET['days'] ?? 30);
+    return ['days' => in_array($days, [7, 30, 90, 365], true) ? $days : 30, 'area' => ($_GET['site'] ?? '') === 'client' ? 'client' : 'respondent', 'project' => (int) ($_GET['project'] ?? 0)];
+}
+
+route('GET', '/visits', function () {
+    ad_need(true);
+    $f = ad_visit_filter();
+    $projects = Db::all('SELECT id, name, slug FROM projects ORDER BY id DESC');
+    $project = null;
+    foreach ($projects as $p) if ((int) $p['id'] === $f['project']) $project = $p;
+    if ($f['area'] === 'client' || !$project) $f['project'] = 0;
+    [$sources, $direct] = Visits::sources($f);
+    view('admin/visits', ['title' => 'Visits', 'nav' => ad_nav('visits'), 'f' => $f, 'projects' => $projects, 'project' => $f['project'] ? $project : null,
+        'totals' => Visits::totals($f), 'days' => Visits::byDay($f), 'pages' => Visits::top($f, 'path', 12), 'countries' => Visits::top($f, 'country', 12),
+        'devices' => Visits::top($f, 'device', 5), 'browsers' => Visits::top($f, 'browser', 8), 'sources' => $sources, 'direct' => $direct,
+        'steps' => $f['project'] && $project ? Visits::steps($f, $project['slug']) : [], 'located' => Guard::settings()['ip_key'] !== '']);
+});
+
+route('GET', '/visits.csv', function () {
+    ad_need(true);
+    audit('visits.export');
+    Visits::sendCsv(ad_visit_filter());
 });
 
 /* ---------- staff ---------- */

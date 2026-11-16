@@ -145,6 +145,32 @@ a.who-link:hover > span:last-child { text-decoration: underline; }
 .acts { flex-wrap: wrap; }
 .acts .btn { white-space: nowrap; }
 .table .row.acts { flex-wrap: wrap; max-width: 22em; }
+/* ---- visits: one bar per day ----
+   Bars are thin with a rounded top and a small gap, the grid is faint, and each day's whole column answers
+   to the pointer. Their heights are set by app.js from data-h; the table under the chart has the same numbers. */
+.visit-filters { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: flex-start; margin: 0 0 6px; }
+.visit-filters .row { margin: 0 0 16px; }
+.visit-filters select { min-height: 38px; padding: 6px 10px; }
+.visit-filters .btn { min-height: 38px; padding: 6px 14px; }
+.chart { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 10px; margin: 18px 0 14px; padding-top: 6px; }
+.chart-y { display: flex; flex-direction: column; justify-content: space-between; height: 220px; color: var(--soft); font-size: .8rem; text-align: right; }
+.chart-y span { height: 0; line-height: 0; }
+.chart-plot { position: relative; height: 220px; }
+.chart-grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; }
+.chart-grid span { height: 0; border-top: 1px solid #e9edf4; }
+.chart-grid span:last-child { border-top-color: #b9c4d6; }
+.chart-bars { position: absolute; inset: 0; display: flex; align-items: stretch; list-style: none; margin: 0; padding: 0; }
+.chart-bars li { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; justify-content: center; padding: 0 1px; }
+.chart-bar { display: block; width: 100%; max-width: 24px; height: 0; border-radius: 4px 4px 0 0; background: var(--navy); }
+.chart-bars li.is-on { background: rgba(10, 30, 60, .06); }
+.chart-bars li.is-on .chart-bar { background: #2b5cb8; }
+.chart-x { grid-column: 2; display: flex; color: var(--soft); font-size: .8rem; }
+.chart-x span { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+.chart-x i { font-style: normal; white-space: nowrap; }
+.chart-tip { position: fixed; z-index: 60; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: var(--navy); color: var(--cream); font-size: .86rem; white-space: nowrap; box-shadow: 0 6px 18px -6px rgba(10, 30, 60, .5); }
+@media (max-width: 640px) { .chart-bars li { padding: 0 .5px; } .chart-y, .chart-plot { height: 180px; } }
+.table-days { min-width: 0; }
+.table-flat .table-days { min-width: 0; }
 .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .pill { padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font-weight: 600; font-size: .92rem; text-decoration: none; }
 .pill:hover { border-color: var(--navy); }

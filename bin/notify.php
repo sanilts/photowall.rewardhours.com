@@ -7,3 +7,7 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 
 $sent = Notify::accepted(isset($argv[1]) ? (int) $argv[1] : Notify::SETTLE);
 echo $sent . ' ' . ($sent === 1 ? 'email' : 'emails') . " sent.\n";
+
+// Visits: look up the country of new visits, then blank their connection addresses.
+$placed = Visits::resolve();
+if ($placed) echo $placed . ' ' . ($placed === 1 ? 'connection' : 'connections') . " given a country.\n";
