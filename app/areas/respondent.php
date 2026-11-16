@@ -34,7 +34,14 @@ function rp_window(array $project): string
 
 route('GET', '/', function () {
     $open = Db::all("SELECT slug, name, intro, closes_at FROM projects WHERE status = 'open' AND (opens_at IS NULL OR opens_at <= ?) AND (closes_at IS NULL OR closes_at >= ?) ORDER BY id DESC", [now(), now()]);
-    if (count($open) === 1) redirect('/p/' . $open[0]['slug']);
+    if (count($open) === 1) {
+        // keep the tag of a shared link (?utm_source=facebook), so the Visits page can tell where people came from
+        $tags = [];
+        foreach (['utm_source', 'utm_campaign'] as $k) {
+            if (is_string($_GET[$k] ?? null) && $_GET[$k] !== '') $tags[$k] = mb_substr($_GET[$k], 0, 80);
+        }
+        redirect('/p/' . $open[0]['slug'] . ($tags ? '?' . http_build_query($tags) : ''));
+    }
     view('respondent/home', ['title' => 'Share your photos', 'projects' => $open, 'bare' => true,
         'description' => 'Photowall by Reward Hours. Take part in a photo project: share original photos taken on your iPhone and upload them straight from your phone.']);
 });
