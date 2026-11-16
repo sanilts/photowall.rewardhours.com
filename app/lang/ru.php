@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'Ваша учётная запись не может загружать фотографии в этот проект.',
     'You have already uploaded all {n} photos for this project.' => 'Вы уже загрузили все фотографии для этого проекта ({n}).',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'Вы достигли сегодняшнего лимита фотографий ({n}). Возвращайтесь завтра.',
+    'Select your language' => 'Выберите язык',
 ];

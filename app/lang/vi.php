@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'Tài khoản của bạn không thể tải ảnh lên dự án này.',
     'You have already uploaded all {n} photos for this project.' => 'Bạn đã tải lên đủ {n} ảnh cho dự án này.',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'Bạn đã đạt giới hạn {n} ảnh của hôm nay. Vui lòng quay lại vào ngày mai.',
+    'Select your language' => 'Chọn ngôn ngữ của bạn',
 ];

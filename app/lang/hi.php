@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'आपका खाता इस प्रोजेक्ट में फ़ोटो अपलोड नहीं कर सकता।',
     'You have already uploaded all {n} photos for this project.' => 'आप इस प्रोजेक्ट की सभी {n} फ़ोटो पहले ही अपलोड कर चुके हैं।',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'आज की {n} फ़ोटो की सीमा पूरी हो गई है। कृपया कल वापस आएँ।',
+    'Select your language' => 'अपनी भाषा चुनें',
 ];

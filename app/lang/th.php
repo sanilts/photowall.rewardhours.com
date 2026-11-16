@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'บัญชีของคุณอัปโหลดรูปเข้าโครงการนี้ไม่ได้',
     'You have already uploaded all {n} photos for this project.' => 'คุณอัปโหลดรูปของโครงการนี้ครบทั้ง {n} รูปแล้ว',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'คุณถึงขีดจำกัดของวันนี้ที่ {n} รูปแล้ว โปรดกลับมาใหม่พรุ่งนี้',
+    'Select your language' => 'เลือกภาษาของคุณ',
 ];

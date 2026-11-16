@@ -126,6 +126,7 @@ Vietnamese and Thai. The console and the client portal are English only.
   translation is shown in English, so a missing line never breaks a page.
 - The language is chosen in this order: a link with `?lang=es`, then the reader's saved choice (cookie
   `pw_lang`, one year), then the browser's own language, then English. The picker is in the header.
+  Its flags are drawn in `public/assets/flags.svg`, because flag emoji do not exist on Windows.
   A shared link can carry both, for example `/?lang=es&utm_source=facebook`.
 - Arabic runs right to left. Languages the two site typefaces cannot write use the device's own typeface.
 - The language a contributor reads the site in is saved (`respondents.lang`, database change 015), so the

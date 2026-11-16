@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'Akun Anda tidak dapat mengunggah foto ke proyek ini.',
     'You have already uploaded all {n} photos for this project.' => 'Anda sudah mengunggah semua {n} foto untuk proyek ini.',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'Anda sudah mencapai batas hari ini, yaitu {n} foto. Silakan kembali besok.',
+    'Select your language' => 'Pilih bahasa Anda',
 ];

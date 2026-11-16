@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => '您的帳號無法上傳照片到本專案。',
     'You have already uploaded all {n} photos for this project.' => '您已上傳本專案的全部 {n} 張照片。',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => '您已達今天 {n} 張照片的上限。請明天再來。',
+    'Select your language' => '選擇語言',
 ];

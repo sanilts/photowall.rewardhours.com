@@ -79,12 +79,16 @@ $langHref = static fn(string $code): string => $path . '?' . http_build_query($l
     <?php endif; ?>
     <?php if ($area === 'respondent'): ?>
     <details class="lang" id="lang">
-      <summary><?= icon('globe') ?><span class="visually-hidden"><?= te('Language') ?>: </span><span class="lang-name"><?= e(Lang::ALL[Lang::code()][0]) ?></span> <span class="lang-code"><?= e(strtoupper(substr(Lang::code(), 0, 2))) ?></span></summary>
-      <ul class="lang-list">
-        <?php foreach (Lang::ALL as $code => [$own, $flag]): ?>
-          <li><a href="<?= e($langHref($code)) ?>" lang="<?= e($code) ?>" hreflang="<?= e($code) ?>" rel="nofollow"<?= $code === Lang::code() ? ' aria-current="true"' : '' ?>><span class="lang-flag" aria-hidden="true"><?= $flag ?></span><span dir="auto"><?= e($own) ?></span><?php if ($code === 'en'): ?><small>Global</small><?php endif; ?></a></li>
-        <?php endforeach; ?>
-      </ul>
+      <?php $flag = static fn(string $code): string => '<svg class="lang-flag" viewBox="0 0 28 20" aria-hidden="true" focusable="false"><use href="' . e($v('flags.svg')) . '#f-' . e($code) . '"></use></svg>'; // drawn flags: flag emoji do not exist on Windows ?>
+      <summary><?= $flag(Lang::code()) ?><span class="visually-hidden"><?= te('Language') ?>: </span><span class="lang-name"><?= e(Lang::ALL[Lang::code()]) ?></span> <span class="lang-code"><?= e(strtoupper(substr(Lang::code(), 0, 2))) ?></span><?= icon('chevron') ?></summary>
+      <div class="lang-panel">
+        <p class="lang-title"><?= icon('globe') ?><?= te('Select your language') ?></p>
+        <ul class="lang-list">
+          <?php foreach (Lang::ALL as $code => $own): ?>
+            <li><a href="<?= e($langHref($code)) ?>" lang="<?= e($code) ?>" hreflang="<?= e($code) ?>" rel="nofollow"<?= $code === Lang::code() ? ' aria-current="true"' : '' ?>><?= $flag($code) ?><span dir="auto"><?= e($own) ?></span><?php if ($code === 'en'): ?><small>Global</small><?php endif; ?></a></li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
     </details>
     <?php endif; ?>
     <?php if ($who): ?>

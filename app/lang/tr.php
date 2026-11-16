@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'Hesabınız bu projeye fotoğraf yükleyemiyor.',
     'You have already uploaded all {n} photos for this project.' => 'Bu proje için {n} fotoğrafın tamamını zaten yüklediniz.',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'Bugünkü {n} fotoğraflık sınıra ulaştınız. Lütfen yarın tekrar gelin.',
+    'Select your language' => 'Dilinizi seçin',
 ];

@@ -8,18 +8,13 @@ declare(strict_types=1);
  */
 final class Lang
 {
-    /** code => [the language's own name, flag] in the order of the picker */
+    /** code => the language's own name, in the order of the picker. The flags are drawn in public/assets/flags.svg. */
     public const ALL = [
-        'en' => ['English', '🌐'], 'es' => ['Español', '🇪🇸'],
-        'pt-BR' => ['Português (Brasil)', '🇧🇷'], 'fr' => ['Français', '🇫🇷'],
-        'de' => ['Deutsch', '🇩🇪'], 'it' => ['Italiano', '🇮🇹'],
-        'nl' => ['Nederlands', '🇳🇱'], 'pl' => ['Polski', '🇵🇱'],
-        'sv' => ['Svenska', '🇸🇪'], 'tr' => ['Türkçe', '🇹🇷'],
-        'ru' => ['Русский', '🇷🇺'], 'ar' => ['العربية', '🇸🇦'],
-        'hi' => ['हिन्दी', '🇮🇳'], 'ja' => ['日本語', '🇯🇵'],
-        'ko' => ['한국어', '🇰🇷'], 'zh-CN' => ['简体中文', '🇨🇳'],
-        'zh-TW' => ['繁體中文', '🇹🇼'], 'id' => ['Bahasa Indonesia', '🇮🇩'],
-        'vi' => ['Tiếng Việt', '🇻🇳'], 'th' => ['ไทย', '🇹🇭'],
+        'en' => 'English', 'es' => 'Español', 'pt-BR' => 'Português (Brasil)', 'fr' => 'Français',
+        'de' => 'Deutsch', 'it' => 'Italiano', 'nl' => 'Nederlands', 'pl' => 'Polski',
+        'sv' => 'Svenska', 'tr' => 'Türkçe', 'ru' => 'Русский', 'ar' => 'العربية',
+        'hi' => 'हिन्दी', 'ja' => '日本語', 'ko' => '한국어', 'zh-CN' => '简体中文',
+        'zh-TW' => '繁體中文', 'id' => 'Bahasa Indonesia', 'vi' => 'Tiếng Việt', 'th' => 'ไทย',
     ];
     public const COOKIE = 'pw_lang';
     /** The sentence added to several "not accepted" reasons. */

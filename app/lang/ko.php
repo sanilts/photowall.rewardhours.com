@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => '이 계정으로는 이 프로젝트에 사진을 업로드할 수 없습니다.',
     'You have already uploaded all {n} photos for this project.' => '이 프로젝트의 사진 {n}장을 이미 모두 업로드했습니다.',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => '오늘 한도인 {n}장에 도달했습니다. 내일 다시 와 주세요.',
+    'Select your language' => '언어 선택',
 ];

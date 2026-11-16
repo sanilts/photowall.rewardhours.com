@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'このアカウントではこのプロジェクトに写真をアップロードできません。',
     'You have already uploaded all {n} photos for this project.' => 'このプロジェクトの {n} 枚はすでにすべてアップロード済みです。',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => '本日の上限 {n} 枚に達しました。明日またお越しください。',
+    'Select your language' => '言語を選択',
 ];

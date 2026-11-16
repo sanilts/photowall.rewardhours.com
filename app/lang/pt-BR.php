@@ -274,4 +274,5 @@ return [
     'Your account cannot upload photos to this project.' => 'Sua conta não pode enviar fotos para este projeto.',
     'You have already uploaded all {n} photos for this project.' => 'Você já enviou todas as {n} fotos deste projeto.',
     'You have reached today\'s limit of {n} photos. Please come back tomorrow.' => 'Você chegou ao limite de hoje, de {n} fotos. Volte amanhã.',
+    'Select your language' => 'Selecione seu idioma',
 ];
